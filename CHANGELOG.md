@@ -4,6 +4,51 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versioning: [semantic versioning](https://semver.org/spec/v2.0.0.html), with the
 pre-1.0 caveat that `0.x` minor bumps may break the SDK.
 
+## [0.1.1] — 2026-07-25
+
+Found by dogfooding: driving a real orchestration run through failure, a real
+fix, and success. Every item here was invisible to the test suite, the eval
+harness, and code review.
+
+### Fixed
+
+**Cross-run resolution was unreachable.** The projector read
+`resolves_signature` from a verification payload and used it to link a fix to
+the failure it resolved, across runs. Nothing could write it — not the SDK, not
+the adapters, not a test. The only reachable path inferred resolution within a
+single task or run, but the real recovery path is to block a task, escalate to a
+human, and do the work in a *later* run, so a failure and its fix always landed
+in different runs. `what_later_worked` was therefore always empty and a fixed
+failure warned forever. `record_verification()` now accepts
+`resolves_signature`.
+
+**A resolved failure read as an open one.** The pre-action warning opened with
+"A similar approach failed previously" even when it carried what fixed it —
+inviting an agent to avoid an approach that now works. Resolved matches say so
+in the headline.
+
+**The gate could not be consulted without recording.** `warning.shown` means a
+warning was shown to someone, and it is the denominator for warning usefulness.
+Anything needing to look up a signature had to inflate that count.
+`OrkestraAdapter.preflight()` now forwards `record=False`.
+
+**An empty listing explained nothing.** `events`, `memories` and `recall`
+printed nothing when the project id did not match what the database held, which
+is indistinguishable from "nothing was ever recorded". They now name the
+projects present and the flag that selects one.
+
+### Added
+
+- `Journal.project_ids()` — the distinct project ids in a journal.
+- `record_verification(resolves_signature=...)`.
+- `OrkestraAdapter.preflight(record=...)`.
+
+### Notes
+
+Each fix carries a regression test verified by reintroducing the bug and
+confirming the test fails. `docs/reference/LIMITATIONS.md` records what the run
+established and what it still does not.
+
 ## [0.1.0] — 2026-07-25
 
 First release. Verified, git-aware memory for autonomous software agents.
