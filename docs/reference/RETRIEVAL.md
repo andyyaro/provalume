@@ -32,7 +32,14 @@ it is what makes a poisoned vector index survivable.
 | Candidate cap | 500 candidates scored per query, bounding work |
 
 Memory **type** is deliberately *not* a hard filter. Requesting gotchas reduces
-other types' weight to 0.5; it does not hide a decisive semantic fact.
+other types' weight to 0.5; it does not hide a decisive semantic fact. This holds
+on both paths: a search (query text, FTS candidates) and a browse (no query text,
+structured candidates) apply the same nudge, so the parameter means one thing.
+
+`as_of` moves **recency** only. Validity is not re-evaluated against it: a record
+withdrawn after `as_of` is still withdrawn, because `invalid_at` closes a record
+outright rather than at a queryable moment. Use `include_terminal` to see
+withdrawn records.
 
 ## The formula
 
@@ -145,6 +152,9 @@ provalume recall "integration tests" --explain
 provalume explain <memory-id> --transitions
 ```
 
+`--explain` prints the reasons and warnings. The component table below is carried
+on every result as `result.explanation.breakdown`; `provalume demo` renders it.
+
 ```
 why: matched the query text (relevance 1.00)
 why: same project (my-app)
@@ -153,13 +163,18 @@ why: current here — a1b2c3d4e5f6 is an ancestor of f9e8d7c6b5a4
 why: failed `pytest -n auto tests/integration`; seen 2 times
 why: linked to what later worked
 
-lexical        1.000  x weight = +1.000
-trust          0.600  x weight = +0.300
-evidence       0.400  x weight = +0.120
-recency        1.000  x weight = +0.250
-scope          1.000  x weight = +0.300
-TOTAL                            2.170
+lexical         1.000 x weight = +1.000
+trust           0.600 x weight = +0.300
+evidence        0.400 x weight = +0.120
+recency         1.000 x weight = +0.250
+type_match      1.000 x weight = +0.200
+scope           1.000 x weight = +0.300
+TOTAL           2.170
 ```
+
+Rows whose component and contribution are both zero are not printed — `usage` is
+absent above because this record had not been retrieved before. Every non-zero
+row is shown, so the arithmetic closes.
 
 **A result that cannot explain itself is a bug**, not a cosmetic gap. The
 components always sum to the total; a test asserts it.
@@ -191,21 +206,39 @@ digest = pv.recall("integration tests").digest(char_budget=2000)
 - **The banner is always first and always present.** Fixed wording — it is the
   control for instruction replay.
 - **The budget is a hard ceiling enforced by construction.** Items are measured
-  before inclusion; the digest is never assembled and then trimmed, because a
-  post-hoc trim can cut mid-item and leave a claim without its trust label.
+  before inclusion — against the footer that will actually be rendered, not a
+  fixed guess at its size — so the digest is never assembled and then trimmed. A
+  post-hoc trim can cut mid-item and leave a claim without its trust label, and
+  the first thing it cuts is the warnings line.
 - Failures are ordered first. An agent about to repeat a mistake needs that before
   general facts.
 - Near-duplicates are suppressed on `(type, text)`.
-- Omitted records are counted and reported.
+- Omitted records are counted and reported. `omitted_count` means *budget
+  overflow only* — records a larger budget would have admitted. Near-duplicates
+  are reported separately as `suppressed_duplicates`, because raising the budget
+  will not bring those back.
 - A token budget converts at 4 characters per token — a documented **estimate**,
   because the true ratio is model-specific. Pass a character budget for exactness.
 
 ## Optional vectors
 
-Off by default, experimental, and never an authorisation gate. Vector results pass
-through the same filter implementation as lexical results — one implementation,
-not two that must be kept in step. Fusion is reciprocal rank fusion over ranks
-rather than scores, because BM25 and cosine live on incomparable scales.
+**Not wired in 0.1.x.** `RecallQuery.use_vectors` is accepted and ignored:
+`RetrievalEngine.recall()` does not read it, and no SDK, CLI or MCP path writes a
+vector, so `memory_vectors` stays empty and every retrieval is lexical. Setting
+the flag changes nothing.
+
+What ships is the machinery — `VectorIndex`, `HashingEmbedder` and
+`reciprocal_rank_fusion` in `provalume.retrieval.vectors` — exercised directly by
+eval scenario 20 and by `provalume doctor`, not by the read path. Scenario 20
+fuses a lexical result list by hand and measures *plumbing*: that fusion runs, and
+that a vector hit cannot authorise a record the filters excluded. It is not a
+retrieval-quality comparison, and the baseline embedder is a hashing projection
+with no semantic content.
+
+The design the flag is reserved for is unchanged: off by default, never an
+authorisation gate, vector results passing through the same filter implementation
+as lexical ones, and fusion over ranks rather than scores because BM25 and cosine
+live on incomparable scales.
 
 See [ADR-0013](../adr/ADR-0013-optional-vector-retrieval.md) and
 [`BENCHMARKS.md`](BENCHMARKS.md) for what is and is not measured.

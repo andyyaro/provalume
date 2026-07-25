@@ -66,19 +66,29 @@ would not have promoted it.
 ```python
 # 4. Someone who is not the author approves.
 pv.record_review(reviewer="reviewer-2", approved=True, task_id="t1")
-#    → the procedure reaches reviewed
-#      rule: promote.any.independent_review_approved
+#    → the approval is stamped on the procedure and kept as its evidence
+#    → still at verified
 ```
 
-Had the reviewer been `agent-A`, this would have been refused with
-`refuse.self_review` — and the refusal recorded.
+The rung is not granted here. A procedure cannot pass `verified` without landed
+history (see the ceilings below), so the approval is recorded and *used* at the
+next step rather than acted on immediately.
+
+Every approval is kept, not only the first. Had `agent-A` approved its own work
+before `reviewer-2` did, both approvals would be evidence, and the promotion
+below would still find the independent one.
 
 ```python
 # 5. It lands.
 pv.record_integration(commit_sha="a1b2c3…", target="user", task_id="t1")
-#    → the procedure reaches integrated
-#      rule: promote.any.landed_in_history
+#    → the procedure climbs the rungs its evidence now supports
+#      verified  → reviewed    rule: promote.any.independent_review_approved
+#      reviewed  → integrated  rule: promote.any.landed_in_history
 ```
+
+Had the *only* approval come from `agent-A`, the record's own author, the first
+of those two steps would have been refused with `refuse.self_review` — and the
+refusal recorded.
 
 The gotcha stays at `verified`. What landed was the fix; the failure is still a
 failure.
@@ -117,6 +127,18 @@ A promotion attempt that vanishes silently is exactly what an attacker wants.
 | `decision` | `integrated` | Directly, when `source=human` |
 | `gotcha` | `verified` | Never promoted to semantic truth |
 | `performance` | `verified` | A statistic does not land in a commit |
+
+Two categories have no command to run, so `observed → verified` asks for what
+does settle them:
+
+- `semantic` — the landing itself, or a recorded human decision.
+  Rule: `promote.semantic.landed_or_human_authority`. The landing has to be the
+  record's own; an unrelated integration event is not evidence about this fact.
+- `decision` — the human decision event, at every rung.
+  Rule: `promote.decision.human_authority`.
+
+Everything else needs a verification or command-result event from a source
+trusted to report a deterministic outcome.
 
 ## Withdrawal
 

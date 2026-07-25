@@ -69,6 +69,19 @@ An imported record is **untrusted input**. Every rule below follows from that.
 | Line over 1 MB | Line rejected and reported; the file continues |
 | Malformed JSON | Line rejected and reported; the file continues |
 
+### Only events are stored
+
+`memories.jsonl` and `transitions.jsonl` are read and checked — divergent
+supersession is found there — and then dropped. A memory is a projection of
+events, so the importer rebuilds its own from the events it accepted rather than
+adopting a file's. `provalume import` reports the two counts separately:
+
+```
+accepted:   42 events (stored)
+duplicates: 0 (already present, skipped)
+read only:  17 memories, 9 transitions (projections are rebuilt from events; not stored)
+```
+
 ### Imported records are never trusted on arrival
 
 `source=import`, ceiling `observed`, landing state `quarantined`. **A record's
@@ -106,6 +119,19 @@ pv.export("./mem", signer=lambda r: signatures.sign_hmac(r, key=key, key_id="tea
 verifier = signatures.Verifier(hmac_keys={"team": key})
 pv.import_records("./mem", verifier=verifier)
 ```
+
+The same thing from the CLI. Keys are pinned by the operator here and nowhere
+else; `--hmac-key` and `--ed25519-key` are repeatable:
+
+```sh
+provalume export --out ./mem --sign-hmac team=./team.key
+provalume import ./mem --hmac-key team=./team.key
+provalume import ./mem --hmac-key team=./team.key --require-signature
+```
+
+Pin no key and no signature is examined at all, which is the default and stays
+the default: checking a record against a key the record itself supplied would
+check nothing.
 
 ## Team workflow
 

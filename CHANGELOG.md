@@ -6,6 +6,76 @@ pre-1.0 caveat that `0.x` minor bumps may break the SDK.
 
 ## [Unreleased]
 
+A five-lens adversarial review fleet ran twice over this codebase; 27 of its
+findings were independently confirmed and fixed, each with a regression test
+verified by reintroducing the bug. The recurring shape, again: every unit test
+passed, every event recorded, and the feature was inert or wrong in a real run.
+
+### Fixed — trust ladder
+
+**Semantic memory could never pass `observed`.** No projection path ever
+attached verification-grade evidence to a fact, so the one category that exists
+to state current truth could never state any: `presentable_as_current_truth`
+was false for every fact a real run produced. Semantic promotion now accepts
+the record's own landed integration or a human decision as evidence, which is
+exactly what ADR-0004 always said promotes the category.
+
+**An early self-approval permanently blocked promotion.** `_apply_review_state`
+short-circuited on matching state, so a later *independent* approval was never
+added to the evidence and the self-review refusal held forever — a
+promotion-denial primitive an agent could trigger on its own work. The evidence
+merge now always runs.
+
+**Cross-run resolution could be overwritten by an unrelated success**, and the
+`resolved_by` link was written backwards (or not at all), leaving
+`Provenance.resolves_gotcha_id` permanently empty. Guarded, linked, and the
+direction now matches the field's documentation.
+
+**Review approvals never matched lessons.** The lookup keyed on the subject
+alone while the writer keyed on subject-plus-finding, so the module whose stated
+purpose is "this was rejected, and here is what satisfied the reviewer" was
+inert in every realistic case.
+
+**Performance aggregates published a phantom `general` bucket** with a 0.0
+success rate for profiles whose real record was perfect, and dropped
+reviewer-only profiles entirely.
+
+### Fixed — boundaries
+
+**MCP rate limiting ran after journalling**, so an untrusted client could write
+unbounded refusal events; refusal bursts are now summarised into one event, and
+a whole-message byte cap rejects oversized lines before parsing. A crafted
+deeply-nested JSON line no longer kills the server loop.
+
+**Typed MCP queries returned empty while matching records existed** — the type
+filter ran after the limit. **Imports** now report foreign-project collisions
+as issues instead of silently treating them as duplicates, say plainly that
+memory/transition records are derived locally rather than counting them as
+accepted, and can actually verify signatures: `provalume import` gained
+`--hmac-key`, `--ed25519-key`, and `--require-signature` — the signature
+subsystem existed but was unreachable from the shipped CLI.
+
+**The PEM redaction rule was quadratic** on repeated unterminated BEGIN
+markers; bounded. **No single poisoning family could reach the default
+quarantine threshold**; the strongest (instruction-override) now can.
+
+### Fixed — retrieval
+
+**The preflight overlap tier matched raw substrings**, so a subsystem like
+`test` matched every gotcha mentioning `pytest`; matching is now on word
+boundaries. **The digest footer reserve was smaller than the footer**, silently
+truncating rendered digests; and `omitted_count` no longer blames the budget
+for near-duplicate suppression. **The browse path applied memory types as a
+hard filter**, contradicting the documented nudge-not-filter rule.
+
+### Changed — claims narrowed to what ships
+
+Tier-1 exact-signature matching (and therefore blocking), vector retrieval, and
+`as_of` validity evaluation are documented as not yet reachable from the
+shipped surfaces, instead of implied working. The README's preflight sample is
+now the verbatim output of a real run. LIFECYCLE's worked example no longer
+claims an approval alone climbs a rung.
+
 Found by continued dogfooding. The shared shape: every unit test passed, every
 event recorded, and the feature still did nothing — or did the wrong thing — in
 a real run.

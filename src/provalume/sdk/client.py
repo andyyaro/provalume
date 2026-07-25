@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any
 
 from provalume import _time
-from provalume.errors import ProvalumeError, TrustError
+from provalume.errors import IntegrityError, ProvalumeError, TrustError
 from provalume.interchange import jsonl
 from provalume.policy import promotion
 from provalume.policy.admission import admit_event
@@ -550,6 +550,12 @@ class Provalume:
         )
 
         if record and result.matched:
+            # Recorded through the projecting path even though nothing projects a
+            # `warning.shown`. Projection is what advances the watermark, and
+            # skipping it left `provalume audit` reporting "projections are
+            # behind the journal" after every warning that matched — constantly,
+            # in an orchestrator run, which devalues the one signal that would
+            # surface a genuinely stale projection.
             event = self.record_event(
                 EventType.WARNING_SHOWN,
                 source=Source.KERNEL,
@@ -560,7 +566,6 @@ class Provalume:
                     "top_confidence": result.matches[0].confidence if result.matches else 0.0,
                     "blocked": result.should_block,
                 },
-                project=False,
             )
             return result.model_copy(update={"warning_event_id": event.event_id})
         return result
@@ -664,10 +669,17 @@ class Provalume:
         caps, redaction, poisoning scan — run by :func:`jsonl.import_directory`
         so a record that fails is reported as an issue rather than aborting the
         import.
+
+        Only events are stored. Memory and transition records are parsed and
+        checked — that is where divergent supersessions are found — but the
+        projections are rebuilt from the events that just landed (ADR-0002),
+        which is why ``ImportResult.accepted`` counts events alone.
         """
-        existing = {
-            e.event_id: e.payload_hash for e in self.journal.iter_all(project_id=self.project_id)
-        }
+        # Every event in the journal, not just this project's. `event_id` is a
+        # global key — `Journal.append` looks it up without a project filter — so
+        # a map scoped to one project reports "new" for an id another project
+        # already holds, and the append then raises out of the whole batch.
+        existing = {e.event_id: e.payload_hash for e in self.journal.iter_all()}
         result = jsonl.import_directory(
             directory,
             project_id=self.project_id,
@@ -678,9 +690,33 @@ class Provalume:
             poisoning_threshold=self.poisoning_threshold,
         )
         if apply and result.events:
-            self.journal.append_many(result.events)
-            self.projector.catch_up(project_id=self.project_id)
+            self._append_imported(result)
+            if result.events:
+                self.projector.catch_up(project_id=self.project_id)
         return result
+
+    def _append_imported(self, result: jsonl.ImportResult) -> None:
+        """Append imported events, reporting a chain conflict instead of raising.
+
+        The batch is one transaction, so one conflicting record would otherwise
+        roll back every valid record in the file and surface as a traceback. A
+        conflict is a normal import outcome (ADR-0011): it is reported and the
+        rest still lands, which is why the retry appends one at a time.
+        """
+        try:
+            self.journal.append_many(result.events)
+        except IntegrityError:
+            kept: list[Event] = []
+            for event in result.events:
+                try:
+                    self.journal.append(event)
+                except IntegrityError as exc:
+                    result.conflicts.append(
+                        jsonl.ImportIssue(0, jsonl.EVENTS_FILE, str(exc), event.event_id)
+                    )
+                else:
+                    kept.append(event)
+            result.events = kept
 
     def status(self) -> dict[str, Any]:
         """A summary suitable for `provalume status` or a health endpoint."""

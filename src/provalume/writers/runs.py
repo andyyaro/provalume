@@ -53,20 +53,29 @@ def performance_text(
     Rates are stated with their denominators. "80% success" over five attempts
     and over five hundred are different claims, and a reader choosing an agent
     needs to see which one this is.
+
+    A bucket holding only verifications or approvals states those instead of
+    claiming there were no attempts. Outcome events carry no task category, so
+    they aggregate apart from the attempts they belong to, and rendering that
+    bucket as "no recorded attempts" published the flat contradiction of the
+    agent's own record: one `verified` memory saying five of five succeeded and
+    another saying there was nothing to succeed at.
     """
-    if attempts == 0:
-        return f"{agent_profile}: no recorded attempts at {task_category}."
-    rate = successes / attempts
-    parts = [
-        f"{agent_profile} on {task_category}: {successes}/{attempts} succeeded "
-        f"({rate:.0%})"
-    ]
+    subject = f"{agent_profile} on {task_category}" if task_category else agent_profile
+    counted = []
     if verifications:
-        parts.append(f"{verifications} passed verification")
+        counted.append(f"{verifications} passed verification")
     if approvals:
-        parts.append(f"{approvals} approved in review")
+        counted.append(f"{approvals} approved in review")
     if fallbacks:
-        parts.append(f"{fallbacks} required fallback")
+        counted.append(f"{fallbacks} required fallback")
+
+    if attempts == 0:
+        if not counted:
+            return f"{agent_profile}: no recorded attempts at {task_category or 'anything'}."
+        return f"{subject}: " + ", ".join(counted) + ", and no attempts recorded."
+    rate = successes / attempts
+    parts = [f"{subject}: {successes}/{attempts} succeeded ({rate:.0%})", *counted]
     return ", ".join(parts) + "."
 
 
@@ -101,7 +110,11 @@ def build_performance(
         "approvals": approvals,
         "verifications": verifications,
         "fallbacks": fallbacks,
-        "success_rate": round(successes / attempts, 4) if attempts else 0.0,
+        # `None`, not 0.0, when there is nothing to divide by: a rate of zero is
+        # a claim that the agent failed everything, and a consumer ranking agents
+        # by `success_rate` would read it as the worst possible record rather
+        # than as the absence of one.
+        "success_rate": round(successes / attempts, 4) if attempts else None,
         "first_seen_at": first_seen_at,
         "last_seen_at": last_seen_at,
     }
@@ -227,9 +240,13 @@ class PerformanceAccumulator:
         agent = (event.agent_profile or "").strip()
         if not agent:
             return
+        # Empty, not "general", when the event names no category. A
+        # `verification.passed` carries none, and defaulting it to a category
+        # name filed those outcomes under a task category the agent was never
+        # asked to work on, next to the real bucket for the same agent.
         category = str(
-            event.payload.get("task_category", event.payload.get("kind", "general"))
-        ).strip() or "general"
+            event.payload.get("task_category", event.payload.get("kind", ""))
+        ).strip()
         key = (agent, event.adapter or "", event.model or "", category)
         bucket = self._buckets.setdefault(
             key,
@@ -267,11 +284,16 @@ class PerformanceAccumulator:
 
         Sorted by key so output order is deterministic regardless of dict
         insertion order — required for byte-identical rebuilds.
+
+        A bucket is materialised whenever it counted anything. Requiring an
+        attempt or a verification dropped reviewer agents entirely — a profile
+        that only ever approves other agents' work produces approvals and nothing
+        else, so review reliability was aggregated for no one.
         """
         out: list[Memory] = []
         for (agent, adapter, model, category) in sorted(self._buckets):
             bucket = self._buckets[(agent, adapter, model, category)]
-            if bucket["attempts"] == 0 and bucket["verifications"] == 0:
+            if not (bucket["attempts"] or bucket["verifications"] or bucket["approvals"]):
                 continue
             out.append(
                 build_performance(

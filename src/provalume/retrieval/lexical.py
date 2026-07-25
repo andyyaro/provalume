@@ -34,6 +34,11 @@ from provalume.store.db import Database
 from provalume.store.gitinfo import GitInfo, applicability_at
 from provalume.store.repository import MemoryRepository
 
+#: Event ids looked up per statement when resolving provenance for a candidate
+#: set. Well under SQLite's variable limit, so a wide query cannot fail on the
+#: bind count alone.
+_EVENT_LOOKUP_CHUNK = 400
+
 
 class RetrievalEngine:
     """Lexical retrieval with governance filtering and explainable ranking."""
@@ -91,9 +96,13 @@ class RetrievalEngine:
         return [by_id[i] for i in ids if i in by_id], lexical
 
     def _filter_for(self, query: RecallQuery) -> MemoryFilter:
+        # ``memory_types`` is deliberately absent: on this filter it would become
+        # ``memory_type IN (...)``, a hard exclusion, while the FTS path treats
+        # type as a ranking nudge (:meth:`_passes_filters`). One parameter must
+        # not mean two different things depending on whether the caller happened
+        # to supply query text.
         return MemoryFilter(
             project_id=query.project_id,
-            memory_types=query.memory_types,
             min_trust=query.min_trust,
             include_terminal=query.include_terminal,
             current_only=not query.include_terminal,
@@ -153,6 +162,39 @@ class RetrievalEngine:
 
         return True, passed, ""
 
+    def _unresolved_provenance(self, memories: list[Memory]) -> set[str]:
+        """Ids of records citing at least one event absent from the journal.
+
+        A record that claims evidence which does not exist is the forged-
+        provenance signature (threat T15), and the read path has to be able to say
+        so: a warning on the result and a rollup line on the digest. Answered with
+        one batched existence check for the whole candidate set rather than the
+        full :meth:`provenance` assembly, which costs a journal round-trip per
+        record and is what ``explain`` is for.
+
+        A record citing no events at all is not unresolved. It claims nothing.
+        """
+        wanted = sorted({eid for memory in memories for eid in memory.source_event_ids})
+        if not wanted:
+            return set()
+
+        present: set[str] = set()
+        for start in range(0, len(wanted), _EVENT_LOOKUP_CHUNK):
+            chunk = tuple(wanted[start : start + _EVENT_LOOKUP_CHUNK])
+            # Only the placeholder count is interpolated; every id is bound.
+            placeholders = ", ".join("?" for _ in chunk)
+            sql = (
+                "SELECT event_id FROM events "  # noqa: S608  # nosec B608
+                f"WHERE event_id IN ({placeholders})"
+            )
+            present.update(str(row["event_id"]) for row in self.db.query(sql, chunk))
+
+        return {
+            memory.memory_id
+            for memory in memories
+            if any(eid not in present for eid in memory.source_event_ids)
+        }
+
     # -- main entry point --------------------------------------------------
 
     def recall(self, query: RecallQuery) -> list[RecallResult]:
@@ -171,6 +213,7 @@ class RetrievalEngine:
             agent_profile=query.agent_profile,
         )
         contradicted = self.repository.contradicted_ids(query.project_id)
+        unresolved_provenance = self._unresolved_provenance(candidates)
 
         scored: list[tuple[tuple[float, str, str], RecallResult]] = []
 
@@ -220,7 +263,7 @@ class RetrievalEngine:
                     memory,
                     applicability=applicability,
                     has_contradiction=has_contradiction,
-                    provenance_resolved=True,
+                    provenance_resolved=memory.memory_id not in unresolved_provenance,
                 ),
             )
 

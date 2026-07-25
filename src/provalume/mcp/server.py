@@ -50,6 +50,24 @@ SUPPORTED_PROTOCOL_VERSIONS: Final[tuple[str, ...]] = (
 )
 PREFERRED_PROTOCOL_VERSION: Final = SUPPORTED_PROTOCOL_VERSIONS[0]
 
+#: Whole-message cap, checked before parsing. The per-argument cap
+#: (``max_input_field_chars``) only applies once a message has been parsed, and
+#: parsing is itself attacker-reachable work: a megabyte of nested brackets costs
+#: more than the tool call it pretends to be.
+MAX_MESSAGE_BYTES: Final = 1024 * 1024
+
+#: Typed queries ask for this multiple of the caller's limit before filtering.
+#: ``memory_types`` is a ranking nudge inside the engine, not a hard filter, so
+#: without headroom records of other types fill the result slots and the filter
+#: in :meth:`McpServer._typed_query` empties the list — reporting "no prior
+#: failures" to a client while prior failures sit in the store.
+TYPED_QUERY_OVERFETCH: Final = 10
+
+#: Ceiling on the over-fetched candidate set. Matches ``RecallQuery.limit``'s own
+#: upper bound, which the engine enforces; asking for more is a validation error
+#: rather than more results.
+MAX_TYPED_QUERY_CANDIDATES: Final = 200
+
 # JSON-RPC error codes.
 PARSE_ERROR: Final = -32700
 INVALID_REQUEST: Final = -32600
@@ -103,6 +121,9 @@ class McpServer:
         self.protocol_version = PREFERRED_PROTOCOL_VERSION
         self.client_name = ""
         self._initialized = False
+        # Consecutive rate-limited calls not yet summarised into the journal.
+        self._throttled = 0
+        self._throttled_tool = ""
 
         # Runtime assertion, not just a test: the forbidden set must never appear.
         assert_surface_is_safe(self.profile.tool_names())
@@ -133,16 +154,37 @@ class McpServer:
             text = line.strip()
             if not text:
                 continue
-            response = self.handle_line(text)
+            try:
+                response = self.handle_line(text)
+            except Exception as exc:  # pragma: no cover - handle_line is total
+                # One bad line must not end the session. A client that cannot be
+                # answered is still a client that gets to send its next message.
+                response = self._error(None, INTERNAL_ERROR, f"internal error: {exc}")
             if response is not None:
                 sink.write(json.dumps(response, separators=(",", ":")) + "\n")
                 sink.flush()
 
+        # A session that ends mid-burst still owes the journal its summary.
+        self._flush_throttled()
+
     def handle_line(self, text: str) -> dict[str, Any] | None:
         """Handle one message. Returns ``None`` for notifications."""
+        size = len(text.encode("utf-8"))
+        if size > MAX_MESSAGE_BYTES:
+            return self._error(
+                None,
+                PARSE_ERROR,
+                f"message is {size} bytes, over the {MAX_MESSAGE_BYTES}-byte limit",
+            )
+
         try:
             message = json.loads(text)
-        except json.JSONDecodeError as exc:
+        except (json.JSONDecodeError, RecursionError) as exc:
+            # RecursionError, not only JSONDecodeError: deeply nested JSON blows
+            # the interpreter stack inside `json.loads`, and it is a *parse*
+            # failure like any other. Letting it escape would turn one malformed
+            # line into the end of the session, which the module docstring
+            # promises it is not.
             return self._error(None, PARSE_ERROR, f"invalid JSON: {exc}")
 
         if not isinstance(message, dict):
@@ -233,16 +275,22 @@ class McpServer:
 
         started = time.monotonic()
 
-        if not self.profile.allows(name):
-            reason = self.profile.refusal_reason(name)
-            self._record_call(name, allowed=False, reason=reason, started=started)
-            return _text_result(reason, is_error=True)
-
+        # Budget first, profile second. Checking the profile first left the one
+        # call shape an attacker controls for free — a forbidden tool name — outside
+        # the limit entirely, so a loop on `promote` wrote an unbounded number of
+        # `mcp.refused` events while the limiter never moved (threat T24).
         if not self.limiter.check():
             reason = (
                 f"rate limit exceeded ({self.limiter.per_minute} calls/minute). "
                 "Retry shortly."
             )
+            self._record_throttled(name, reason=reason, started=started)
+            return _text_result(reason, is_error=True)
+
+        self._flush_throttled()
+
+        if not self.profile.allows(name):
+            reason = self.profile.refusal_reason(name)
             self._record_call(name, allowed=False, reason=reason, started=started)
             return _text_result(reason, is_error=True)
 
@@ -292,21 +340,75 @@ class McpServer:
                 elapsed_ms=elapsed,
             )
         )
+        self._journal_call(tool, allowed=allowed, reason=reason, elapsed=elapsed)
+
+    def _record_throttled(self, tool: str, *, reason: str, started: float) -> None:
+        """Record a rate-limited call without one journal write per call.
+
+        The in-memory audit keeps every one — it is capped, so it cannot grow
+        without bound. The journal is not capped, so a burst gets one event when
+        it starts and one summary when it ends. Recording each rate-limited call
+        durably would hand an ignored limit the very write amplification the limit
+        exists to prevent.
+        """
+        elapsed = (time.monotonic() - started) * 1000.0
+        self.audit.record(
+            CallAudit(
+                tool=tool,
+                allowed=False,
+                reason=reason,
+                client=self.client_name,
+                elapsed_ms=elapsed,
+            )
+        )
+        if self._throttled == 0:
+            self._journal_call(tool, allowed=False, reason=reason, elapsed=elapsed)
+        self._throttled += 1
+        self._throttled_tool = tool
+
+    def _flush_throttled(self) -> None:
+        """Close out a burst of rate-limited calls with one summary event."""
+        suppressed = self._throttled - 1
+        self._throttled = 0
+        tool = self._throttled_tool
+        self._throttled_tool = ""
+        if suppressed > 0:
+            self._journal_call(
+                tool,
+                allowed=False,
+                reason=(
+                    f"rate limit exceeded; {suppressed} further call(s) refused and "
+                    "not recorded individually"
+                ),
+                elapsed=0.0,
+                suppressed=suppressed,
+            )
+
+    def _journal_call(
+        self, tool: str, *, allowed: bool, reason: str, elapsed: float, suppressed: int = 0
+    ) -> None:
         # Durable audit. Refusals are recorded too: a refused call is a security
         # signal, and a silently-dropped one is what an attacker wants.
+        payload: dict[str, Any] = {
+            "tool": tool,
+            "client": self.client_name,
+            "allowed": allowed,
+            "reason": reason,
+            "elapsed_ms": round(elapsed, 3),
+        }
+        if suppressed:
+            payload["suppressed"] = suppressed
         with contextlib.suppress(Exception):
             # Auditing must never break serving.
+            #
+            # Recorded through the projecting path even though no projection
+            # reads an `mcp.*` event: projection advances the watermark, and
+            # skipping it left `provalume audit` reporting the projections as
+            # permanently behind the journal after any MCP session.
             self.pv.record_event(
                 EventType.MCP_CALL if allowed else EventType.MCP_REFUSED,
                 source=Source.AGENT,
-                payload={
-                    "tool": tool,
-                    "client": self.client_name,
-                    "allowed": allowed,
-                    "reason": reason,
-                    "elapsed_ms": round(elapsed, 3),
-                },
-                project=False,
+                payload=payload,
             )
 
     def _limit(self, arguments: dict[str, Any], default: int = 10) -> int:
@@ -403,13 +505,22 @@ class McpServer:
 
     def _typed_query(self, arguments: dict[str, Any], memory_type: MemoryType,
                      heading: str) -> dict[str, Any]:
+        """Query one memory type, hard.
+
+        ``memory_types`` is a ranking nudge inside the engine, not a filter, so
+        the requested type has to be enforced here. Over-fetch first: applying
+        the filter to a list the engine already truncated to ``limit`` is how a
+        client asking for prior failures was told there were none while the store
+        held several.
+        """
+        limit = self._limit(arguments)
         response = self.pv.recall(
             str(arguments.get("query", "")),
             memory_types=[memory_type],
             min_trust=TrustState(str(arguments.get("min_trust", "observed"))),
-            limit=self._limit(arguments),
+            limit=min(limit * TYPED_QUERY_OVERFETCH, MAX_TYPED_QUERY_CANDIDATES),
         )
-        results = [r for r in response.results if r.memory_type is memory_type]
+        results = [r for r in response.results if r.memory_type is memory_type][:limit]
         return self._render_results(results, heading=heading)
 
     def _tool_query_failures(self, arguments: dict[str, Any]) -> dict[str, Any]:

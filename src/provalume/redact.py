@@ -93,11 +93,22 @@ RULES: tuple[Rule, ...] = (
         re.compile(r"(?i)\b(authorization)\b[\"']?\s*[=:]\s*[\"']?bearer\s+[^\s\"',}]+"),
         r"\1: Bearer " + REDACTED,
     ),
+    # The body is bounded, and it cannot contain a `-----` run. Both are **ReDoS
+    # fixes, not tidiness**: `.*?` with DOTALL rescanned to the end of the input
+    # from every BEGIN marker, so `"-----BEGIN PRIVATE KEY-----" * n` — an
+    # unterminated marker repeated, which is ordinary in a log that echoed a
+    # truncated key — was quadratic: 0.1s at 20 KB, 11.2s at 250 KB. Repeating the
+    # literal a pattern is looking for is the same adversarial shape the error
+    # normaliser was already hardened against. Excluding `-----` makes the body
+    # fail immediately at the next marker instead of walking to the bound, and
+    # `-(?!----)` keeps the single hyphens of an encrypted key's `DEK-Info:`
+    # header matchable.
     Rule(
         "pem",
         re.compile(
-            r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----",
-            re.DOTALL,
+            r"-----BEGIN [A-Z ]{0,40}PRIVATE KEY-----"
+            r"(?:[A-Za-z0-9+/=\s:,.]|-(?!----)){0,8192}?"
+            r"-----END [A-Z ]{0,40}PRIVATE KEY-----"
         ),
         REDACTED,
     ),

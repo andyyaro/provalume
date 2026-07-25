@@ -279,7 +279,16 @@ class ImportResult:
 
     @property
     def accepted(self) -> int:
-        return len(self.events) + len(self.memories) + len(self.transitions)
+        """Records that will actually be stored, which is events and only events.
+
+        Memory and transition records are parsed, validated, and checked for
+        divergent supersession — but a memory is a projection of events (ADR-0002)
+        and the target rebuilds its own from the events it just accepted, so
+        nothing here persists them. Counting them as accepted asserted a
+        durability that does not exist: a memories-only file reported "accepted:
+        1 … ok: True" and wrote nothing.
+        """
+        return len(self.events)
 
     @property
     def ok(self) -> bool:
@@ -468,6 +477,15 @@ def import_directory(
     because this is the only place that still knows which line of which file a
     record came from, and a record that fails admission has to be reportable as
     an :class:`ImportIssue` rather than an exception that aborts the file.
+
+    ``result.memories`` and ``result.transitions`` are parsed for inspection —
+    :func:`_detect_supersession_conflicts` reads them — not for storage. A memory
+    is a projection of events, and an importer rebuilds its own from the events it
+    accepted, which is why they do not count towards ``accepted``.
+
+    ``existing_event_hashes`` should cover the *whole* target journal rather than
+    one project: ``event_id`` is a global key, so a map scoped to one project
+    reports "new" for an id another project already holds.
     """
     base = Path(directory)
     if root is not None:
@@ -660,11 +678,15 @@ def _detect_supersession_conflicts(result: ImportResult) -> None:
 def summarize(result: ImportResult) -> str:
     """Human-readable import summary."""
     lines = [
-        f"accepted:   {result.accepted} "
-        f"({len(result.events)} events, {len(result.memories)} memories, "
-        f"{len(result.transitions)} transitions)",
+        f"accepted:   {result.accepted} events (stored)",
         f"duplicates: {result.skipped_duplicates} (already present, skipped)",
     ]
+    if result.memories or result.transitions:
+        lines.append(
+            f"read only:  {len(result.memories)} memories, "
+            f"{len(result.transitions)} transitions "
+            "(projections are rebuilt from events; not stored)"
+        )
     if result.quarantined:
         lines.append(f"quarantined: {len(result.quarantined)}")
         lines.extend(f"  - {issue}" for issue in result.quarantined[:10])

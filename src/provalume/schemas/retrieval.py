@@ -149,12 +149,26 @@ class RecallQuery(BaseModel):
     limit: int = Field(default=10, ge=1, le=200)
 
     use_vectors: bool = False
-    """Opt-in. Vectors reorder an authorised candidate set; they never
-    authorise (ADR-0013)."""
+    """Reserved, and **not yet honoured**: ``RetrievalEngine.recall`` does not
+    read this field, and nothing on the SDK, CLI or MCP surface writes a vector,
+    so setting it changes no result in 0.1.x.
+
+    What ships is the machinery, not the path: ``retrieval.vectors`` provides an
+    index, a hashing embedder and reciprocal rank fusion, exercised directly by
+    the eval harness and by ``provalume doctor``. The field is kept so the opt-in
+    stays opt-in — vectors reorder an authorised candidate set and never
+    authorise (ADR-0013) — but until the index is populated on the write path,
+    treat retrieval as lexical only."""
 
     as_of: str | None = None
-    """Evaluate recency and validity as of this timestamp instead of now. Makes
-    historical queries and eval replay deterministic."""
+    """Evaluate **recency** as of this timestamp instead of now. Makes historical
+    queries and eval replay deterministic.
+
+    Validity is *not* re-evaluated against it. Currency is decided by
+    ``Memory.is_current``, which is deliberately time-independent — an
+    ``invalid_at`` in the future is still a closed record — so a record withdrawn
+    after ``as_of`` stays out. Pass ``include_terminal=True`` to see withdrawn
+    records at all."""
 
 
 class ScoreBreakdown(BaseModel):
@@ -275,8 +289,14 @@ class Digest(BaseModel):
     char_budget: int = 0
     chars_used: int = 0
     omitted_count: int = 0
-    """How many qualifying records did not fit. Reported rather than hidden: a
-    caller needs to know their budget is the binding constraint."""
+    """How many qualifying records did not fit the budget. Reported rather than
+    hidden: a caller needs to know their budget is the binding constraint —
+    which means it must count only records a larger budget would have admitted.
+    Near-duplicates are counted separately, in ``suppressed_duplicates``."""
+
+    suppressed_duplicates: int = 0
+    """How many records were dropped as near-duplicates of one already included.
+    Not budget pressure: raising the budget will not bring these back."""
 
     warnings: tuple[str, ...] = ()
     """Digest-level warnings: stale facts present, contradictions unresolved,

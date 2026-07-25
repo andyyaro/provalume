@@ -28,8 +28,18 @@ class Pattern(NamedTuple):
 #: Per-family contribution to the risk score. Families are capped individually so
 #: one record matching six patterns in one family cannot saturate on its own,
 #: while a record matching several *different* families rightly scores high.
+#:
+#: ``instruction-override`` reaches the default threshold on its own, and that is
+#: chosen rather than emergent: it is the most-recognised attack shape there is,
+#: and a text saying "ignore all previous instructions" has no legitimate reading
+#: as a project memory. Every other family sits below the default threshold, so it
+#: takes two independent signals to force quarantine — a lone `chmod 777` in a
+#: verification excerpt is suspicious, not conclusive.
+#:
+#: ``tests/security/test_poisoning_threshold_boundary.py`` pins this relationship,
+#: so a future weight edit cannot silently make the gate unreachable.
 FAMILY_WEIGHT: Final[dict[str, float]] = {
-    "instruction-override": 0.45,
+    "instruction-override": 0.50,
     "ai-directed": 0.30,
     "self-asserted-trust": 0.40,
     "dangerous-shell": 0.35,
