@@ -4,7 +4,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versioning: [semantic versioning](https://semver.org/spec/v2.0.0.html), with the
 pre-1.0 caveat that `0.x` minor bumps may break the SDK.
 
-## [Unreleased]
+## [0.1.2] — 2026-07-25
 
 A five-lens adversarial review fleet ran twice over this codebase; 27 of its
 findings were independently confirmed and fixed, each with a regression test
