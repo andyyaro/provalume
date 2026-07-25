@@ -302,8 +302,21 @@ def test_file_overlap_produces_a_weak_match(pv: Provalume) -> None:
     pv.record_verification(command="pytest tests/test_db.py", passed=False,
                            excerpt="E boom", error_kind="e")
     result = pv.preflight(files=("src/test_db.py",), record=False)
-    if result.matched:
-        assert result.matches[0].confidence <= 0.5
+    assert result.matched, "file overlap no longer matches"
+    assert result.matches[0].confidence <= 0.5
+    assert "previously failed touching test_db.py" in result.matches[0].match_reasons
+
+
+def test_subsystem_overlap_produces_a_weak_match(pv: Provalume) -> None:
+    """The companion tier to file overlap, and the one most prone to noise."""
+    pv.record_verification(command="terraform apply", passed=False,
+                           excerpt="E lock timeout", error_kind="e")
+    matched = pv.preflight(subsystem="terraform", record=False)
+    assert matched.matched, "subsystem overlap no longer matches"
+    assert "previously failed in terraform" in matched.matches[0].match_reasons
+    assert matched.matches[0].confidence <= 0.6
+
+    assert not pv.preflight(subsystem="frontend", record=False).matched
 
 
 # --- Vectors ---------------------------------------------------------------

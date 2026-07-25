@@ -9,15 +9,19 @@ suggestion — it is the control for threat T4 (instruction replay). It is
 mitigation, not prevention: Provalume cannot force a model to honour it.
 
 **The budget is a hard ceiling enforced by construction.** Items are measured
-before inclusion and the digest is never assembled and then trimmed, because a
+before inclusion — against the footer that will actually be rendered, not a fixed
+guess at its size — and the digest is never assembled and then trimmed, because a
 post-hoc trim can cut mid-item and leave a memory's claim without its trust
-label — which is exactly how an untrusted record starts reading like a fact.
+label, or cut the warnings line that says the claim is contested at all. That is
+exactly how an untrusted record starts reading like a fact.
 
 The digest is not persisted. Composing it fresh keeps one source of truth and
 avoids a second, staler thing to poison.
 """
 
 from __future__ import annotations
+
+from collections.abc import Sequence
 
 from provalume.errors import BudgetExceeded
 from provalume.schemas.memories import MemoryType
@@ -31,9 +35,25 @@ from provalume.schemas.retrieval import (
 from provalume.schemas.scope import Applicability
 from provalume.schemas.trust import TrustState
 
-#: Reserved so a truncation notice always fits. Without this the composer could
-#: fill the budget exactly and have no room to say that it did.
+#: Floor for the smallest budget that will be accepted at all, so a truncation
+#: notice always fits. The reserve actually applied while admitting items is
+#: computed from the footer that will be rendered (see :func:`compose`), because
+#: a fixed reserve smaller than the real footer is precisely how a digest ends up
+#: assembled and then trimmed — the thing this module promises never to do.
 _FOOTER_RESERVE = 160
+
+#: Per-item warnings rolled up to one digest-level line each. Keyed on a stable
+#: tag rather than on the rendered sentence: comparing against the sentence is
+#: how the same warning ends up printed once per matching record.
+_ROLLUP: tuple[tuple[str, str, str], ...] = (
+    ("contradicted", "contradiction", "contradictions unresolved among the records below"),
+    (
+        "could not be determined",
+        "applicability",
+        "some applicability uncertain at the queried commit",
+    ),
+    ("provenance", "provenance", "provenance unresolved for some records"),
+)
 
 #: Category labels, in the order they appear in a digest. Failures lead
 #: deliberately: an agent about to repeat a known mistake needs that first, and a
@@ -62,6 +82,32 @@ def _dedupe_key(result: RecallResult) -> tuple[str, str]:
     real context is worse than occasionally repeating some.
     """
     return (result.memory_type.value, result.text)
+
+
+def _rollup_tags(result: RecallResult) -> set[str]:
+    """Which digest-level rollup lines this result would contribute.
+
+    An upper bound rather than an exact set — every matching needle counts, where
+    the emitter stops at the first — because this drives the footer reserve, and
+    a reserve may be too generous but never too small.
+    """
+    return {
+        tag
+        for warning in result.explanation.warnings
+        for needle, tag, _message in _ROLLUP
+        if needle in warning
+    }
+
+
+def _omitted_notice(omitted: int, budget: int) -> str:
+    return (
+        f"\n\n[{omitted} further record(s) matched but did not fit the "
+        f"{budget}-character budget.]"
+    )
+
+
+def _warnings_line(messages: Sequence[str]) -> str:
+    return "\n[warnings: " + "; ".join(messages) + "]" if messages else ""
 
 
 def trust_label(result: RecallResult) -> str:
@@ -108,8 +154,12 @@ def render_item(result: RecallResult, *, include_reasons: bool) -> str:
     if include_reasons and result.explanation.reasons:
         lines.append(f"  why: {'; '.join(result.explanation.reasons[:3])}")
 
+    # Only the warnings a reader must act on inline. Provenance is one of them:
+    # a record citing evidence that is not in the journal is the forged-provenance
+    # signature (threat T15), and a rollup line at the foot of the digest does not
+    # say *which* record it applies to.
     for warning in result.explanation.warnings:
-        if warning.startswith(("QUARANTINED", "matched")):
+        if warning.startswith(("QUARANTINED", "matched", "provenance")):
             lines.append(f"  warning: {warning}")
 
     return "\n".join(lines)
@@ -167,6 +217,15 @@ def compose(
     included_ids: set[str] = set()
     seen_fingerprints: set[tuple[str, str]] = set()
     warnings: list[str] = []
+    duplicates = 0
+
+    # The reserve is the footer that could actually be rendered, not a guess: the
+    # omission notice at its longest, plus the rollup lines the items admitted so
+    # far have already earned. A fixed number smaller than the real footer turns
+    # "measured before inclusion" back into a post-hoc trim, and the first thing a
+    # post-hoc trim cuts is the warnings line.
+    notice_reserve = len(_omitted_notice(len(results), budget))
+    pending_tags: set[str] = set()
 
     for memory_type, heading in _SECTION_ORDER:
         section = grouped.get(memory_type)
@@ -184,13 +243,19 @@ def compose(
             # third copy displaces context the caller has not seen at all.
             fingerprint = _dedupe_key(result)
             if fingerprint in seen_fingerprints:
+                duplicates += 1
                 continue
 
             block = render_item(result, include_reasons=include_reasons)
             cost = len(block) + 2
-            if used + len(header) + section_chars + cost + _FOOTER_RESERVE > budget:
+            tags = pending_tags | _rollup_tags(result)
+            reserve = notice_reserve + len(
+                _warnings_line([m for _n, tag, m in _ROLLUP if tag in tags])
+            )
+            if used + len(header) + section_chars + cost + reserve > budget:
                 break
             rendered.append(block)
+            pending_tags = tags
             seen_fingerprints.add(fingerprint)
             section_chars += cost
             included_ids.add(result.memory_id)
@@ -211,20 +276,12 @@ def compose(
             body_parts.append(header + "\n".join(rendered))
             used += len(header) + section_chars
 
-    omitted = len(results) - len(included_ids)
+    # Budget overflow only. A record suppressed as a near-duplicate did not
+    # *fail to fit*, and counting it as though it had tells the caller their
+    # budget is binding when raising it would change nothing.
+    omitted = len(results) - len(included_ids) - duplicates
 
-    # Roll per-item warnings up to one line each. Keyed on a stable tag rather
-    # than on the rendered sentence: comparing against the sentence is how the
-    # same warning ends up printed once per matching record.
-    _ROLLUP: tuple[tuple[str, str, str], ...] = (
-        ("contradicted", "contradiction", "contradictions unresolved among the records below"),
-        (
-            "could not be determined",
-            "applicability",
-            "some applicability uncertain at the queried commit",
-        ),
-        ("provenance", "provenance", "provenance unresolved for some records"),
-    )
+    # Roll the per-item warnings of the admitted items up to one line each.
     seen_tags: set[str] = set()
     for result in results:
         if result.memory_id not in included_ids:
@@ -236,17 +293,11 @@ def compose(
                     warnings.append(message)
                     break
 
-    footer = ""
-    if omitted > 0:
-        footer = (
-            f"\n\n[{omitted} further record(s) matched but did not fit the "
-            f"{budget}-character budget.]"
-        )
-    if warnings:
-        footer += "\n[warnings: " + "; ".join(warnings) + "]"
+    footer = _omitted_notice(omitted, budget) if omitted > 0 else ""
+    footer += _warnings_line(warnings)
 
     text = banner_block + "".join(body_parts) + footer
-    if len(text) > budget:  # pragma: no cover - reserve should prevent this
+    if len(text) > budget:  # pragma: no cover - the computed reserve prevents this
         text = text[:budget]
 
     return Digest(
@@ -256,6 +307,7 @@ def compose(
         char_budget=budget,
         chars_used=len(text),
         omitted_count=omitted,
+        suppressed_duplicates=duplicates,
         warnings=tuple(warnings),
         provenance_refs=tuple(i.memory_id for i in items),
         explanations=tuple(r.explanation for r in results if r.memory_id in included_ids),

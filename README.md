@@ -15,18 +15,24 @@ actually landed. Everything else is stored, labelled, and kept out of the way.
 ```
 $ provalume preflight --command "pytest -n auto tests/integration"
 
-  A similar approach failed previously.
+A similar approach failed previously, and was later resolved.
 
-  Previous attempt      pytest -n auto tests/integration   (2 occurrences)
-  Failure evidence      exit 1 — deadlock in db fixture teardown
-  What later worked     pytest -p no:xdist tests/integration  ✓ verified
-  Applicability         current at this commit
-  Provenance            failed in attempt 01JZ…9F, confirmed by reviewer-2
-  Trust state           verified
+  Previous attempt   pytest -n auto tests/integration
+  Occurrences        failed twice
+  Failure evidence   exit 1 - deadlock in db fixture teardown
+  What later worked  pytest -p no:xdist tests/integration, recorded 2026-05-14T09:12:44.318Z
+  Applicability      current
+  Provenance         attempt attempt-1; agent agent-A
+  Trust state        verified
+  Match confidence   0.85 (same command failed previously)
+
+  This is a warning, not a block. Provalume does not override policy.
 ```
 
 Nothing in that output is a model's opinion. Every line traces to a recorded
-event with a hash.
+event with a hash. `0.85` rather than `1.00` because the check named a command,
+not an error: certainty is reserved for a caller that supplies the failure it
+just saw, and only certainty can block.
 
 ---
 
@@ -150,8 +156,12 @@ constraint the whole design is built around
 ([ADR-0007](docs/adr/ADR-0007-deterministic-writers.md)).
 
 **Optional, off by default:** vector retrieval (`provalume[vectors]`),
-cryptographic signatures (`provalume[signatures]`). Both marked experimental in
-0.1.0. Retrieval works fully without either.
+cryptographic signatures (`provalume[signatures]`). Both experimental. Vector
+retrieval is **not yet wired into the read path** in 0.1.x — the index, embedder
+and rank fusion ship and are exercised by the eval harness, but `recall()` does
+not consult them and nothing writes a vector
+([`RETRIEVAL.md`](docs/reference/RETRIEVAL.md) §Optional vectors). Retrieval is
+lexical, and works fully.
 
 **Leaves your machine only when you:** run `provalume export`, or install an
 embedder extra, which downloads a model once and then runs locally. There is **no
@@ -173,13 +183,17 @@ heuristic. Retrievable, always labelled, never presented as fact.
 - It has no multi-user access control. Single-operator; use filesystem permissions.
 - It has no hard deletion. The journal is append-only, so it is a poor fit for
   data under a deletion requirement.
-- It does not do cross-project or global memory in 0.1.0 — deliberately, because
+- It does not do cross-project or global memory in 0.1.x — deliberately, because
   cross-project leakage is the one Critical-rated confidentiality threat
   ([ADR-0016](docs/adr/ADR-0016-global-memory-deferral.md)).
-- **It has not been dogfooded on production runs yet.** Its schema comes from the
-  literature, a competitor review, and a replayable eval harness — not from mined
-  production failure frequencies. That is the largest known weakness of 0.1.0 and
-  it is stated in [`LIMITATIONS.md`](docs/reference/LIMITATIONS.md) rather than
+- **It has not been dogfooded against real agents yet.** Two real orchestration
+  runs have been driven end to end, with real worktrees, real failing commands
+  and real integration commits, and they found seven defects no test or review
+  had caught — but fake agents stood in for vendor CLIs. What is still unproven
+  is whether a digest measurably helps a real model. Its schema comes from the
+  literature, a competitor review, and a replayable eval harness, not from mined
+  production failure frequencies. That is the largest known weakness and it is
+  stated in [`LIMITATIONS.md`](docs/reference/LIMITATIONS.md) §1 rather than
   buried.
 
 No benchmark superiority claim is published anywhere in this repository. The eval

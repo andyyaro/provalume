@@ -66,6 +66,12 @@ would invite an importer to treat a foreign chain as its own.
 | Line over the size cap | Rejected; the file is not aborted, the line is reported |
 | Malformed JSON | Line rejected and reported; import continues |
 
+**Only events are stored.** Memory and transition records in a file are parsed and
+checked — divergent supersession is detected there — and then dropped: a memory is
+a projection of events ([ADR-0002](ADR-0002-immutable-event-journal.md)), and the
+importer rebuilds its own from the events it accepted. `provalume import` counts
+and reports them separately for that reason.
+
 **Imported records never arrive trusted.** `source=import`, ceiling `observed`
 ([ADR-0005](ADR-0005-trust-lifecycle.md)) — a record's *claimed* trust state in a
 file carries no weight. Trust is re-derived locally from evidence that also imported
@@ -83,6 +89,18 @@ Optional, two schemes, with an honest difference between them:
 Both fail closed. If `cryptography` is absent, Ed25519-signed records are
 **quarantined with an explicit reason**, never accepted unverified. Keys must be
 pinned; an unknown signer is an untrusted signer.
+
+Keys are pinned by the operator, on the command line:
+
+```sh
+provalume export --out ./export --sign-hmac team=./team.key
+provalume import ./export --hmac-key team=./team.key   # --require-signature to
+                                                       # quarantine unsigned records
+```
+
+`--hmac-key` and `--ed25519-key` are repeatable. Pin nothing and no signature is
+examined at all — verifying a record against a key that record supplied would
+verify nothing.
 
 **A valid signature proves origin, not truthfulness.** A signed lie is a
 verified-origin lie. Signatures raise confidence about *who*, never about *what* —

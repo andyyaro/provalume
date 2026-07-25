@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json as jsonlib
 import sys
+from functools import partial
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -95,6 +96,53 @@ ProjectOption = Annotated[
     typer.Option("--project", help="Project id. Defaults to the repository identity."),
 ]
 JsonOption = Annotated[bool, typer.Option("--json", help="Emit JSON.")]
+
+
+def _key_material(raw: bytes) -> bytes:
+    """Interpret the contents of a key file.
+
+    64 hexadecimal characters decode to the 32 raw bytes an Ed25519 key is; every
+    other file is taken verbatim, minus the trailing newline an editor adds. Hex
+    is offered because a raw 32-byte key is not something a person can keep in a
+    file they occasionally look at, and an HMAC secret is whatever the two sides
+    agreed on — reinterpreting it would break the agreement.
+    """
+    stripped = raw.strip()
+    if len(stripped) == 64:
+        try:
+            return bytes.fromhex(stripped.decode("ascii"))
+        except (UnicodeDecodeError, ValueError):
+            return raw.rstrip(b"\r\n")
+    return raw.rstrip(b"\r\n")
+
+
+def _pinned_keys(pairs: tuple[str, ...] | None, *, flag: str) -> dict[str, bytes]:
+    """Parse repeated ``KEY_ID=PATH`` options into pinned key material.
+
+    Keys are pinned by the operator, on the command line. A record never names
+    its own key: a self-authenticating record is not authenticated at all, since
+    an attacker would simply supply a key they hold.
+    """
+    keys: dict[str, bytes] = {}
+    for pair in pairs or ():
+        key_id, separator, path = pair.partition("=")
+        if not key_id or not separator or not path:
+            err_console.print(
+                f"[pv.error]error:[/] {flag} expects KEY_ID=PATH, got {pair!r}"
+            )
+            raise typer.Exit(code=2)
+        try:
+            keys[key_id] = _key_material(Path(path).read_bytes())
+        except OSError as exc:
+            err_console.print(f"[pv.error]error:[/] cannot read key file {path}: {exc}")
+            raise typer.Exit(code=2) from exc
+    return keys
+
+
+def _one_pinned_key(pair: str, *, flag: str) -> tuple[str, bytes]:
+    keys = _pinned_keys((pair,), flag=flag)
+    key_id, material = next(iter(keys.items()))
+    return key_id, material
 
 
 def _version_callback(value: bool) -> None:
@@ -600,14 +648,47 @@ def supersede(
 @app.command(name="export")
 def export_command(
     directory: Annotated[Path, typer.Option("--out", "-o", help="Output directory.")],
+    sign_hmac: Annotated[
+        str | None,
+        typer.Option(
+            "--sign-hmac",
+            metavar="KEY_ID=PATH",
+            help="Sign every record with an HMAC-SHA256 shared secret.",
+        ),
+    ] = None,
+    sign_ed25519: Annotated[
+        str | None,
+        typer.Option(
+            "--sign-ed25519",
+            metavar="KEY_ID=PATH",
+            help="Sign every record with an Ed25519 private key. Needs the signatures extra.",
+        ),
+    ] = None,
     db: DbOption = None,
     project: ProjectOption = None,
     json: JsonOption = False,
 ) -> None:
     """Export to JSONL. Refuses if audit finds unredacted credentials."""
+    from provalume.interchange import signatures
+
+    if sign_hmac and sign_ed25519:
+        err_console.print(
+            "[pv.error]error:[/] choose one of --sign-hmac or --sign-ed25519; "
+            "a record carries one signature."
+        )
+        raise typer.Exit(code=2)
+
+    signer: Any = None
+    if sign_hmac:
+        key_id, key = _one_pinned_key(sign_hmac, flag="--sign-hmac")
+        signer = partial(signatures.sign_hmac, key=key, key_id=key_id)
+    elif sign_ed25519:
+        key_id, key = _one_pinned_key(sign_ed25519, flag="--sign-ed25519")
+        signer = partial(signatures.sign_ed25519, private_key=key, key_id=key_id)
+
     pv = _open(db, project)
     try:
-        result = pv.export(directory)
+        result = pv.export(directory, signer=signer)
     except ProvalumeError as exc:
         err_console.print(f"[pv.error]export refused:[/] {exc}")
         raise typer.Exit(code=1) from exc
@@ -631,22 +712,73 @@ def import_command(
     directory: Annotated[Path, typer.Argument(help="Directory holding the JSONL export.")],
     allow_foreign_project: Annotated[bool, typer.Option("--allow-foreign-project")] = False,
     quarantine_unknown: Annotated[bool, typer.Option("--quarantine-unknown")] = False,
+    hmac_key: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--hmac-key",
+            metavar="KEY_ID=PATH",
+            help="Pin an HMAC-SHA256 key. Repeatable.",
+        ),
+    ] = None,
+    ed25519_key: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--ed25519-key",
+            metavar="KEY_ID=PATH",
+            help="Pin an Ed25519 public key. Repeatable.",
+        ),
+    ] = None,
+    require_signature: Annotated[
+        bool,
+        typer.Option(
+            "--require-signature",
+            help="Quarantine any record that arrives unsigned.",
+        ),
+    ] = False,
     db: DbOption = None,
     project: ProjectOption = None,
     json: JsonOption = False,
 ) -> None:
-    """Import a JSONL export. Imported records are never trusted on arrival."""
+    """Import a JSONL export. Imported records are never trusted on arrival.
+
+    Signatures are checked against keys pinned here and nowhere else, and the
+    check fails closed: a record signed by an unknown key, with an unsupported
+    scheme, or with a signature that does not verify is quarantined rather than
+    imported. Without a pinned key no signature is examined at all — verifying
+    against a key the file supplied would verify nothing.
+    """
     from provalume.interchange.jsonl import summarize
+    from provalume.interchange.signatures import Verifier
+
+    verifier = None
+    if hmac_key or ed25519_key or require_signature:
+        verifier = Verifier(
+            hmac_keys=_pinned_keys(tuple(hmac_key or ()), flag="--hmac-key"),
+            ed25519_keys=_pinned_keys(tuple(ed25519_key or ()), flag="--ed25519-key"),
+            require_signature=require_signature,
+        )
 
     pv = _open(db, project)
-    result = pv.import_records(
-        directory,
-        allow_foreign_project=allow_foreign_project,
-        quarantine_unknown=quarantine_unknown,
-    )
+    try:
+        result = pv.import_records(
+            directory,
+            allow_foreign_project=allow_foreign_project,
+            quarantine_unknown=quarantine_unknown,
+            verifier=verifier,
+        )
+    except ProvalumeError as exc:
+        err_console.print(f"[pv.error]import failed:[/] {exc}")
+        raise typer.Exit(code=1) from exc
+
     if _emit(
         {
+            # `accepted` is events stored. Memory and transition records are
+            # read and checked, never stored — projections are rebuilt from the
+            # events — so they are reported separately rather than folded into a
+            # count that reads as durability.
             "accepted": result.accepted,
+            "memories_read": len(result.memories),
+            "transitions_read": len(result.transitions),
             "duplicates": result.skipped_duplicates,
             "conflicts": [str(c) for c in result.conflicts],
             "rejected": [str(r) for r in result.rejected],

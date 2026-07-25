@@ -46,6 +46,11 @@ the caller is the operator.
 | `query_decisions` | Decisions with rationale and rejected alternatives |
 | `query_procedures` | Verified commands and runbooks |
 | `query_facts` | Semantic facts, labelled when not established truth |
+
+The four typed queries filter **hard** on their type: `recall`'s `memory_types` is
+a ranking nudge, so a typed tool over-fetches and then filters, rather than
+filtering a list the ranker already truncated and answering "no prior failures"
+while prior failures sit in the store.
 | `query_provenance` | The evidence chain for one memory |
 | `preflight` | The pre-action warning gate |
 
@@ -82,9 +87,17 @@ never used for authorisation.
 | Max response | 64 KB |
 | Max results | 50 |
 | Max input field | 8 KB |
+| Max message | 1 MB |
+
+The rate limit is consulted **before** the permission profile, so every inbound
+call spends budget — including one naming a tool that does not exist. The message
+cap is checked before parsing, because parsing is itself work a client can ask
+for: a megabyte of nested brackets costs more than the tool call it imitates.
 
 Exceeding a bound returns a *tool execution error* (`isError: true`) with an
 actionable reason rather than a transport failure, so a model can correct itself.
+An oversized or unparseable *message* is a protocol error (JSON-RPC
+`-32700`) instead, and never ends the session.
 This follows the specification's distinction: protocol errors use JSON-RPC
 `error`; tool errors use a normal result.
 
@@ -129,6 +142,14 @@ what an attacker wants.
 ```sh
 provalume events --type mcp.refused
 ```
+
+One exception, and it is deliberate: a client that keeps calling after it has been
+rate-limited gets **one `mcp.refused` event when the burst starts and one summary
+when it ends**, carrying a `suppressed` count. The in-memory audit still holds
+every call. Journalling each rate-limited call individually would hand an ignored
+limit exactly the unbounded durable write the limit exists to prevent — and the
+rate limit is checked before the permission profile, so a forbidden tool name in a
+loop is bounded too.
 
 ## Why no SDK
 

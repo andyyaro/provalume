@@ -61,6 +61,7 @@ RULE_GOTCHA_VERIFIED: Final = "promote.gotcha.verified_by_failure_evidence"
 RULE_VERIFIED_TO_REVIEWED: Final = "promote.any.independent_review_approved"
 RULE_REVIEWED_TO_INTEGRATED: Final = "promote.any.landed_in_history"
 RULE_DECISION_HUMAN: Final = "promote.decision.human_authority"
+RULE_SEMANTIC_VERIFIED: Final = "promote.semantic.landed_or_human_authority"
 RULE_REVALIDATE: Final = "revalidate.invalidated.fresh_evidence"
 
 REFUSE_TERMINAL: Final = "refuse.terminal_state"
@@ -269,6 +270,34 @@ def _human_decision_events(evidence: tuple[Event, ...]) -> tuple[Event, ...]:
     )
 
 
+def _semantic_authority(memory: Memory, evidence: tuple[Event, ...]) -> tuple[Event, ...]:
+    """The evidence that verifies a repository fact.
+
+    ADR-0004 promotes semantic memory "by landed integration, or human decision",
+    and that is the whole of it: no command returns whether the project uses uv.
+    Requiring a verification event here instead left ``observed -> verified``
+    permanently refused for the category, so every projected fact stalled two
+    rungs below ``integrated`` — the state ``presentable_as_current_truth``
+    requires — and the one category that exists to state current truth could
+    never state any.
+
+    The landing has to be this record's own. A record carries a landed
+    ``integration_state`` only because the projector matched it to that commit's
+    task or branch, so an unrelated integration event handed in as evidence
+    proves nothing about it.
+    """
+    landed = (
+        tuple(
+            e
+            for e in evidence
+            if e.event_type is EventType.INTEGRATION_LANDED and e.commit_sha
+        )
+        if memory.is_landed
+        else ()
+    )
+    return (*landed, *_human_decision_events(evidence))
+
+
 def _to_verified(memory: Memory, evidence: tuple[Event, ...]) -> Decision:
     """observed -> verified: a deterministic verification result.
 
@@ -283,6 +312,9 @@ def _to_verified(memory: Memory, evidence: tuple[Event, ...]) -> Decision:
       is its evidence at every rung. The rungs are still walked and still
       recorded; what differs is what counts as evidence, not whether evidence is
       required (ADR-0005).
+    * **Semantic** has nothing to run either: "the project uses uv" is settled by
+      what landed or by a person, which is exactly what ADR-0004 says promotes
+      the category.
     """
     if memory.memory_type is MemoryType.DECISION:
         human = _human_decision_events(evidence)
@@ -293,6 +325,17 @@ def _to_verified(memory: Memory, evidence: tuple[Event, ...]) -> Decision:
                 "a recorded human decision is its own evidence; there is no command "
                 "to verify",
                 tuple(e.event_id for e in human),
+            )
+
+    if memory.memory_type is MemoryType.SEMANTIC:
+        authority = _semantic_authority(memory, evidence)
+        if authority:
+            return Decision(
+                True,
+                RULE_SEMANTIC_VERIFIED,
+                "a repository fact is settled by landed history or by human "
+                "authority; there is no command that returns whether it holds",
+                tuple(e.event_id for e in authority),
             )
 
     verifications = _verification_events(evidence)

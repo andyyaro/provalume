@@ -10,6 +10,17 @@ orchestration-control bug, and a false positive would become an outage. Blocking
 exists, gated behind an explicit policy, and requires an exact high-confidence
 match on a high-risk action.
 
+**Certainty needs the error, not just the command.** The failure signature is
+computed over ``(command, error_kind, error_text)``, so a caller that has not run
+anything yet cannot reach :data:`CONFIDENCE_EXACT_SIGNATURE`. A command-only
+check — which is what ``provalume preflight``, the MCP tool and the Orkestra
+adapter issue — tops out at :data:`CONFIDENCE_EXACT_COMMAND` and therefore
+always warns. Blocking is reachable only where the caller passes the error it
+observed: a retry check, or any caller re-proposing an action it has already
+watched fail. That asymmetry is the point. "This exact failure, again" is not
+knowable before the failure, and a gate that blocked on "this command, again"
+would stop every command that ever failed once.
+
 Every warning is recorded so its usefulness can be measured rather than assumed
 (eval scenario 19): whether it was shown, heeded or ignored, and what happened
 next.
@@ -17,6 +28,7 @@ next.
 
 from __future__ import annotations
 
+import re
 from typing import Final
 
 from provalume.schemas.memories import Memory, MemoryFilter, MemoryType
@@ -42,9 +54,20 @@ CONFIDENCE_FILE_OVERLAP: Final = 0.40
 MIN_REPORT_CONFIDENCE: Final = 0.40
 
 #: Blocking requires all three: an exact signature match, repetition, and an
-#: explicitly enabled policy. Any one alone is not enough.
+#: explicitly enabled policy. Any one alone is not enough. Because only a caller
+#: that supplies the observed error can reach an exact signature match, a
+#: command-only pre-action check never blocks, whatever the policy says.
 BLOCK_MIN_CONFIDENCE: Final = 1.0
 BLOCK_MIN_OCCURRENCES: Final = 2
+
+#: Overlap matching compares whole words, never raw substrings. ``subsystem="ui"``
+#: must not match ``npm run build`` because "build" happens to contain "ui": the
+#: reason this tier emits ("previously failed in ui") is a claim with evidence
+#: attached, and this is already the noisiest tier.
+_WORD: Final = re.compile(r"[a-z0-9]+")
+
+#: A one-character subsystem carries no signal and would match almost anything.
+MIN_SUBSYSTEM_CHARS: Final = 2
 
 
 def _one_line(text: str, limit: int) -> str:
@@ -56,6 +79,29 @@ def _one_line(text: str, limit: int) -> str:
     """
     collapsed = " ".join(text.split())
     return collapsed[: limit - 1] + "…" if len(collapsed) > limit else collapsed
+
+
+def _words(text: str) -> list[str]:
+    """Lowercase word tokens, split on everything that is not alphanumeric.
+
+    Deliberately coarser than :func:`provalume.store.fts.tokenize`, which keeps
+    ``tests/integration`` and ``no:xdist`` whole for the index. Here the opposite
+    is wanted: a subsystem named ``tests`` should match a command that ran
+    ``tests/integration``, and only as a whole word.
+    """
+    return _WORD.findall(text.lower())
+
+
+def _contains_words(haystack: list[str], needle: list[str]) -> bool:
+    """Whether ``needle`` appears in ``haystack`` as a contiguous run of words."""
+    span = len(needle)
+    if not span or span > len(haystack):
+        return False
+    return any(
+        haystack[index : index + span] == needle
+        for index, word in enumerate(haystack)
+        if word == needle[0]
+    )
 
 
 class PreflightGate:
@@ -85,7 +131,14 @@ class PreflightGate:
         commit_sha: str | None = None,
         limit: int = 5,
     ) -> PreflightResult:
-        """Look for prior failures resembling a proposed action."""
+        """Look for prior failures resembling a proposed action.
+
+        ``error_kind`` and ``error_text`` describe an error the caller has
+        *already seen* — they are what a retry check supplies, and the only way
+        to reach tier 1 and, with it, blocking. Omitting them is the normal
+        pre-action case and is not a degraded one: the check still runs, and
+        still warns, one tier down.
+        """
         matches: list[PreflightMatch] = []
         seen: set[str] = set()
 
@@ -285,17 +338,16 @@ class PreflightGate:
     def _overlap(
         self, memory: Memory, *, subsystem: str, files: tuple[str, ...]
     ) -> tuple[float, str] | None:
-        haystack = f"{memory.text} {memory.content.get('command', '')}".lower()
+        haystack = _words(f"{memory.text} {memory.content.get('command', '')}")
 
         for path in files:
             name = path.rsplit("/", 1)[-1].lower()
-            if name and name in haystack:
+            if name and _contains_words(haystack, _words(name)):
                 return CONFIDENCE_FILE_OVERLAP, f"previously failed touching {name}"
 
-        if subsystem:
-            token = subsystem.strip().lower()
-            if token and token in haystack:
-                return CONFIDENCE_SUBSTANTIAL_OVERLAP, f"previously failed in {subsystem}"
+        token = subsystem.strip()
+        if len(token) >= MIN_SUBSYSTEM_CHARS and _contains_words(haystack, _words(token)):
+            return CONFIDENCE_SUBSTANTIAL_OVERLAP, f"previously failed in {subsystem}"
         return None
 
     def _summarize(

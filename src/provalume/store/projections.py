@@ -358,19 +358,36 @@ class Projector:
                 signature=str(row["signature"]),
                 resolved_by_id=event.event_id,
             )
-            self.repository.add_link(
-                project_id=event.project_id,
-                from_id=prior.memory_id,
-                to_id=verification.derive_memory_id(event.event_id, "procedural"),
-                link_type="resolved_by",
-            )
+            fix_id = _procedural_id(event)
+            if fix_id is not None:
+                # From the fix to the failure it resolved. `resolves_gotcha_id` is
+                # read off this link and is documented as being set on "this
+                # record documents what finally worked", so the arrow has to leave
+                # the record that documents the fix.
+                self.repository.add_link(
+                    project_id=event.project_id,
+                    from_id=fix_id,
+                    to_id=prior.memory_id,
+                    link_type="resolved_by",
+                )
 
     def _link_resolution(
         self, event: Event, signature: str, stats: ProjectionStats
     ) -> None:
+        """Attach a success that names the failure signature it resolves.
+
+        The declared path reaches across runs, where inference cannot, and it
+        needs the same two properties as the inferred one. A resolution already
+        recorded is never overwritten: a second success naming the same signature
+        would otherwise replace the real fix in ``content["resolution"]`` — which
+        is what the preflight gate serves as ``what_later_worked`` — while the
+        rendered text went on naming the first, and the signature row would be
+        repointed at the wrong event. And the fix is linked to the failure, so
+        the record that documents what worked says so.
+        """
         for row in self.repository.signature_rows(event.project_id, signature):
             prior = self.repository.get(str(row["memory_id"]))
-            if prior is None:
+            if prior is None or prior.content.get("resolution"):
                 continue
             updated = failures.build_resolution_link(gotcha=prior, resolution_event=event)
             self._write(updated, stats, update=True)
@@ -379,6 +396,14 @@ class Projector:
                 signature=signature,
                 resolved_by_id=event.event_id,
             )
+            fix_id = _procedural_id(event)
+            if fix_id is not None:
+                self.repository.add_link(
+                    project_id=event.project_id,
+                    from_id=fix_id,
+                    to_id=prior.memory_id,
+                    link_type="resolved_by",
+                )
 
     def _on_review_rejected(
         self, event: Event, landing: TrustState, stats: ProjectionStats
@@ -398,9 +423,8 @@ class Projector:
         subject = str(event.payload.get("subject", "")).strip()
         if subject:
             key = invalidation.subject_key(subject)
-            for memory in self._memories_with_subject(event.project_id, key):
-                unresolved = not memory.content.get("resolution")
-                if memory.memory_type is MemoryType.GOTCHA and unresolved:
+            for memory in self._lessons_naming_subject(event.project_id, key):
+                if not memory.content.get("resolution"):
                     self._write(
                         reviews.attach_approval(memory, event), stats, update=True
                     )
@@ -881,23 +905,31 @@ class Projector:
         association. A record type — a gotcha, an episode, a statistic — is
         stamped only when the reviewer named its subject, because approving a fix
         is not approving the failure that prompted it.
+
+        Every verdict is linked, not only the first one to change the state. An
+        earlier self-approval already sets ``review_state`` to ``approved``, so
+        skipping on that alone dropped the later *independent* approval from
+        ``source_event_ids`` — and `_to_reviewed`, which reads its evidence from
+        exactly that list, then refused the promotion as a self-review. An agent
+        could cap its own work at ``verified`` by approving it first.
         """
         subject = str(event.payload.get("subject", "")).strip()
         subject_match = invalidation.subject_key(subject) if subject else ""
 
         for memory in self._memories_for_attempt(event):
-            if memory.review_state is state:
-                continue
-            named_by_subject = bool(subject_match) and memory.subject_key == subject_match
+            named_by_subject = _names_subject(memory, subject_match)
             if memory.memory_type not in CLAIM_TYPES and not named_by_subject:
+                continue
+            source_event_ids = tuple(
+                dict.fromkeys([*memory.source_event_ids, event.event_id])
+            )
+            if memory.review_state is state and source_event_ids == memory.source_event_ids:
                 continue
             self._write(
                 memory.model_copy(
                     update={
                         "review_state": state,
-                        "source_event_ids": tuple(
-                            dict.fromkeys([*memory.source_event_ids, event.event_id])
-                        ),
+                        "source_event_ids": source_event_ids,
                     }
                 ),
                 stats,
@@ -967,6 +999,40 @@ class Projector:
                 out.append(memory)
         return out
 
+    def _lessons_naming_subject(self, project_id: str, key: str) -> list[Memory]:
+        """Lessons whose subject is the one a reviewer named.
+
+        A lesson's ``subject_key`` covers the subject *and* the finding together,
+        so it can never equal a key built from the subject alone — which is why
+        an exact-key lookup attached a resolution to bare rejections only, and
+        never to the ones that said what was wrong. The stated subject is
+        compared instead, over the recent lessons plus whatever the exact key
+        still matches, so an older bare rejection stays reachable.
+        """
+        from provalume.schemas.memories import MemoryFilter
+
+        if not key:
+            return []
+        recent = self.repository.find(
+            MemoryFilter(
+                project_id=project_id,
+                memory_types=(MemoryType.GOTCHA,),
+                include_terminal=False,
+                current_only=True,
+                limit=200,
+            )
+        )
+        out: list[Memory] = []
+        seen: set[str] = set()
+        for memory in [*recent, *self._memories_with_subject(project_id, key)]:
+            if memory.memory_id in seen or memory.memory_type is not MemoryType.GOTCHA:
+                continue
+            if not _names_subject(memory, key):
+                continue
+            seen.add(memory.memory_id)
+            out.append(memory)
+        return out
+
     def _memories_with_subject(self, project_id: str, subject: str) -> list[Memory]:
         from provalume.schemas.memories import MemoryFilter
 
@@ -1029,6 +1095,34 @@ class Projector:
                     note="aggregated from recorded outcome events",
                 )
                 stats.promotions += 1
+
+
+def _procedural_id(event: Event) -> str | None:
+    """The identifier of the procedure this success produced, if it produced one.
+
+    ``build_procedural`` writes nothing for an event carrying no command, and a
+    link pointing at a memory that was never written is worse than no link.
+    """
+    if not str(event.payload.get("command", "")).strip():
+        return None
+    return verification.derive_memory_id(event.event_id, "procedural")
+
+
+def _names_subject(memory: Memory, key: str) -> bool:
+    """Whether a reviewer who named ``key`` named *this* record's subject.
+
+    One subject can produce two keys. A record's ``subject_key`` is derived from
+    whatever text identifies it, and for a lesson that is the subject and the
+    finding together — a key no lookup built from the subject alone can
+    reconstruct. Where a record also carries the subject it was filed under, that
+    is compared as well, which is what lets a reviewer's verdict reach it.
+    """
+    if not key:
+        return False
+    if memory.subject_key == key:
+        return True
+    stated = str(memory.content.get("subject", "")).strip()
+    return bool(stated) and invalidation.subject_key(stated) == key
 
 
 def _resolves(gotcha: Memory, *, command: str, purpose: str) -> bool:
