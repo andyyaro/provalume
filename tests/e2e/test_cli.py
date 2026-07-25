@@ -51,9 +51,26 @@ def test_version_flag(tmp_path: Path) -> None:
 def test_help_lists_the_documented_commands(tmp_path: Path) -> None:
     result = run("--help", cwd=tmp_path)
     for command in (
-        "init", "doctor", "status", "demo", "events", "memories", "recall",
-        "explain", "preflight", "propose", "promote", "invalidate", "supersede",
-        "export", "import", "rebuild", "audit", "replay", "eval", "serve-mcp",
+        "init",
+        "doctor",
+        "status",
+        "demo",
+        "events",
+        "memories",
+        "recall",
+        "explain",
+        "preflight",
+        "propose",
+        "promote",
+        "invalidate",
+        "supersede",
+        "export",
+        "import",
+        "rebuild",
+        "audit",
+        "replay",
+        "eval",
+        "serve-mcp",
     ):
         assert command in result.stdout, f"{command} is missing from --help"
 
@@ -80,8 +97,14 @@ def test_doctor_reports_checks(project: Path) -> None:
 
 def test_status_json_shape(project: Path) -> None:
     payload = json.loads(run("status", "--json", cwd=project).stdout)
-    for key in ("project_id", "events", "chain_head", "memories_by_trust",
-                "memories_by_type", "schema_version"):
+    for key in (
+        "project_id",
+        "events",
+        "chain_head",
+        "memories_by_trust",
+        "memories_by_type",
+        "schema_version",
+    ):
         assert key in payload
 
 
@@ -89,9 +112,7 @@ def test_status_json_shape(project: Path) -> None:
 
 
 def test_propose_lands_quarantined(project: Path) -> None:
-    payload = json.loads(
-        run("propose", "the project uses uv", "--json", cwd=project).stdout
-    )
+    payload = json.loads(run("propose", "the project uses uv", "--json", cwd=project).stdout)
     assert payload["trust_state"] == "quarantined"
 
     memories = json.loads(run("memories", "--json", cwd=project).stdout)
@@ -104,8 +125,7 @@ def test_promotion_without_evidence_is_refused(project: Path) -> None:
     memories = json.loads(run("memories", "--json", cwd=project).stdout)
     memory_id = memories[0]["memory_id"]
 
-    result = run("promote", memory_id, "--to", "verified", "--json",
-                 cwd=project, expect=1)
+    result = run("promote", memory_id, "--to", "verified", "--json", cwd=project, expect=1)
     payload = json.loads(result.stdout)
     assert payload["ok"] is False
     assert payload["rule"], "a refusal must name the rule that refused it"
@@ -114,8 +134,9 @@ def test_promotion_without_evidence_is_refused(project: Path) -> None:
 def test_recall_and_explain_round_trip(project: Path) -> None:
     run("propose", "integration tests are slow under parallelism", cwd=project)
     results = json.loads(
-        run("recall", "integration parallelism", "--trust", "quarantined",
-            "--json", cwd=project).stdout
+        run(
+            "recall", "integration parallelism", "--trust", "quarantined", "--json", cwd=project
+        ).stdout
     )
     assert results
     memory_id = results[0]["memory_id"]
@@ -128,8 +149,7 @@ def test_recall_and_explain_round_trip(project: Path) -> None:
 
 def test_recall_digest_is_banner_first(project: Path) -> None:
     run("propose", "a proposed fact about the build", cwd=project)
-    result = run("recall", "build", "--trust", "quarantined", "--digest", "1500",
-                 cwd=project)
+    result = run("recall", "build", "--trust", "quarantined", "--digest", "1500", cwd=project)
     assert result.stdout.startswith("Historical context from Provalume follows.")
 
 
@@ -139,16 +159,22 @@ def test_recall_json_result_shape(project: Path) -> None:
         run("recall", "fact", "--trust", "quarantined", "--json", cwd=project).stdout
     )
     assert results
-    for key in ("memory_id", "memory_type", "text", "trust_state", "score",
-                "rank", "explanation", "presentable_as_current_truth"):
+    for key in (
+        "memory_id",
+        "memory_type",
+        "text",
+        "trust_state",
+        "score",
+        "rank",
+        "explanation",
+        "presentable_as_current_truth",
+    ):
         assert key in results[0], f"recall --json lost the {key!r} key"
 
 
 def test_preflight_exits_zero_whether_or_not_it_warns(project: Path) -> None:
     """An exit code meaning "blocked" would make it a gate scripts route around."""
-    payload = json.loads(
-        run("preflight", "--command", "pytest -q", "--json", cwd=project).stdout
-    )
+    payload = json.loads(run("preflight", "--command", "pytest -q", "--json", cwd=project).stdout)
     assert payload["matched"] is False
 
 
@@ -198,8 +224,7 @@ def test_events_json_shape(project: Path) -> None:
     run("propose", "a fact", cwd=project)
     events = json.loads(run("events", "--json", cwd=project).stdout)
     assert events
-    for key in ("event_id", "event_type", "recorded_at", "project_id", "source",
-                "payload_hash"):
+    for key in ("event_id", "event_type", "recorded_at", "project_id", "source", "payload_hash"):
         assert key in events[0]
 
 
@@ -226,9 +251,7 @@ def test_demo_writes_a_light_themed_html_report(tmp_path: Path) -> None:
 def test_eval_runs_every_scenario(tmp_path: Path) -> None:
     payload = json.loads(run("eval", "--json", cwd=tmp_path).stdout)
     assert payload["total"] == 20
-    assert payload["passed"] is True, [
-        s for s in payload["scenarios"] if not s["passed"]
-    ]
+    assert payload["passed"] is True, [s for s in payload["scenarios"] if not s["passed"]]
     assert "No comparison against another system" in payload["note"]
 
 
