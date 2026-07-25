@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
       # No GPL, AGPL, SSPL, or CLA-encumbered dependency enters Provalume at any
       # tier. See docs/research/COMPETITOR_TRIALS.md §4.
-      - uses: actions/dependency-review-action@v4
+      - uses: actions/dependency-review-action@v5
         with:
           fail-on-severity: moderate
           deny-licenses: GPL-2.0, GPL-3.0, AGPL-3.0, SSPL-1.0
