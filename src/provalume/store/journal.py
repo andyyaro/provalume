@@ -124,9 +124,7 @@ class Journal:
         """
         payload_hash = hash_payload(event.payload)
 
-        existing = self.db.query_one(
-            f"{_SELECT_SQL} WHERE event_id = ?", (event.event_id,)
-        )
+        existing = self.db.query_one(f"{_SELECT_SQL} WHERE event_id = ?", (event.event_id,))
         if existing is not None:
             stored = _row_to_event(existing)
             if stored.payload_hash != payload_hash:
@@ -166,9 +164,7 @@ class Journal:
                 (stamped.project_id, stamped.recorded_at),
             )
 
-        return AppendResult(
-            event=stamped.model_copy(update={"seq": seq}), inserted=True, seq=seq
-        )
+        return AppendResult(event=stamped.model_copy(update={"seq": seq}), inserted=True, seq=seq)
 
     def append_many(self, events: list[Event]) -> list[AppendResult]:
         """Append a batch in one transaction.
@@ -185,9 +181,7 @@ class Journal:
     # -- read --------------------------------------------------------------
 
     def get(self, event_id: str) -> Event | None:
-        row = self.db.query_one(
-            f"{_SELECT_SQL} WHERE event_id = ?", (event_id,)
-        )
+        row = self.db.query_one(f"{_SELECT_SQL} WHERE event_id = ?", (event_id,))
         return None if row is None else _row_to_event(row)
 
     def get_many(self, event_ids: tuple[str, ...]) -> list[Event]:
@@ -246,10 +240,7 @@ class Journal:
                 sql = f"{_SELECT_SQL} WHERE seq > ? ORDER BY seq LIMIT ?"
                 params: tuple[Any, ...] = (last_seq, batch)
             else:
-                sql = (
-                    f"{_SELECT_SQL} WHERE seq > ? AND project_id = ? "
-                    "ORDER BY seq LIMIT ?"
-                )
+                sql = f"{_SELECT_SQL} WHERE seq > ? AND project_id = ? ORDER BY seq LIMIT ?"
                 params = (last_seq, project_id, batch)
             rows = self.db.query(sql, params)
             if not rows:
@@ -262,9 +253,18 @@ class Journal:
         if project_id is None:
             return int(self.db.scalar("SELECT COUNT(*) FROM events") or 0)
         return int(
-            self.db.scalar("SELECT COUNT(*) FROM events WHERE project_id = ?", (project_id,))
-            or 0
+            self.db.scalar("SELECT COUNT(*) FROM events WHERE project_id = ?", (project_id,)) or 0
         )
+
+    def project_ids(self) -> list[str]:
+        """Every project id present in the journal, ascending.
+
+        Exists so a caller that finds nothing can tell the difference between an
+        empty database and a query aimed at the wrong project — a distinction
+        that is invisible when an empty result is simply printed as nothing.
+        """
+        rows = self.db.query("SELECT DISTINCT project_id FROM events ORDER BY project_id")
+        return [str(row[0]) for row in rows]
 
     def latest_seq(self) -> int:
         return int(self.db.scalar("SELECT COALESCE(MAX(seq), 0) FROM events") or 0)
@@ -308,7 +308,6 @@ class Journal:
             prev_hash = event.event_hash
             if limit is not None and checked >= limit:
                 return problems
-
 
         stored_head, stored_seq, stored_count = self.head()
         actual_count = self.count()

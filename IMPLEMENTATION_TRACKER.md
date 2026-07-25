@@ -197,6 +197,10 @@ Found by tests and by the eval harness, not by inspection.
 | 13 | The Orkestra hook read `Assignment.agent`, a field that does not exist — and because the guard wrapped only the adapter call, the `AttributeError` from *building the arguments* escaped and crashed the run | Orkestra's own suite, 3 pre-existing tests | Correct field, and the guard became a context manager wrapping the whole interaction |
 | 14 | Orkestra's `run.completed` record was written after a `finally` had already closed the client, so the best-effort guard swallowed it and it never recorded | Reading the diff; then a regression test verified by reintroducing the bug | Record before the `finally` closes |
 
+| 15 | The Orkestra hook iterated the *requested* verify commands rather than the results. Verification stops at the first failure, so a command that passed — or never ran at all — was recorded as failed, manufacturing gotchas and then false warnings | **Dogfooding**, then a regression test | Iterate `outcome.results`, which carries each command's own verdict and exit code |
+| 16 | The recorded excerpt was `outcome.summary`, a one-line headline containing no error text. Every failure of a given command therefore produced the *same* failure signature, so the gate would warn about an unrelated failure | **Dogfooding** — demonstrated by showing two unrelated failures collapsing to one signature | Excerpt now carries captured stdout/stderr |
+| 17 | `provalume events/memories/recall` printed *nothing* when the project id did not match, which is indistinguishable from "the integration recorded nothing" | **Dogfooding** — it cost a long misdiagnosis of exactly that kind | Empty results now name the projects the database actually holds |
+
 Bugs 13 and 14 are the same lesson from two directions. Swallowing errors on
 memory writes is the right policy — a memory fault must not fail an
 orchestration run — but it is also what let a real defect stay invisible. So the

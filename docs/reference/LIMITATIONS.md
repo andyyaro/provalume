@@ -7,6 +7,14 @@ Read this before adopting Provalume. It is the honest list, not a marketing
 
 ## 1. It has not been dogfooded on production runs
 
+**Partly addressed.** One real orchestration run has now been driven end to end
+(real git worktrees, real failing verification commands, real integration
+commits) with fake agents standing in for vendor CLIs. That run found three
+defects no test had caught — see `IMPLEMENTATION_TRACKER.md`, bugs 15–17. What
+it still does not establish is whether a digest measurably helps a real model,
+which needs real agents and real quota.
+
+
 **This is the biggest weakness of 0.1.0.**
 
 Provalume's schema, its six memory categories, its promotion rules, and its
@@ -163,6 +171,14 @@ enough to mean anything. Eval scenario 20 verifies the *plumbing* — that fusio
 runs and that vectors cannot bypass governance — not the quality.
 
 ## 13. Lexical retrieval misses synonyms
+
+**Confirmed by dogfooding.** A gotcha is keyed on the command and the error, so
+it is findable by `ConnectionError` or `transient upstream reset` but *not* by
+`uploader retry` — the feature being worked on appears nowhere in the record. A
+developer asking "what do we know about the uploader?" gets nothing, while one
+who already knows the error message gets the answer. That is backwards from how
+the question usually arrives.
+
 
 The default installation uses FTS5 and BM25. A query for "dependency resolution
 failure" will not match a record phrased "package solver conflict". This is the

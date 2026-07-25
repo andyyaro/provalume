@@ -54,6 +54,30 @@ def _open(
         raise typer.Exit(code=2) from exc
 
 
+def _report_empty(pv: Any, noun: str) -> None:
+    """Explain an empty result instead of printing nothing.
+
+    An empty listing has two very different causes: the database really is
+    empty, or the query is aimed at a project the database does not hold. Printed
+    as nothing they are indistinguishable, and the second one reads as "the
+    integration recorded nothing" — a wrong and expensive conclusion.
+    """
+    present = pv.journal.project_ids()
+    if not present:
+        console.print(f"[pv.muted]No {noun}. This database is empty.[/]")
+        return
+    if pv.project_id not in present:
+        listed = ", ".join(repr(p) for p in present)
+        console.print(
+            f"[pv.muted]No {noun} for project [/][pv.action]{pv.project_id!r}[/]"
+            f"[pv.muted].[/]\n"
+            f"[pv.muted]This database holds: [/]{listed}[pv.muted].\n"
+            f"Select one with [/][pv.action]--project <id>[/][pv.muted].[/]"
+        )
+        return
+    console.print(f"[pv.muted]No {noun} matched.[/]")
+
+
 def _emit(payload: Any, *, as_json: bool) -> bool:
     """Print JSON and report whether output is finished."""
     if as_json:
@@ -83,8 +107,13 @@ def _version_callback(value: bool) -> None:
 def main(
     version: Annotated[
         bool,
-        typer.Option("--version", "-V", callback=_version_callback, is_eager=True,
-                     help="Show the version and exit."),
+        typer.Option(
+            "--version",
+            "-V",
+            callback=_version_callback,
+            is_eager=True,
+            help="Show the version and exit.",
+        ),
     ] = False,
 ) -> None:
     """Verified, git-aware memory for autonomous software agents."""
@@ -112,8 +141,10 @@ def init(
     else:
         console.print("  git        [pv.muted]not available — commit validity is disabled[/]")
     console.print()
-    console.print("Next: [pv.action]provalume demo[/] to see it work, "
-                  "or [pv.action]provalume doctor[/] to check the environment.")
+    console.print(
+        "Next: [pv.action]provalume demo[/] to see it work, "
+        "or [pv.action]provalume doctor[/] to check the environment."
+    )
 
 
 @app.command()
@@ -168,7 +199,8 @@ def doctor(db: DbOption = None, project: ProjectOption = None, json: JsonOption 
     add(
         "git",
         True,
-        f"branch {status['branch']}" if status["git_available"]
+        f"branch {status['branch']}"
+        if status["git_available"]
         else "no repository — commit validity degrades to 'uncertain'",
     )
     pragma_problems = pv.db.check_pragmas()
@@ -212,9 +244,7 @@ def status(db: DbOption = None, project: ProjectOption = None, json: JsonOption 
     if data["memories_by_trust"]:
         console.print("\n  [pv.heading]memories by trust[/]")
         for state, count in sorted(data["memories_by_trust"].items()):
-            console.print(
-                f"    {trust_marker(state)} [{trust_style(state)}]{state:<13}[/] {count}"
-            )
+            console.print(f"    {trust_marker(state)} [{trust_style(state)}]{state:<13}[/] {count}")
     if data["memories_by_type"]:
         console.print("\n  [pv.heading]memories by type[/]")
         for kind, count in sorted(data["memories_by_type"].items()):
@@ -233,9 +263,7 @@ def recall(
         list[str] | None,
         typer.Option("--type", "-t", help="Memory type filter. Repeatable."),
     ] = None,
-    min_trust: Annotated[
-        str, typer.Option("--trust", help="Minimum trust state.")
-    ] = "observed",
+    min_trust: Annotated[str, typer.Option("--trust", help="Minimum trust state.")] = "observed",
     limit: Annotated[int, typer.Option("--limit", "-n")] = 10,
     branch: Annotated[str | None, typer.Option("--branch")] = None,
     include_terminal: Annotated[
@@ -279,7 +307,7 @@ def recall(
         return
 
     if not response.results:
-        console.print("[pv.muted]No memories matched.[/]")
+        _report_empty(pv, "memories")
         return
 
     for result in response.results:
@@ -307,8 +335,9 @@ def explain_command(
     memory_id: Annotated[str, typer.Argument(help="The memory to explain.")],
     db: DbOption = None,
     project: ProjectOption = None,
-    transitions: Annotated[bool, typer.Option("--transitions",
-                           help="Show the full lifecycle history.")] = False,
+    transitions: Annotated[
+        bool, typer.Option("--transitions", help="Show the full lifecycle history.")
+    ] = False,
     json: JsonOption = False,
 ) -> None:
     """Show the full evidence chain behind one memory."""
@@ -331,8 +360,10 @@ def explain_command(
     console.print(f"  verification   {provenance.verification_state}")
     console.print(f"  review         {provenance.review_state}")
     console.print(f"  integration    {provenance.integration_state}")
-    console.print(f"  provenance     [pv.provenance]{provenance.resolution}[/] "
-                  f"— {provenance.resolution_detail}")
+    console.print(
+        f"  provenance     [pv.provenance]{provenance.resolution}[/] "
+        f"— {provenance.resolution_detail}"
+    )
 
     for verification in provenance.verifications:
         mark = "passed" if verification.passed else "FAILED"
@@ -343,12 +374,15 @@ def explain_command(
 
     for review in provenance.reviews:
         independent = "independent" if review.independent else "NOT independent"
-        console.print(f"\n  [pv.heading]review {review.verdict}[/] by {review.reviewer} "
-                      f"({independent})")
+        console.print(
+            f"\n  [pv.heading]review {review.verdict}[/] by {review.reviewer} ({independent})"
+        )
 
     for integration in provenance.integrations:
-        console.print(f"\n  [pv.heading]integration {integration.state}[/] "
-                      f"{integration.commit_sha[:12]} — {integration.resolution}")
+        console.print(
+            f"\n  [pv.heading]integration {integration.state}[/] "
+            f"{integration.commit_sha[:12]} — {integration.resolution}"
+        )
 
     for decision in provenance.decisions:
         console.print(f"\n  [pv.heading]decision[/] {decision.selected}")
@@ -371,12 +405,8 @@ def explain_command(
 
 @app.command()
 def preflight(
-    command: Annotated[
-        str, typer.Option("--command", "-c", help="The command about to run.")
-    ] = "",
-    subsystem: Annotated[
-        str, typer.Option("--subsystem", help="Subsystem about to change.")
-    ] = "",
+    command: Annotated[str, typer.Option("--command", "-c", help="The command about to run.")] = "",
+    subsystem: Annotated[str, typer.Option("--subsystem", help="Subsystem about to change.")] = "",
     files: Annotated[
         list[str] | None, typer.Option("--file", help="Files about to change.")
     ] = None,
@@ -405,12 +435,8 @@ def preflight(
 def events(
     db: DbOption = None,
     project: ProjectOption = None,
-    source: Annotated[
-        str | None, typer.Option("--source", help="Filter by source.")
-    ] = None,
-    event_type: Annotated[
-        str | None, typer.Option("--type", help="Filter by event type.")
-    ] = None,
+    source: Annotated[str | None, typer.Option("--source", help="Filter by source.")] = None,
+    event_type: Annotated[str | None, typer.Option("--type", help="Filter by event type.")] = None,
     limit: Annotated[int, typer.Option("--limit", "-n")] = 20,
     json: JsonOption = False,
 ) -> None:
@@ -428,6 +454,9 @@ def events(
     found = pv.events(spec)
     if _emit([e.model_dump() for e in found], as_json=json):
         return
+    if not found:
+        _report_empty(pv, "events")
+        return
     for event in found:
         console.print(
             f"[pv.muted]{event.recorded_at}[/] "
@@ -440,9 +469,7 @@ def events(
 def memories(
     db: DbOption = None,
     project: ProjectOption = None,
-    trust: Annotated[
-        str | None, typer.Option("--trust", help="Exact trust state.")
-    ] = None,
+    trust: Annotated[str | None, typer.Option("--trust", help="Exact trust state.")] = None,
     types: Annotated[list[str] | None, typer.Option("--type", "-t")] = None,
     limit: Annotated[int, typer.Option("--limit", "-n")] = 25,
     explain: Annotated[bool, typer.Option("--explain")] = False,
@@ -462,6 +489,9 @@ def memories(
     )
     found = pv.memory_records(spec)
     if _emit([m.model_dump() for m in found], as_json=json):
+        return
+    if not found:
+        _report_empty(pv, "memories")
         return
     for memory in found:
         state = memory.trust_state.value
@@ -492,17 +522,17 @@ def propose(
     if _emit({"event_id": event.event_id, "trust_state": "quarantined"}, as_json=json):
         return
     console.print(f"[pv.success]Proposed[/] as event {event.event_id}")
-    console.print("  [pv.muted]Landed quarantined. Promotion requires deterministic "
-                  "evidence recorded elsewhere.[/]")
+    console.print(
+        "  [pv.muted]Landed quarantined. Promotion requires deterministic "
+        "evidence recorded elsewhere.[/]"
+    )
 
 
 @app.command()
 def promote(
     memory_id: Annotated[str, typer.Argument()],
     to: Annotated[str, typer.Option("--to", help="Target trust state.")],
-    actor: Annotated[
-        str, typer.Option("--actor", help="Who is promoting.")
-    ] = "cli-operator",
+    actor: Annotated[str, typer.Option("--actor", help="Who is promoting.")] = "cli-operator",
     note: Annotated[str, typer.Option("--note")] = "",
     db: DbOption = None,
     project: ProjectOption = None,
@@ -513,19 +543,20 @@ def promote(
 
     pv = _open(db, project)
     try:
-        memory = pv.promote(memory_id, TrustState(to), actor=actor,
-                            actor_source=Source.HUMAN, note=note)
+        memory = pv.promote(
+            memory_id, TrustState(to), actor=actor, actor_source=Source.HUMAN, note=note
+        )
     except TrustError as exc:
         if json:
-            console.print_json(jsonlib.dumps({"ok": False, "rule": exc.rule,
-                                              "reason": str(exc)}))
+            console.print_json(jsonlib.dumps({"ok": False, "rule": exc.rule, "reason": str(exc)}))
         else:
             err_console.print(f"[pv.error]refused:[/] {exc}")
             err_console.print(f"  [pv.muted]rule: {exc.rule} (the refusal was recorded)[/]")
         raise typer.Exit(code=1) from exc
 
-    if _emit({"ok": True, "memory_id": memory_id, "trust_state": memory.trust_state.value},
-             as_json=json):
+    if _emit(
+        {"ok": True, "memory_id": memory_id, "trust_state": memory.trust_state.value}, as_json=json
+    ):
         return
     console.print(f"[pv.attested]Promoted[/] {memory_id} -> {memory.trust_state}")
 
@@ -549,9 +580,7 @@ def invalidate(
 @app.command()
 def supersede(
     old_id: Annotated[str, typer.Argument(help="The record being replaced.")],
-    statement: Annotated[
-        str, typer.Option("--with", help="The new fact that replaces it.")
-    ],
+    statement: Annotated[str, typer.Option("--with", help="The new fact that replaces it.")],
     subject: Annotated[str, typer.Option("--subject")] = "",
     db: DbOption = None,
     project: ProjectOption = None,
@@ -570,9 +599,7 @@ def supersede(
 
 @app.command(name="export")
 def export_command(
-    directory: Annotated[
-        Path, typer.Option("--out", "-o", help="Output directory.")
-    ],
+    directory: Annotated[Path, typer.Option("--out", "-o", help="Output directory.")],
     db: DbOption = None,
     project: ProjectOption = None,
     json: JsonOption = False,
@@ -594,15 +621,14 @@ def export_command(
     if _emit(payload, as_json=json):
         return
     console.print(f"[pv.success]Exported[/] to {result.directory}")
-    console.print(f"  {result.events} events, {result.memories} memories, "
-                  f"{result.transitions} transitions")
+    console.print(
+        f"  {result.events} events, {result.memories} memories, {result.transitions} transitions"
+    )
 
 
 @app.command(name="import")
 def import_command(
-    directory: Annotated[
-        Path, typer.Argument(help="Directory holding the JSONL export.")
-    ],
+    directory: Annotated[Path, typer.Argument(help="Directory holding the JSONL export.")],
     allow_foreign_project: Annotated[bool, typer.Option("--allow-foreign-project")] = False,
     quarantine_unknown: Annotated[bool, typer.Option("--quarantine-unknown")] = False,
     db: DbOption = None,
@@ -652,8 +678,7 @@ def rebuild(
     if _emit(stats.as_dict(), as_json=json):
         return
     console.print(f"[pv.success]Rebuilt[/] from {stats.events_processed} event(s)")
-    console.print(f"  memories written {stats.memories_written}, "
-                  f"updated {stats.memories_updated}")
+    console.print(f"  memories written {stats.memories_written}, updated {stats.memories_updated}")
     console.print(f"  promotions {stats.promotions}, refusals {stats.refusals}")
     if stats.notes:
         for note in stats.notes[:10]:
@@ -664,9 +689,7 @@ def rebuild(
 def audit(
     strict: Annotated[
         bool,
-        typer.Option(
-            "--strict", help="Exit non-zero on any finding, including warnings."
-        ),
+        typer.Option("--strict", help="Exit non-zero on any finding, including warnings."),
     ] = False,
     db: DbOption = None,
     project: ProjectOption = None,
@@ -681,8 +704,12 @@ def audit(
         "summary": report.summary(),
         "chain_head": report.chain_head,
         "findings": [
-            {"check": f.check, "severity": f.severity.value,
-             "message": f.message, "detail": f.detail}
+            {
+                "check": f.check,
+                "severity": f.severity.value,
+                "message": f.message,
+                "detail": f.detail,
+            }
             for f in report.findings
         ],
         "stats": report.stats,
@@ -694,10 +721,12 @@ def audit(
 
     console.print("[pv.heading]Provalume audit[/]\n")
     for finding in report.findings:
-        style = {"info": "pv.success", "warning": "pv.warning",
-                 "error": "pv.error"}[finding.severity.value]
-        console.print(f"  [{style}]{finding.severity.value:<7}[/] "
-                      f"{finding.check:<24} {finding.message}")
+        style = {"info": "pv.success", "warning": "pv.warning", "error": "pv.error"}[
+            finding.severity.value
+        ]
+        console.print(
+            f"  [{style}]{finding.severity.value:<7}[/] {finding.check:<24} {finding.message}"
+        )
         if finding.detail:
             console.print(f"          [pv.muted]{finding.detail[:160]}[/]")
 
@@ -733,9 +762,7 @@ def eval_command(
         str | None,
         typer.Option("--scenario", help="Run one scenario by name instead of all."),
     ] = None,
-    out: Annotated[
-        Path | None, typer.Option("--out", help="Write results JSON here.")
-    ] = None,
+    out: Annotated[Path | None, typer.Option("--out", help="Write results JSON here.")] = None,
     json: JsonOption = False,
 ) -> None:
     """Run the replayable evaluation harness."""
@@ -765,9 +792,7 @@ def eval_command(
 
 @app.command()
 def replay(
-    directory: Annotated[
-        Path, typer.Argument(help="Directory of a JSONL export to replay.")
-    ],
+    directory: Annotated[Path, typer.Argument(help="Directory of a JSONL export to replay.")],
     db: DbOption = None,
     project: ProjectOption = None,
     json: JsonOption = False,
@@ -776,12 +801,17 @@ def replay(
     pv = _open(db, project)
     result = pv.import_records(directory)
     stats = pv.rebuild()
-    payload = {"imported": result.accepted, "rebuilt_from": stats.events_processed,
-               "memories": stats.memories_written}
+    payload = {
+        "imported": result.accepted,
+        "rebuilt_from": stats.events_processed,
+        "memories": stats.memories_written,
+    }
     if _emit(payload, as_json=json):
         return
-    console.print(f"[pv.success]Replayed[/] {result.accepted} record(s); "
-                  f"rebuilt {stats.memories_written} memories")
+    console.print(
+        f"[pv.success]Replayed[/] {result.accepted} record(s); "
+        f"rebuilt {stats.memories_written} memories"
+    )
 
 
 @app.command(name="serve-mcp")
