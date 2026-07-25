@@ -24,9 +24,15 @@ from pathlib import Path
 from typing import Any, Final
 
 from provalume import _time
-from provalume.errors import InterchangeError, UnknownRecordVersion
+from provalume.errors import (
+    InterchangeError,
+    OversizedInputError,
+    UnknownRecordVersion,
+    ValidationError,
+)
 from provalume.interchange.hashing import canonical_json, hash_payload
 from provalume.interchange.signatures import Verifier
+from provalume.policy.admission import admit_event
 from provalume.policy.scope import confine
 from provalume.schemas.events import Event, EventType
 from provalume.schemas.memories import Memory, MemoryType, Transition
@@ -332,6 +338,10 @@ def record_to_event(record: dict[str, Any]) -> Event:
     Hash fields are left empty: the receiving journal recomputes ``payload_hash``
     and assigns a fresh position in its own chain. The exported ``payload_hash``
     is used only to detect conflicts, never adopted verbatim.
+
+    The returned event has **not** been admitted. It is a parse of untrusted
+    input, and :func:`import_directory` puts it through
+    :func:`provalume.policy.admission.admit_event` before it can reach a journal.
     """
     return Event(
         event_id=str(record["id"]),
@@ -357,8 +367,13 @@ def record_to_event(record: dict[str, Any]) -> Event:
         # promote itself to `kernel` by saying so (threat T17).
         source=Source.IMPORT,
         payload=dict(record.get("payload", {})),
-        redaction=dict(record.get("redaction", {})),
-        integrity=dict(record.get("integrity", {})),
+        # The file's `redaction` and `integrity` blocks are dropped rather than
+        # copied. Both are claims *about* Provalume's own processing — "this was
+        # redacted", "this scored 0.0 for poisoning" — and adopting them verbatim
+        # would let a hand-written file assert that a scan it never ran came back
+        # clean. `_landing_state` and the promotion gate read
+        # `integrity.poisoning.risk`, so a forged 0.0 there disables both.
+        # Admission recomputes each from the payload actually being stored.
     )
 
 
@@ -439,12 +454,20 @@ def import_directory(
     quarantine_unknown: bool = False,
     verifier: Verifier | None = None,
     root: Path | str | None = None,
+    poisoning_threshold: float = 0.5,
 ) -> ImportResult:
     """Import a JSONL export directory.
 
     ``existing_event_hashes`` maps ``event_id -> payload_hash`` for what the
     target already holds, so a duplicate can be told apart from a conflict
     without a query per line.
+
+    Every accepted event has been through :func:`admit_event`, so
+    ``result.events`` is safe to hand to a journal: redacted, poisoning-scanned,
+    within the size caps. Admission happens here rather than in the caller
+    because this is the only place that still knows which line of which file a
+    record came from, and a record that fails admission has to be reportable as
+    an :class:`ImportIssue` rather than an exception that aborts the file.
     """
     base = Path(directory)
     if root is not None:
@@ -576,7 +599,25 @@ def import_directory(
                                 )
                             )
                         continue
-                    result.events.append(record_to_event(record))
+                    # Admission, on the same terms as a locally recorded
+                    # event: validate, cap, redact, scan — then hash. Skipping
+                    # it here would put an unredacted credential on disk and
+                    # have the chain attest to it (threat T11), and would let
+                    # the file's own poisoning score stand in for one Provalume
+                    # never computed.
+                    try:
+                        admitted = admit_event(
+                            record_to_event(record),
+                            poisoning_threshold=poisoning_threshold,
+                        )
+                    except (OversizedInputError, ValidationError) as exc:
+                        result.rejected.append(
+                            ImportIssue(
+                                line_no, filename, f"failed admission: {exc}", record_id
+                            )
+                        )
+                        continue
+                    result.events.append(admitted.event)
                 elif kind == KIND_MEMORY:
                     result.memories.append(record_to_memory(record))
                 else:

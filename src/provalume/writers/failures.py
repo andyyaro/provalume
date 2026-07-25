@@ -292,6 +292,11 @@ def build_gotcha(
     content: dict[str, Any] = {
         "command": command,
         "error_kind": error_kind,
+        # What the command was *for*. Kept because a fix is often a different
+        # command achieving the same end, and purpose is the only recorded thing
+        # that links the two; without it, resolution can only be inferred from
+        # co-occurrence, which credits the wrong success.
+        "purpose": str(payload.get("purpose", "")),
         "excerpt": excerpt[:2000],
         "failure_signature": signature.value,
         "exit_code": payload.get("exit_code"),
@@ -337,6 +342,44 @@ def build_gotcha(
     return _with_content_hash(memory), signature
 
 
+def resolution_summary(
+    resolution: dict[str, Any], *, failed_command: str, quote_command: bool = False
+) -> str:
+    """Describe what resolved a failure, in one clause.
+
+    When the fix was a *different* command, that command is the answer and is
+    named. When the same command later passed, naming it is tautological — "what
+    later worked: the thing that failed" — and the useful datum is the one
+    recorded beside it and never surfaced: the commit the resolving run was at.
+    What changed was the tree, not the command.
+
+    A commit is a more precise anchor than a timestamp, so only one is shown;
+    both would be noise on a line that has to stay scannable.
+
+    Shared with :mod:`provalume.retrieval.preflight` so the stored text and the
+    rendered warning cannot drift apart.
+    """
+    command = str(resolution.get("command", "")).strip()
+    note = str(resolution.get("note", "")).strip()
+    commit = str(resolution.get("commit_sha") or "").strip()
+    when = str(resolution.get("recorded_at") or "").strip()
+
+    if command and normalize_command(command) != normalize_command(failed_command):
+        head = f"`{command}`" if quote_command else command
+    elif command:
+        head = "the same command passed"
+    else:
+        head = note
+
+    if not head:
+        return ""
+    if commit:
+        return f"{head} after commit {commit[:12]}"
+    if when:
+        return f"{head}, recorded {when}"
+    return head
+
+
 def build_resolution_link(
     *,
     gotcha: Memory,
@@ -355,10 +398,14 @@ def build_resolution_link(
         "recorded_at": resolution_event.recorded_at,
         "commit_sha": resolution_event.commit_sha,
     }
-    resolved_command = str(content["resolution"]["command"]).strip()
+    described = resolution_summary(
+        content["resolution"],
+        failed_command=str(content.get("command", "")),
+        quote_command=True,
+    )
     text = gotcha.text
-    if resolved_command and "What later worked" not in text:
-        text = f"{_sentence(text)} What later worked: `{resolved_command}`."
+    if described and "What later worked" not in text:
+        text = f"{_sentence(text)} What later worked: {described}."
 
     updated = gotcha.model_copy(
         update={

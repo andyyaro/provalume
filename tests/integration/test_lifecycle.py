@@ -35,9 +35,17 @@ def test_gotcha_is_verified_by_its_failure(pv: Provalume) -> None:
 
 
 def test_a_later_success_is_linked_as_the_resolution(pv: Provalume) -> None:
+    """A different command that achieved the same declared purpose is the fix.
+
+    The shared ``purpose`` is what makes it a link. Without one, two commands in
+    one task are only two commands in one task, and inferring a resolution from
+    that credits the wrong success.
+    """
     pv.record_verification(command=FAILING, passed=False, excerpt=EXCERPT,
-                           error_kind="test_failure", task_id="t1")
-    pv.record_verification(command=WORKING, passed=True, task_id="t1")
+                           error_kind="test_failure", purpose="the integration suite",
+                           task_id="t1")
+    pv.record_verification(command=WORKING, passed=True,
+                           purpose="the integration suite", task_id="t1")
 
     gotcha = pv.memory_records(memory_types=[MemoryType.GOTCHA])[0]
     assert gotcha.content["resolution"] is not None

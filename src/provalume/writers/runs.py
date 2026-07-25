@@ -145,6 +145,58 @@ def build_performance(
     return with_content_hash(memory)
 
 
+def merge_performance(stored: Memory, fresh: Memory) -> Memory | None:
+    """Fold a freshly accumulated bucket into the aggregate already on disk.
+
+    The live write path projects one event at a time, so ``fresh`` holds one
+    event's counts. Upserting it as-is — which is what a plain write does —
+    replaces "9 of 10 succeeded" with "1 of 1 succeeded", and the stored
+    aggregate then permanently disagrees with a rebuild from the same journal.
+    A statistic is about a series, so it has to accumulate across writes.
+
+    Returns ``None`` when there is nothing new to fold. Every event that
+    contributed is named in ``source_event_ids``, so re-projecting an event that
+    is already counted cannot inflate the numbers. Callers only ever offer a
+    bucket that is wholly new or wholly already counted — ``apply`` projects a
+    single event, ``catch_up`` starts past the watermark, and ``rebuild`` drops
+    the projections first — which is what makes that check exact.
+    """
+    already = set(stored.source_event_ids)
+    if set(fresh.source_event_ids) <= already:
+        return None
+
+    prior = stored.content
+    latest = fresh.content
+
+    def total(field: str) -> int:
+        return int(prior.get(field, 0) or 0) + int(latest.get(field, 0) or 0)
+
+    return build_performance(
+        project_id=fresh.scope.project_id,
+        repository_id=fresh.scope.repository_id,
+        agent_profile=str(latest.get("agent_profile", "")),
+        adapter=str(latest.get("adapter", "")),
+        model=str(latest.get("model", "")),
+        effort=str(latest.get("effort") or prior.get("effort") or ""),
+        task_category=str(latest.get("task_category", "")),
+        attempts=total("attempts"),
+        successes=total("successes"),
+        approvals=total("approvals"),
+        verifications=total("verifications"),
+        fallbacks=total("fallbacks"),
+        first_seen_at=min(
+            str(prior.get("first_seen_at") or latest["first_seen_at"]),
+            str(latest["first_seen_at"]),
+        ),
+        last_seen_at=max(
+            str(prior.get("last_seen_at") or latest["last_seen_at"]),
+            str(latest["last_seen_at"]),
+        ),
+        source_event_ids=tuple(sorted(already | set(fresh.source_event_ids))),
+        landing_state=fresh.trust_state,
+    )
+
+
 def _dominant_source(source_event_ids: tuple[str, ...]) -> Any:
     """Performance aggregates are derived by Provalume itself from kernel events.
 

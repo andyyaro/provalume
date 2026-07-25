@@ -213,8 +213,14 @@ class PreflightGate:
 
         resolution = memory.content.get("resolution")
         what_worked = ""
+        resolution_commit = ""
+        resolved_at = ""
         if isinstance(resolution, dict):
-            what_worked = str(resolution.get("command", "")) or str(resolution.get("note", ""))
+            what_worked = failures.resolution_summary(
+                resolution, failed_command=str(memory.content.get("command", ""))
+            )
+            resolution_commit = str(resolution.get("commit_sha") or "")
+            resolved_at = str(resolution.get("recorded_at") or "")
 
         provenance_bits: list[str] = []
         if memory.attempt_id:
@@ -243,6 +249,8 @@ class PreflightGate:
             previous_attempt=str(memory.content.get("command", "")) or memory.text[:200],
             failure_evidence=excerpt[:500] or memory.text[:500],
             what_later_worked=what_worked,
+            resolution_commit_sha=resolution_commit,
+            resolved_at=resolved_at,
             applicability=applicability,
             provenance="; ".join(provenance_bits) or applicability_reason,
             trust_state=memory.trust_state,
