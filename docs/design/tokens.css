@@ -1,0 +1,262 @@
+/* Provalume design tokens — light-first.
+ *
+ * Generated from tokens.json, which is the source of truth. See ADR-0018.
+ *
+ * Two hard accessibility rules are encoded below and verified by
+ * docs/design/contrast_check.py in CI:
+ *
+ *   1. --pv-gold never sets normal-size body text (3.04:1 on warm white).
+ *   2. --pv-gold never appears on either beige (2.70:1 / 2.40:1 — below even
+ *      the 3:1 non-text threshold).
+ *
+ * The verified state therefore renders as a gold-bordered badge on white with a
+ * black label, never as gold prose.
+ */
+
+:root {
+  /* ---- Palette ---------------------------------------------------------- */
+  --pv-warm-white: #fcfaf5;
+  --pv-white: #ffffff;
+  --pv-beige-soft: #e9dfc9;
+  --pv-beige-light: #f3ecdd;
+  --pv-black: #151515;
+  --pv-green: #3f684f;
+  --pv-mauve: #705468;
+  --pv-gold: #b28a45;
+
+  /* ---- Semantic roles -------------------------------------------------- */
+  --pv-surface: var(--pv-warm-white);
+  --pv-surface-raised: var(--pv-white);
+  --pv-surface-code: var(--pv-beige-light);
+  --pv-border: var(--pv-beige-soft);
+  --pv-text: var(--pv-black);
+  --pv-text-muted: #4a4a4a;
+
+  --pv-action: var(--pv-green);
+  --pv-success: var(--pv-green);
+  --pv-lineage: var(--pv-mauve);
+  --pv-provenance: var(--pv-mauve);
+  --pv-attested: var(--pv-gold);
+
+  /* Trust states. Colour is reinforcement; the label is the signal. */
+  --pv-trust-quarantined: var(--pv-black);
+  --pv-trust-observed: var(--pv-green);
+  --pv-trust-verified: var(--pv-gold);
+  --pv-trust-reviewed: var(--pv-gold);
+  --pv-trust-integrated: var(--pv-gold);
+  --pv-trust-invalidated: var(--pv-mauve);
+  --pv-trust-superseded: var(--pv-mauve);
+  --pv-trust-rejected: var(--pv-mauve);
+
+  /* ---- Typography ------------------------------------------------------ */
+  --pv-font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  --pv-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+  --pv-font-serif: ui-serif, Georgia, Cambria, "Times New Roman", serif;
+
+  --pv-text-xs: 0.75rem;
+  --pv-text-sm: 0.875rem;
+  --pv-text-base: 1rem;
+  --pv-text-lg: 1.125rem;
+  --pv-text-xl: 1.375rem;
+  --pv-text-2xl: 1.75rem;
+  --pv-text-3xl: 2.25rem;
+
+  --pv-weight-regular: 400;
+  --pv-weight-medium: 500;
+  --pv-weight-semibold: 600;
+
+  --pv-leading-tight: 1.25;
+  --pv-leading-normal: 1.6;
+  --pv-leading-relaxed: 1.75;
+
+  /* ---- Space, radius, border ------------------------------------------- */
+  --pv-space-1: 0.25rem;
+  --pv-space-2: 0.5rem;
+  --pv-space-3: 0.75rem;
+  --pv-space-4: 1rem;
+  --pv-space-6: 1.5rem;
+  --pv-space-8: 2rem;
+  --pv-space-12: 3rem;
+  --pv-space-16: 4rem;
+
+  --pv-radius-sm: 3px;
+  --pv-radius-md: 6px;
+  --pv-radius-lg: 10px;
+
+  --pv-border-hairline: 1px;
+  --pv-border-regular: 2px;
+  --pv-border-seal: 3px;
+}
+
+/* ---- Base ------------------------------------------------------------- */
+
+body {
+  background: var(--pv-surface);
+  color: var(--pv-text);
+  font-family: var(--pv-font-sans);
+  font-size: var(--pv-text-base);
+  line-height: var(--pv-leading-normal);
+}
+
+a {
+  color: var(--pv-action);
+  text-decoration-thickness: var(--pv-border-hairline);
+  text-underline-offset: 2px;
+}
+
+code,
+pre {
+  font-family: var(--pv-font-mono);
+  background: var(--pv-surface-code);
+  border-radius: var(--pv-radius-sm);
+}
+
+pre {
+  padding: var(--pv-space-4);
+  overflow-x: auto; /* wide content scrolls in its own box, never the page */
+  border: var(--pv-border-hairline) solid var(--pv-border);
+}
+
+hr {
+  border: 0;
+  border-top: var(--pv-border-hairline) solid var(--pv-border);
+}
+
+table {
+  border-collapse: collapse;
+}
+
+th {
+  background: var(--pv-beige-light);
+  border-bottom: var(--pv-border-regular) solid var(--pv-border);
+  text-align: left;
+}
+
+td,
+th {
+  padding: var(--pv-space-2) var(--pv-space-3);
+  border-bottom: var(--pv-border-hairline) solid var(--pv-border);
+}
+
+/* ---- Cards and seals -------------------------------------------------- */
+
+.pv-card {
+  background: var(--pv-surface-raised);
+  border: var(--pv-border-hairline) solid var(--pv-border);
+  border-radius: var(--pv-radius-lg);
+  padding: var(--pv-space-6);
+}
+
+/* ---- Trust badges ------------------------------------------------------
+ * Label text is always --pv-black. Colour lives in the border and never in
+ * the text, which is what keeps gold compliant and keeps the badge legible
+ * without colour.
+ */
+
+.pv-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pv-space-1);
+  font-size: var(--pv-text-sm);
+  font-weight: var(--pv-weight-medium);
+  padding: var(--pv-space-1) var(--pv-space-2);
+  border-radius: var(--pv-radius-sm);
+  border: var(--pv-border-regular) solid var(--pv-border);
+  background: var(--pv-surface-raised); /* never beige: gold fails on beige */
+  color: var(--pv-black);
+}
+
+.pv-badge--verified,
+.pv-badge--reviewed,
+.pv-badge--integrated {
+  border-color: var(--pv-gold);
+}
+
+.pv-badge--observed {
+  border-color: var(--pv-green);
+}
+
+.pv-badge--quarantined {
+  border-color: var(--pv-black);
+  border-style: dashed;
+}
+
+.pv-badge--invalidated,
+.pv-badge--superseded,
+.pv-badge--rejected {
+  border-color: var(--pv-mauve);
+  color: var(--pv-text-muted);
+  text-decoration: line-through;
+}
+
+/* An evidence seal: the strongest "this was attested" mark in the system.
+ * Gold on white at 3.17:1 — permitted as a non-text border. */
+.pv-seal {
+  display: inline-block;
+  border: var(--pv-border-seal) solid var(--pv-gold);
+  border-radius: 50%;
+  padding: var(--pv-space-2);
+  background: var(--pv-white);
+}
+
+/* Lineage: supersession and provenance chains. */
+.pv-lineage {
+  border-left: var(--pv-border-regular) solid var(--pv-lineage);
+  padding-left: var(--pv-space-3);
+  color: var(--pv-text);
+}
+
+/* The untrusted-data banner that opens every digest. Deliberately plain —
+ * it is a warning, not decoration. */
+.pv-untrusted-banner {
+  background: var(--pv-beige-light);
+  border-left: var(--pv-border-seal) solid var(--pv-mauve);
+  padding: var(--pv-space-3) var(--pv-space-4);
+  font-size: var(--pv-text-sm);
+}
+
+/* ---- Dark override ----------------------------------------------------
+ * DEFERRED and NOT the identity (ADR-0018). Provided so a viewer's dark
+ * preference is not actively hostile. Light is canonical: screenshots,
+ * social previews, and docs default to light.
+ */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --pv-surface: #171613;
+    --pv-surface-raised: #1f1e1a;
+    --pv-surface-code: #22201b;
+    --pv-border: #3a362e;
+    --pv-text: #f2eee5;
+    --pv-text-muted: #b3ac9e;
+    /* Accents lightened to hold contrast on a dark surface. */
+    --pv-green: #8fbd9f;
+    --pv-mauve: #c3a3b8;
+    --pv-gold: #d9b978;
+  }
+}
+
+:root[data-theme="dark"] {
+  --pv-surface: #171613;
+  --pv-surface-raised: #1f1e1a;
+  --pv-surface-code: #22201b;
+  --pv-border: #3a362e;
+  --pv-text: #f2eee5;
+  --pv-text-muted: #b3ac9e;
+  --pv-green: #8fbd9f;
+  --pv-mauve: #c3a3b8;
+  --pv-gold: #d9b978;
+}
+
+/* In dark mode the badge label must follow the surface, not stay black. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .pv-badge {
+    color: var(--pv-text);
+  }
+}
+
+:root[data-theme="dark"] .pv-badge {
+  color: var(--pv-text);
+}

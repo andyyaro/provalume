@@ -1,0 +1,41 @@
+name: Feature request
+description: Propose a capability
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The most useful feature requests name **the failure the feature would
+        have prevented**. Knowing which limitations actually bite in practice is
+        exactly the data this project lacks — see
+        [LIMITATIONS.md](../blob/main/docs/reference/LIMITATIONS.md).
+
+  - type: textarea
+    id: failure
+    attributes:
+      label: What went wrong that this would have prevented
+      description: A concrete incident is worth more than a general capability.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you have in mind
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Does this touch a standing commitment?
+      description: >
+        Six architectural commitments require a security review to change. Tick
+        any that apply; it is not disqualifying, it just changes the conversation.
+      options:
+        - label: Would put a language model in the write path
+        - label: Would expose promotion, invalidation, or supersession to MCP
+        - label: Would let a record's payload influence its own trust state
+        - label: Would allow cross-project promotion without human approval
+        - label: Would make vectors an authorisation gate
+        - label: Would serve semantic records as truth without landed history

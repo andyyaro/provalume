@@ -1,0 +1,149 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: test (${{ matrix.os }}, py${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python: ["3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python ${{ matrix.python }}
+        run: uv python install ${{ matrix.python }}
+
+      # The signatures and vectors extras are installed so their code paths are
+      # exercised. Neither is required at runtime; tests/security asserts that.
+      - name: Install
+        run: uv sync --python ${{ matrix.python }} --extra signatures --extra vectors
+
+      - name: Verify FTS5 is available
+        run: uv run python -c "import sqlite3; sqlite3.connect(':memory:').execute('CREATE VIRTUAL TABLE t USING fts5(x)'); print('fts5 ok')"
+
+      - name: Test
+        run: uv run pytest tests -q
+
+      - name: Evaluation harness
+        run: uv run provalume eval
+
+      - name: Demo (offline, no API key, no network)
+        run: uv run provalume demo
+
+  quality:
+    name: lint, types, security
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install
+        run: uv sync --extra signatures --extra vectors
+
+      - name: Ruff
+        run: uv run ruff check src tests
+
+      - name: mypy (strict)
+        run: uv run mypy
+
+      - name: Bandit
+        run: uv run bandit -q -c pyproject.toml -r src
+
+      - name: pip-audit
+        run: uv run pip-audit
+
+      - name: Design token contrast
+        run: uv run python docs/design/contrast_check.py
+
+  coverage:
+    name: coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install
+        run: uv sync --extra signatures --extra vectors
+
+      - name: Run with coverage
+        run: uv run pytest tests -q --cov=provalume --cov-report=json:coverage.json --cov-report=term
+
+      # The 85% target applies to the deterministic core, not to the CLI, the
+      # demo, or the eval harness, which are exercised end-to-end rather than
+      # line-by-line.
+      - name: Enforce deterministic-core coverage
+        run: |
+          uv run python - <<'PY'
+          import json, sys
+          data = json.load(open("coverage.json"))
+          core = ("src/provalume/schemas/", "src/provalume/store/",
+                  "src/provalume/policy/", "src/provalume/writers/",
+                  "src/provalume/retrieval/", "src/provalume/interchange/")
+          also = ("src/provalume/redact.py", "src/provalume/_ids.py",
+                  "src/provalume/_time.py", "src/provalume/errors.py",
+                  "src/provalume/sdk/client.py")
+          s = ms = b = mb = 0
+          for path, metrics in data["files"].items():
+              if path.startswith(core) or path in also:
+                  summary = metrics["summary"]
+                  s += summary["num_statements"]; ms += summary["missing_lines"]
+                  b += summary["num_branches"];   mb += summary["missing_branches"]
+          covered = (s + b - ms - mb) / (s + b) * 100
+          print(f"deterministic core branch-aware coverage: {covered:.1f}%")
+          if covered < 85.0:
+              sys.exit(f"below the 85% target ({covered:.1f}%)")
+          PY
+
+  package:
+    name: build and install both distributions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Build
+        run: uv build
+
+      - name: Validate metadata
+        run: uvx twine check --strict dist/*
+
+      # Installed separately so a wheel-only or sdist-only packaging mistake is
+      # caught here rather than by a user.
+      - name: Install and smoke-test the wheel
+        run: |
+          uv run --isolated --with ./dist/*.whl --no-project provalume --version
+          uv run --isolated --with ./dist/*.whl --no-project provalume demo
+
+      - name: Install and smoke-test the sdist
+        run: |
+          uv run --isolated --with ./dist/*.tar.gz --no-project provalume --version
+          uv run --isolated --with ./dist/*.tar.gz --no-project provalume doctor
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: distributions
+          path: dist/

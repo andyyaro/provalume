@@ -1,0 +1,158 @@
+# Event schema
+
+Events are the source of truth. Everything else is a projection.
+
+Field-by-field detail is in [`DATA_MODEL.md`](DATA_MODEL.md); this document lists
+the event types and what each one produces.
+
+---
+
+## The type set is closed
+
+Deliberately. Deterministic writers map event types to memory candidates, so an
+open-ended type would mean an event nothing knows how to project — stored, and
+silently inert.
+
+Adding a type means adding its writer and its tests. That friction is the point.
+
+## Run and task lifecycle
+
+| Type | Projects into |
+|---|---|
+| `run.started` | — |
+| `run.completed` | episodic |
+| `task.started` | — |
+| `task.completed` | episodic, performance |
+| `attempt.started` | — |
+| `attempt.completed` | episodic, performance |
+
+## Deterministic evidence
+
+**These are the events that can promote a memory.** Everything else records
+context.
+
+| Type | Projects into | Payload |
+|---|---|---|
+| `verification.passed` | procedural, episodic | `command`, `exit_code`, `purpose`, `duration_s` |
+| `verification.failed` | **gotcha**, episodic | `command`, `error_kind`, `excerpt`, `exit_code` |
+| `command.succeeded` | procedural, episodic | as above |
+| `command.failed` | gotcha, episodic | as above |
+
+A `verification.failed` event is what a gotcha is made of. The failure **is** the
+evidence, which is why a gotcha can be `trust_state=verified` with
+`verification_state=failed`.
+
+## Review
+
+| Type | Projects into | Payload |
+|---|---|---|
+| `review.approved` | promotes to `reviewed` | `reviewer`, `subject`, `findings` |
+| `review.rejected` | gotcha (lesson), episodic | `reviewer`, `subject`, `finding`, `files` |
+| `review.changes_requested` | gotcha (lesson), episodic | as above |
+| `review.finding` | gotcha | `finding`, `severity`, `reviewer`, `files` |
+
+`reviewer` is compared against the record's `author_agent`. A self-review never
+promotes, and the refusal is recorded.
+
+A review verdict attaches by attempt or task association to **claim types**
+(semantic, procedural, decision) only. To attach it to a gotcha or an episode, the
+reviewer must name that record's `subject` — because approving a fix is not
+approving the failure that prompted it.
+
+## Human authority
+
+| Type | Projects into | Payload |
+|---|---|---|
+| `human.decision` | **decision**, reaching `integrated` on authority | `question`, `selected`, `rejected`, `rationale`, `authority`, `consequences` |
+| `human.promotion` | explicit promotion | `memory_id`, `target` |
+| `human.invalidation` | invalidates | `memory_id`, `reason` |
+| `human.rejection` | rejects permanently | `memory_id`, `reason` |
+
+`rejected` is the reusable part of a decision: without it, nothing stops an agent
+re-proposing what was already turned down.
+
+A decision has no command to verify, so the human decision event is its evidence
+at every rung. The rungs are still walked and still recorded — what differs is
+what counts as evidence, not whether evidence is required.
+
+## Git
+
+| Type | Effect | Payload |
+|---|---|---|
+| `integration.landed` | Marks claim-type records landed; enables `integrated` | `target` (`run` or `user`), `branch`; `commit_sha` on the envelope |
+| `integration.reverted` | Invalidates what it landed | `branch` |
+| `commit.recorded` | Records a commit | — |
+| `branch.rejected` | **Rejects every record on that branch, permanently** | `branch` |
+
+`branch.rejected` is how abandoned work stops being truth while remaining
+available as negative experience.
+
+## Facts
+
+| Type | Projects into | Payload |
+|---|---|---|
+| `fact.observed` | semantic | `statement`, `subject`, `category`, `evidence` |
+| `fact.changed` | semantic, superseding the prior fact | as above, plus `replaces` |
+
+`fact.changed` supersedes rather than overwrites. Without `replaces`, the
+predecessor is found by matching `subject_key`.
+
+## Agent-sourced — always untrusted
+
+| Type | Projects into |
+|---|---|
+| `agent.proposal` | a quarantined memory of the requested type |
+| `agent.observation` | quarantined semantic |
+| `agent.failure_report` | quarantined gotcha |
+| `agent.outcome_report` | quarantined episodic |
+
+`source=agent` and the trust ceiling is `observed`; the landing state is
+`quarantined`. Nothing in the payload changes that — a payload claiming
+`{"verified": true, "confidence": "high"}` is payload.
+
+## Warning feedback
+
+| Type | Purpose |
+|---|---|
+| `warning.shown` | The gate warned |
+| `warning.heeded` | The agent changed course |
+| `warning.ignored` | It proceeded anyway |
+| `warning.false_positive` | The warning was wrong |
+
+These make the preflight gate's usefulness measurable rather than assumed. A gate
+nobody can evaluate is a gate nobody should trust.
+
+## Interface audit
+
+| Type | Purpose |
+|---|---|
+| `mcp.call` | An MCP tool ran |
+| `mcp.refused` | An MCP tool call was refused |
+| `import.applied` / `import.rejected` | Interchange outcomes |
+
+Refusals are recorded because a refused call is a security signal, and a
+silently-dropped one is what an attacker wants.
+
+## Recording events
+
+The SDK's helpers cover the common cases and set `source` correctly:
+
+```python
+pv.record_verification(command=..., passed=..., excerpt=..., error_kind=...)
+pv.record_review(reviewer=..., approved=..., subject=..., finding=...)
+pv.record_decision(selected=..., rejected=[...], rationale=..., authority=...)
+pv.record_fact(subject=..., statement=..., changed=False)
+pv.record_integration(commit_sha=..., target="user")
+pv.propose(text=..., memory_type=..., agent=...)     # always quarantined
+```
+
+For anything else:
+
+```python
+pv.record_event(EventType.RUN_COMPLETED, source=Source.KERNEL,
+                payload={"outcome": "completed", "task_count": 4}, run_id="run-1")
+```
+
+`record_event` is the only path into the journal, and it runs the full admission
+pipeline — validation, size caps, redaction, poisoning scan — before anything
+durable happens. `Event.create` alone cannot persist.
