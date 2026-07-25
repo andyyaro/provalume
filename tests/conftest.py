@@ -74,7 +74,10 @@ def git_repo(tmp_path: Path) -> Path:
             timeout=30,
         ).stdout.strip()
 
-    git("init", "-q")
+    # -b main: `git init` alone yields `master` or `main` depending on the git
+    # version and the machine's init.defaultBranch, and a test that assumes one
+    # fails on the other.
+    git("init", "-q", "-b", "main")
     git("config", "user.email", "test@provalume.invalid")
     git("config", "user.name", "Test")
     git("config", "commit.gpgsign", "false")
