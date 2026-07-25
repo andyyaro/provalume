@@ -281,7 +281,6 @@ class Journal:
         """
         problems: list[str] = []
         prev_hash = ""
-        checked = 0  # stays 0 when the journal is empty; enumerate rebinds it
 
         for checked, event in enumerate(self.iter_all(), start=1):
             expected_payload = hash_payload(event.payload)
@@ -309,6 +308,7 @@ class Journal:
             prev_hash = event.event_hash
             if limit is not None and checked >= limit:
                 return problems
+
 
         stored_head, stored_seq, stored_count = self.head()
         actual_count = self.count()
