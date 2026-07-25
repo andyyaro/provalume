@@ -24,7 +24,8 @@ CLI = [sys.executable, "-m", "provalume.cli.main"]
 class CliRunner(Protocol):
     def __call__(
         self, *args: str, cwd: Path, expect: int | None = 0
-    ) -> subprocess.CompletedProcess[str]: ...
+    ) -> subprocess.CompletedProcess[str]:
+        """Run the CLI and return the completed process."""
 
 
 @pytest.fixture
