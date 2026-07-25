@@ -57,7 +57,9 @@ def _init_repo(path: Path) -> str:
             timeout=30,
         ).stdout.strip()
 
-    git("init", "-q")
+    # -b main so the branch the demo reports matches the branch it created,
+    # whatever the machine's init.defaultBranch happens to be.
+    git("init", "-q", "-b", "main")
     git("config", "user.email", "demo@provalume.invalid")
     git("config", "user.name", "Provalume Demo")
     git("config", "commit.gpgsign", "false")

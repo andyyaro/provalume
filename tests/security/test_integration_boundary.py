@@ -269,7 +269,7 @@ def test_git_add_all_stages_nothing_generated(tmp_path: Path) -> None:
             capture_output=True, text=True, check=True, timeout=30,
         ).stdout
 
-    git("init", "-q")
+    git("init", "-q", "-b", "main")
     git("config", "user.email", "t@e.st")
     git("config", "user.name", "T")
     (tmp_path / "code.py").write_text("print('work')\n")
