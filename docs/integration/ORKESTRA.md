@@ -129,6 +129,42 @@ other's case.
 `safe_digest` and `safe_preflight` implement fail-open. Provenance fail-closed is
 inside retrieval, not the caller's problem.
 
+### Two ways fail-open gets implemented wrong
+
+Both of these were live bugs in the reference integration, found by Orkestra's
+suite and by reading the diff. They are worth stating because neither is
+obvious, and both survive code review easily.
+
+**A guard must cover argument construction, not just the call.** This is not a
+guard:
+
+```python
+if self._memory is not None:
+    self._memory.record_verification(
+        command=command,
+        agent=task.assignment.agent,   # AttributeError raised HERE
+    )
+```
+
+The arguments are evaluated before the call, so a fault in building them escapes
+the memory layer entirely and crashes the run. Wrap the whole interaction:
+
+```python
+with self._remember() as mem:      # contextlib.suppress(Exception) around a yield
+    if mem is not None:
+        mem.record_verification(command=command, agent=agent)
+```
+
+**Swallowing errors hides your own defects too.** The reference integration
+closed memory in a `finally`, which fires before the code following the `try` —
+so the run-completion write went to a closed client, got swallowed, and never
+recorded. Nothing failed; the data was simply never there.
+
+Fail-open is still the right policy. But it means the wiring needs tests that
+assert a write **happened**, not merely that nothing raised. Verify such a test
+by reintroducing the bug and confirming it fails — a regression test that passes
+against the broken code is worse than none.
+
 ## The generated-file trap
 
 `WorkspaceManager.commit_workspace()` calls `add_all_and_commit()` — a
