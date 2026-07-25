@@ -57,7 +57,6 @@ class Embedder(Protocol):
 
     def embed(self, texts: Sequence[str]) -> list[list[float]]:
         """Embed a batch. Must be deterministic for the same model and input."""
-        ...
 
 
 class HashingEmbedder:

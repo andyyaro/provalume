@@ -31,6 +31,7 @@ from provalume.schemas.events import Event, EventFilter, EventType
 from provalume.schemas.memories import Memory, MemoryFilter, MemoryType, Transition
 from provalume.schemas.provenance import Provenance
 from provalume.schemas.retrieval import (
+    DEFAULT_RANKING_POLICY,
     Digest,
     PreflightResult,
     RankingPolicy,
@@ -110,7 +111,7 @@ class Provalume:
         self.db = db
         self.project_id = project_id
         self.repository_id = repository_id
-        self.policy = policy or RankingPolicy()
+        self.policy = policy or DEFAULT_RANKING_POLICY
         self.git = git
         self.poisoning_threshold = poisoning_threshold
 

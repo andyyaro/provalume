@@ -249,12 +249,16 @@ def test_cleanup_refuses_a_file_whose_sentinel_is_missing(tmp_path: Path) -> Non
 
 def test_the_context_manager_cleans_up_after_an_exception(tmp_path: Path) -> None:
     """A crashed task must not leave a file for `git add -A` to sweep up."""
-    with pytest.raises(RuntimeError, match="simulated"), generic.materialized(
-        make_digest(), tmp_path, vendors=("codex", "claude")
-    ) as result:
-        assert result.written
-        msg = "simulated task failure"
-        raise RuntimeError(msg)
+    def materialize_then_fail() -> None:
+        with generic.materialized(
+            make_digest(), tmp_path, vendors=("codex", "claude")
+        ) as result:
+            assert result.written
+            msg = "simulated task failure"
+            raise RuntimeError(msg)
+
+    with pytest.raises(RuntimeError, match="simulated"):
+        materialize_then_fail()
 
     assert not (tmp_path / "AGENTS.md").exists()
     assert not (tmp_path / "CLAUDE.md").exists()
