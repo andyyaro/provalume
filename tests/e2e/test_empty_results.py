@@ -11,12 +11,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from tests.e2e.test_cli import run
+import pytest
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-import pytest
+    from tests.e2e.conftest import CliRunner
 
 
 @pytest.fixture
@@ -31,16 +31,16 @@ def db_holding_dogfood(tmp_path: Path) -> Path:
     return db
 
 
-def test_an_empty_database_says_it_is_empty(tmp_path: Path) -> None:
-    result = run("events", "--db", str(tmp_path / "fresh.db"), "--project", "any", cwd=tmp_path)
+def test_an_empty_database_says_it_is_empty(tmp_path: Path, cli: CliRunner) -> None:
+    result = cli("events", "--db", str(tmp_path / "fresh.db"), "--project", "any", cwd=tmp_path)
 
     assert "empty" in result.stdout.lower()
 
 
 def test_a_project_mismatch_names_the_projects_that_do_exist(
-    tmp_path: Path, db_holding_dogfood: Path
+    tmp_path: Path, db_holding_dogfood: Path, cli: CliRunner
 ) -> None:
-    result = run("events", "--db", str(db_holding_dogfood), "--project", "wrong-name", cwd=tmp_path)
+    result = cli("events", "--db", str(db_holding_dogfood), "--project", "wrong-name", cwd=tmp_path)
 
     # The three things a reader needs: what was asked for, what is actually
     # there, and how to fix it.
@@ -51,15 +51,17 @@ def test_a_project_mismatch_names_the_projects_that_do_exist(
 
 @pytest.mark.parametrize("command", [["memories"], ["recall", "anything"]])
 def test_memories_and_recall_explain_a_mismatch_too(
-    tmp_path: Path, db_holding_dogfood: Path, command: list[str]
+    tmp_path: Path, db_holding_dogfood: Path, command: list[str], cli: CliRunner
 ) -> None:
-    result = run(*command, "--db", str(db_holding_dogfood), "--project", "wrong-name", cwd=tmp_path)
+    result = cli(*command, "--db", str(db_holding_dogfood), "--project", "wrong-name", cwd=tmp_path)
 
     assert "dogfood" in result.stdout
 
 
-def test_a_real_match_still_lists_normally(tmp_path: Path, db_holding_dogfood: Path) -> None:
-    result = run("events", "--db", str(db_holding_dogfood), "--project", "dogfood", cwd=tmp_path)
+def test_a_real_match_still_lists_normally(
+    tmp_path: Path, db_holding_dogfood: Path, cli: CliRunner
+) -> None:
+    result = cli("events", "--db", str(db_holding_dogfood), "--project", "dogfood", cwd=tmp_path)
 
     assert "verification.failed" in result.stdout
     assert "empty" not in result.stdout.lower()
