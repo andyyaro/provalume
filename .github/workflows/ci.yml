@@ -143,7 +143,7 @@ jobs:
           uv run --isolated --with ./dist/*.tar.gz --no-project provalume --version
           uv run --isolated --with ./dist/*.tar.gz --no-project provalume doctor
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: distributions
           path: dist/
