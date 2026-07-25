@@ -2,7 +2,7 @@
 
 **Project:** Provalume — verified, git-aware memory for autonomous software agents
 **Session started:** 2026-07-25
-**Current phase:** 18–20 — GitHub publication, v0.1.0 release, PyPI Trusted Publishing
+**Status:** v0.1.0 released — published to PyPI through OIDC Trusted Publishing on 2026-07-25
 
 This file records what was actually done, what was verified, what was corrected,
 and what was deliberately not done. It is not a plan; it is evidence.
@@ -28,12 +28,12 @@ and what was deliberately not done. It is not a plan; it is evidence.
 | 12 — SDK, CLI, MCP | done | `sdk/client.py`, `cli/main.py`, `mcp/` (stdlib, no SDK dependency) |
 | 13 — Demo | done | `provalume demo` — 12 beats, offline, real engine |
 | 14 — Evaluation harness | done | 20 scenarios, baseline committed |
-| 15 — Orkestra integration | adapter done; **draft PR pending** | `integrations/orkestra.py`, `generic.py` |
-| 16 — Tests and security gates | done | 602 passed, 1 skipped; all gates green |
+| 15 — Orkestra integration | **done** — draft PR [orkestra#6](https://github.com/andyyaro/orkestra/pull/6), all 7 CI jobs green, not merged | `integrations/orkestra.py`, `generic.py` |
+| 16 — Tests and security gates | done | 664 passed, 1 skipped; all gates green |
 | 17 — Documentation | done | 30+ documents |
-| 18 — GitHub repository | **in progress** | — |
-| 19 — v0.1.0 release | **in progress** | — |
-| 20 — PyPI Trusted Publishing | **pending human action** | Workflow written; pending publisher must be configured |
+| 18 — GitHub repository | **done** — CI and CodeQL green, 0 open code-scanning alerts | — |
+| 19 — v0.1.0 release | **done** — annotated tag `v0.1.0`, GitHub release with both artifacts | — |
+| 20 — PyPI Trusted Publishing | **done** — published through OIDC, no API token; both artifacts carry PEP 740 attestations | `publish-to-pypi.yml` |
 
 ---
 
@@ -47,7 +47,7 @@ Run on 2026-07-25 against the working tree.
 | `mypy` (strict) | Success: no issues in 59 source files |
 | `bandit -c pyproject.toml -r src` | 0 findings (high 0, medium 0, low 0) |
 | `pip-audit` | No known vulnerabilities |
-| `pytest tests` | **602 passed, 1 skipped** |
+| `pytest tests` | **664 passed, 1 skipped** |
 | `provalume eval` | **20/20 scenarios passed** |
 | `docs/design/contrast_check.py` | All documented contrast constraints hold |
 | Deterministic-core branch coverage | **87.8%** (target 85%) |
@@ -232,10 +232,13 @@ raised.
 
 ## Known blockers
 
-**Phase 20 requires a human action.** PyPI Trusted Publishing needs a pending
-publisher configured before the first release can be published. Exact values are
-in the completion report; the workflow (`publish-to-pypi.yml`), the protected
-`pypi` environment, and the OIDC job are all in place and waiting.
+**Phase 20 is complete.** The pending publisher was configured, the tag
+`v0.1.0` triggered `publish-to-pypi.yml`, the protected `pypi` environment gate
+was approved by the repository owner, and both artifacts were published through
+GitHub OIDC. No PyPI API token was ever created. Both the wheel and the sdist
+carry PEP 740 attestations naming `andyyaro/provalume` and
+`publish-to-pypi.yml`, verifiable at
+`https://pypi.org/integrity/provalume/0.1.0/<filename>/provenance`.
 
 ---
 
