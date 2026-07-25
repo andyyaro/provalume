@@ -658,6 +658,12 @@ class Provalume:
         Imported records arrive ``source=import`` with an ``observed`` ceiling.
         Their claimed trust states are discarded and re-derived locally from
         evidence that also imported and also validated (threat T17).
+
+        A file is untrusted input, so its events cross into the journal through
+        the same admission pipeline as a locally recorded one — validation, size
+        caps, redaction, poisoning scan — run by :func:`jsonl.import_directory`
+        so a record that fails is reported as an issue rather than aborting the
+        import.
         """
         existing = {
             e.event_id: e.payload_hash for e in self.journal.iter_all(project_id=self.project_id)
@@ -669,6 +675,7 @@ class Provalume:
             allow_foreign_project=allow_foreign_project,
             quarantine_unknown=quarantine_unknown,
             verifier=verifier,
+            poisoning_threshold=self.poisoning_threshold,
         )
         if apply and result.events:
             self.journal.append_many(result.events)

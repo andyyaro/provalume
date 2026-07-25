@@ -301,7 +301,16 @@ class PreflightMatch(BaseModel):
     failure_evidence: str = ""
     what_later_worked: str = ""
     """Empty when nothing is linked yet — an unresolved trap, which is worth
-    saying out loud rather than leaving blank."""
+    saying out loud rather than leaving blank. When the resolving command is the
+    command that failed, this states the commit rather than repeating the command
+    back, because the command is not what changed."""
+
+    resolution_commit_sha: str = ""
+    """The commit the resolving run was at, when one is recorded. Carried
+    separately so a caller can diff against it rather than parse the sentence."""
+
+    resolved_at: str = ""
+    """When the resolution was recorded."""
 
     applicability: Applicability = Applicability.UNCERTAIN
     provenance: str = ""

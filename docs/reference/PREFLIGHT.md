@@ -31,6 +31,26 @@ A similar approach failed previously.
 Every line is evidence. The gate says what happened; it does not tell the agent
 what to do.
 
+## "What later worked"
+
+Two shapes, because the fix is not always a different command.
+
+When a *different* command resolved the failure — as above — that command is the
+answer, and it is what the line names.
+
+When the **same** command later passed, naming it would be tautological: the
+command is not what changed, the tree is. The line names the commit the
+resolving run was at instead.
+
+```
+  What later worked  the same command passed after commit 4f2a91c0d3e5
+```
+
+`PreflightMatch` carries `resolution_commit_sha` and `resolved_at` alongside the
+sentence, so a caller can diff against the commit rather than parse the prose.
+When no commit was recorded — Git unavailable, for instance — the line falls back
+to the time the resolution was recorded.
+
 ## Warning, not blocking
 
 **Default behaviour is to warn.** Memory must not acquire veto power over an

@@ -4,6 +4,49 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versioning: [semantic versioning](https://semver.org/spec/v2.0.0.html), with the
 pre-1.0 caveat that `0.x` minor bumps may break the SDK.
 
+## [Unreleased]
+
+Found by continued dogfooding. The shared shape: every unit test passed, every
+event recorded, and the feature still did nothing — or did the wrong thing — in
+a real run.
+
+### Fixed
+
+**Imported events bypassed admission.** `import_records()` appended straight to
+the journal, so a JSONL file was never redacted, never poisoning-scanned, and
+never size-capped, and its own `redaction` / `integrity` blocks were adopted as
+if Provalume had produced them — which meant a file could assert `risk: 0.0` and
+switch off the promotion gate that reads it. Imported events now cross the same
+admission boundary as a locally recorded one, and a record that fails admission
+is reported as an import issue rather than raised. Threat T11.
+
+**A file could withdraw the recipient's own memories.** `human.rejection`,
+`human.invalidation` and `branch.rejected` acted on whatever their payload
+named, with no check on the event's source and no check that the memory belonged
+to the event's project. `rejected` is terminal, so a two-line export could
+permanently withdraw a verified memory with no way back. Withdrawal now requires
+a human or kernel source and a matching project. Threats T9, T17.
+
+**Live performance aggregates disagreed with a rebuild.** `Projector.apply()`
+built a fresh accumulator per event, so each write replaced the aggregate with
+one event's counts: an agent with a 1-in-10 success rate was served, at
+`verified`, as "1/1 succeeded (100%)". Only `rebuild` computed the real figure,
+and `audit(deep=True)` could not see the difference. Aggregates now merge into
+what is stored, idempotently.
+
+**A success was recorded as the fix for unrelated failures.** Resolution was
+inferred from nothing but a shared task or run, so the first passing gate in a
+task was written into every other open gotcha as "What later worked" — a false
+sentence, hashed into `content_hash`, that also closed the signature so the
+genuine fix could never attach. Inference now requires the same command or the
+same declared `purpose`, which is recorded on the gotcha.
+
+**"What later worked" repeated the command that failed.** When the fix is the
+same command passing later, naming it is tautological: the command is not what
+changed. The warning now names the resolving commit, which was recorded all
+along and surfaced nowhere. `PreflightMatch` carries `resolution_commit_sha` and
+`resolved_at`.
+
 ## [0.1.1] — 2026-07-25
 
 Found by dogfooding: driving a real orchestration run through failure, a real

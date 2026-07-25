@@ -25,7 +25,7 @@ def seeded(pv: Provalume) -> Provalume:
     pv.record_verification(
         command="pytest -n auto tests/integration", passed=False,
         excerpt="E TimeoutError: deadlock in db fixture", error_kind="test_failure",
-        task_id="t1", agent_profile="agent-A",
+        purpose="the integration suite", task_id="t1", agent_profile="agent-A",
     )
     pv.record_verification(
         command="pytest -p no:xdist tests/integration", passed=True,

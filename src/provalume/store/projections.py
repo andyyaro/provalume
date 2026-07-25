@@ -59,6 +59,17 @@ _EPISODIC_EVENTS = frozenset(
 )
 
 
+#: Sources permitted to withdraw an existing memory — to invalidate it, or to
+#: reject it along with its branch. Withdrawal is the mirror image of promotion
+#: and needs the same structural gate: `rejected` is terminal, with no
+#: revalidation path (:data:`provalume.policy.promotion.REFUSE_REJECTED`), so an
+#: ungated handler lets a two-line JSONL file permanently withdraw the
+#: recipient's own verified memories. An import arrives ``source=import``
+#: precisely so a file cannot promote itself (threat T17); nothing about that
+#: reasoning is specific to the upward direction.
+_WITHDRAWAL_SOURCES = frozenset({Source.HUMAN, Source.KERNEL})
+
+
 @dataclass
 class ProjectionStats:
     """What a projection run did. Returned so callers can report honestly."""
@@ -308,15 +319,26 @@ class Projector:
     ) -> None:
         """Attach a success as the resolution of an unresolved failure.
 
-        Matching is on the *purpose* rather than the command: a fix is usually a
-        *different* command that achieved the same end, so matching on command
-        equality would almost never fire. Only unresolved signatures in the same
-        task or run are considered, which keeps an unrelated later success from
-        claiming credit for someone else's failure.
+        Inference needs a real link, not merely co-occurrence. Two count: the
+        same command now passing, and a *different* command declaring the same
+        ``purpose`` — a fix is often a different command that achieved the same
+        end, which is why purpose is carried on the gotcha at all.
+
+        Scope alone is not a link. Under an orchestrator every gate in a task —
+        lint, types, tests — shares a ``task_id``, so a bare scope match wrote
+        the first success into *every* open gotcha as "what later worked". That
+        sentence is false, it is hashed into ``content_hash``, and it cannot be
+        corrected later, because the signature is marked resolved at the same
+        moment and the genuine fix is then refused.
+
+        Several genuine matches are possible — one command can fail twice with
+        different errors, and one success resolves both — so this does not stop
+        at the first.
         """
         scope_id = event.task_id or event.run_id
         if not scope_id:
             return
+        purpose = str(event.payload.get("purpose", "")).strip().lower()
         for row in self.repository.all_signatures(event.project_id):
             if row.get("resolved_by_id"):
                 continue
@@ -326,6 +348,8 @@ class Projector:
             if (prior.task_id or prior.run_id) != scope_id:
                 continue
             if prior.content.get("resolution"):
+                continue
+            if not _resolves(prior, command=command, purpose=purpose):
                 continue
             updated = failures.build_resolution_link(gotcha=prior, resolution_event=event)
             self._write(updated, stats, update=True)
@@ -523,6 +547,8 @@ class Projector:
         reusable thing memory holds; what must never happen is that lesson being
         served as current fact (threat T5).
         """
+        if not self._may_withdraw(event, stats):
+            return
         # `or` rather than a dict default: callers routinely pass an explicit
         # empty branch, and `.get(k, default)` returns the empty string rather
         # than falling back, which silently matched nothing.
@@ -557,10 +583,10 @@ class Projector:
     def _on_human_invalidation(
         self, event: Event, landing: TrustState, stats: ProjectionStats
     ) -> None:
-        memory_id = str(event.payload.get("memory_id", "")).strip()
-        memory = self.repository.get(memory_id) if memory_id else None
+        memory = self._withdrawal_target(event, stats)
         if memory is None:
             return
+        memory_id = memory.memory_id
         decision = invalidation.can_invalidate(
             memory, rule=invalidation.RULE_INVALIDATE_HUMAN
         )
@@ -586,8 +612,7 @@ class Projector:
     def _on_human_rejection(
         self, event: Event, landing: TrustState, stats: ProjectionStats
     ) -> None:
-        memory_id = str(event.payload.get("memory_id", "")).strip()
-        memory = self.repository.get(memory_id) if memory_id else None
+        memory = self._withdrawal_target(event, stats)
         if memory is None:
             return
         decision = invalidation.can_reject(memory, rule=invalidation.RULE_REJECT_HUMAN)
@@ -608,6 +633,42 @@ class Projector:
             note=str(event.payload.get("reason", "")),
         )
         stats.rejections += 1
+
+    def _may_withdraw(self, event: Event, stats: ProjectionStats) -> bool:
+        """Whether this event carries the authority to withdraw a memory.
+
+        The refusal is recorded rather than silent: a shared export that tried
+        to reject the recipient's records is exactly what an operator wants to
+        hear about, and a handler that simply returned would leave no trace.
+        """
+        if event.source in _WITHDRAWAL_SOURCES:
+            return True
+        stats.notes.append(
+            f"{event.event_type.value} from {event.source} refused: only human "
+            "or kernel events may withdraw a memory"
+        )
+        return False
+
+    def _withdrawal_target(self, event: Event, stats: ProjectionStats) -> Memory | None:
+        """The memory a withdrawal event names, when it may act on it at all."""
+        if not self._may_withdraw(event, stats):
+            return None
+        memory_id = str(event.payload.get("memory_id", "")).strip()
+        memory = self.repository.get(memory_id) if memory_id else None
+        if memory is None:
+            return None
+        # `get` resolves an identifier, not a project. `project_id` is the
+        # isolation boundary (threat T9), so a database holding two projects —
+        # reachable through a second `Provalume(db, project_id=...)` or an
+        # `allow_foreign_project` import — must not let one withdraw the
+        # other's records.
+        if memory.scope.project_id != event.project_id:
+            stats.notes.append(
+                f"withdrawal refused for {memory_id}: it belongs to project "
+                f"{memory.scope.project_id!r}, not {event.project_id!r}"
+            )
+            return None
+        return memory
 
     def _on_proposal(self, event: Event, landing: TrustState, stats: ProjectionStats) -> None:
         """An agent proposed a memory. It lands quarantined, always.
@@ -940,8 +1001,21 @@ class Projector:
         stats: ProjectionStats,
     ) -> None:
         for key in sorted(accumulators):
-            for memory in accumulators[key].build(landing_state=TrustState.OBSERVED):
-                self._write(memory, stats)
+            for built in accumulators[key].build(landing_state=TrustState.OBSERVED):
+                # Merge rather than replace. `apply` accumulates a single event,
+                # so writing the built record as-is would restate the whole
+                # aggregate from that one event, and the live path would then
+                # disagree with `rebuild` over the same journal.
+                stored = self.repository.get(built.memory_id)
+                memory = built
+                if stored is not None:
+                    merged = runs.merge_performance(stored, built)
+                    if merged is None:
+                        # Every contributing event is already counted; restating
+                        # it would also record a second promotion for one rung.
+                        continue
+                    memory = merged
+                self._write(memory, stats, update=stored is not None)
                 # Performance aggregates are deterministic arithmetic over
                 # trusted outcome events, so they reach `verified` without a
                 # command having run.
@@ -955,6 +1029,20 @@ class Projector:
                     note="aggregated from recorded outcome events",
                 )
                 stats.promotions += 1
+
+
+def _resolves(gotcha: Memory, *, command: str, purpose: str) -> bool:
+    """Whether a success is plausibly the fix for this failure.
+
+    Deliberately narrow. A false negative leaves ``what_later_worked`` empty,
+    which the warning already says out loud; a false positive records a
+    fabricated fix and closes the signature, so the real one can never attach.
+    Both arguments arrive normalised by the caller.
+    """
+    if failures.normalize_command(str(gotcha.content.get("command", ""))) == command:
+        return True
+    prior = str(gotcha.content.get("purpose", "")).strip().lower()
+    return bool(purpose) and prior == purpose
 
 
 def _branch_filter(project_id: str, branch: str) -> Any:
