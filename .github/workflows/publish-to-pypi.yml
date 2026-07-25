@@ -1,0 +1,124 @@
+name: Publish to PyPI
+
+# Triggered only by an immutable release tag. Never by a branch push, never
+# manually with a version argument — the tag is the only thing that decides what
+# gets published.
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: verify before building
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install
+        run: uv sync --extra signatures --extra vectors
+
+      - name: Confirm the tag matches the packaged version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          packaged="$(uv run python -c 'import importlib.metadata as m; print(m.version("provalume"))')"
+          echo "tag=$tag packaged=$packaged"
+          if [ "$tag" != "$packaged" ]; then
+            echo "::error::tag $tag does not match packaged version $packaged"
+            exit 1
+          fi
+
+      - name: Ruff
+        run: uv run ruff check src tests
+      - name: mypy (strict)
+        run: uv run mypy
+      - name: Bandit
+        run: uv run bandit -q -c pyproject.toml -r src
+      - name: pip-audit
+        run: uv run pip-audit
+      - name: Test
+        run: uv run pytest tests -q
+      - name: Evaluation harness
+        run: uv run provalume eval
+
+  build:
+    name: build distributions
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Build wheel and sdist
+        run: uv build
+
+      - name: Validate metadata
+        run: uvx twine check --strict dist/*
+
+      - name: Install and smoke-test the wheel
+        run: |
+          uv run --isolated --with ./dist/*.whl --no-project provalume --version
+          uv run --isolated --with ./dist/*.whl --no-project provalume demo
+
+      - name: Install and smoke-test the sdist
+        run: |
+          uv run --isolated --with ./dist/*.tar.gz --no-project provalume --version
+          uv run --isolated --with ./dist/*.tar.gz --no-project provalume doctor
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: distributions
+          path: dist/
+
+  publish:
+    name: publish through OIDC
+    needs: build
+    runs-on: ubuntu-latest
+    # The protected environment is the human gate. Everything above this point
+    # runs without any elevated permission.
+    environment:
+      name: pypi
+      url: https://pypi.org/p/provalume
+    permissions:
+      # id-token: write is granted here and nowhere else in this repository.
+      # There is no long-lived PyPI API token: a token in a secret store is a
+      # token that can leak.
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: distributions
+          path: dist/
+
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          attestations: true
+
+  github-release:
+    name: create the GitHub release
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: distributions
+          path: dist/
+
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file <(awk '/^## \[/{n++} n==1' CHANGELOG.md) \
+            dist/*

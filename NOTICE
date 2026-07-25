@@ -1,0 +1,70 @@
+Provalume
+Copyright 2026 Andy Yaro
+
+This product includes software developed by Andy Yaro.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied. See the License for the
+specific language governing permissions and limitations under the License.
+
+-------------------------------------------------------------------------------
+Third-party notices
+-------------------------------------------------------------------------------
+
+Provalume contains no third-party source code. Its required runtime
+dependencies are used as libraries under their own licenses:
+
+  pydantic     MIT          https://github.com/pydantic/pydantic
+  typer        MIT          https://github.com/fastapi/typer
+  rich         MIT          https://github.com/Textualize/rich
+
+Optional extras, installed only when explicitly requested:
+
+  cryptography Apache-2.0 OR BSD-3-Clause  https://github.com/pyca/cryptography
+  numpy        BSD-3-Clause                https://github.com/numpy/numpy
+  model2vec    MIT                         https://github.com/MinishLab/model2vec
+  fastembed    Apache-2.0                  https://github.com/qdrant/fastembed
+
+-------------------------------------------------------------------------------
+Attribution of ideas (no code copied)
+-------------------------------------------------------------------------------
+
+Provalume's design was informed by reading the following projects and papers.
+No source code from any of them was copied, adapted, or vendored. See
+docs/research/COMPETITOR_TRIALS.md for the review that produced these notes and
+docs/adr/ for the decisions taken.
+
+  Bi-temporal facts with invalidation instead of deletion
+    Zep / Graphiti (Apache-2.0, https://github.com/getzep/graphiti) and
+    "Zep: A Temporal Knowledge Graph Architecture for Agent Memory"
+    (arXiv:2501.13956). Schema concept only.
+
+  Pre-action gate that warns before repeating a known-failed fix
+    ProjectMem (MIT, https://github.com/riponcm/projectmem),
+    arXiv:2606.12329. Concept only; Provalume's gate is an independent
+    implementation keyed on deterministic failure signatures.
+
+  Verify-before-promote for procedural memory
+    Voyager (arXiv:2305.16291) and Memp (arXiv:2508.06433).
+
+  Recency x usage x relevance scoring with usage-weighted decay
+    Generative Agents (arXiv:2304.03442) and MemoryBank (arXiv:2305.10250).
+
+  Reciprocal rank fusion over lexical and vector retrieval; single-file
+  SQLite substrate with FTS5 plus optional vectors
+    AIngram (Apache-2.0, https://github.com/bozbuilds/AIngram) as a published
+    reference architecture; RRF itself is from Cormack et al., 2009.
+
+  Memory governance as first-class metadata
+    MemOS (arXiv:2507.03724). Framing only.
+
+  Git-committed JSONL as the portable interchange layer with a database as
+  a rebuildable cache
+    Beads (MIT, https://github.com/steveyegge/beads).

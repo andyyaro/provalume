@@ -1,0 +1,54 @@
+name: Bug report
+description: Something behaves differently from what the documentation says
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing: several behaviours that look like bugs are deliberate.
+        See [SUPPORT.md](../blob/main/SUPPORT.md#things-that-are-working-as-intended)
+        — quarantined agent memory, semantic facts labelled "not established
+        truth", `uncertain` applicability after a rebase, and the absent MCP
+        promote tool are all intended.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you recorded, what you queried, what you expected, what you got.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction
+      description: The smallest sequence of commands or SDK calls that shows it.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: provalume doctor
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: audit
+    attributes:
+      label: provalume audit
+      description: >
+        Redact anything sensitive first — output can contain command strings and
+        paths.
+      render: shell
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: "provalume --version"
+    validations:
+      required: true

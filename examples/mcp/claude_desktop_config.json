@@ -1,0 +1,20 @@
+{
+  "_comment": [
+    "Provalume MCP server configuration.",
+    "Read tools plus propose. There is no promotion, invalidation, supersession,",
+    "or delete tool on the surface — not disabled, absent. See ADR-0012.",
+    "Use --read-only in shared or untrusted environments."
+  ],
+  "mcpServers": {
+    "provalume": {
+      "command": "provalume",
+      "args": ["serve-mcp"],
+      "cwd": "/absolute/path/to/your/project"
+    },
+    "provalume-read-only": {
+      "command": "provalume",
+      "args": ["serve-mcp", "--read-only", "--rate-limit", "30"],
+      "cwd": "/absolute/path/to/your/project"
+    }
+  }
+}

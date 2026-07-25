@@ -1,0 +1,273 @@
+{
+  "metrics": {
+    "context": {
+      "max_chars": 3764,
+      "mean_chars": 1743.3,
+      "samples": 3
+    },
+    "cross_scope_leakage": {
+      "denominator": 3,
+      "numerator": 0,
+      "rate": 0.0
+    },
+    "false_warnings": {
+      "denominator": 5,
+      "numerator": 0,
+      "rate": 0.0
+    },
+    "poisoning_success": {
+      "denominator": 5,
+      "numerator": 0,
+      "rate": 0.0
+    },
+    "procedure_reuse": {
+      "denominator": 1,
+      "numerator": 1,
+      "rate": 1.0
+    },
+    "rebuild_latency": {
+      "count": 1,
+      "max_ms": 2.268,
+      "median_ms": 2.268,
+      "p95_ms": 2.268
+    },
+    "recall_coverage": {
+      "denominator": 1,
+      "numerator": 1,
+      "rate": 1.0
+    },
+    "recall_precision": {
+      "denominator": 2,
+      "numerator": 2,
+      "rate": 1.0
+    },
+    "repeated_error": {
+      "denominator": 1,
+      "numerator": 0,
+      "rate": 0.0
+    },
+    "retrieval_latency": {
+      "count": 1,
+      "max_ms": 1.672,
+      "median_ms": 1.672,
+      "p95_ms": 1.672
+    },
+    "review_cycle_reduction": {
+      "denominator": 0,
+      "numerator": 0,
+      "rate": 0.0
+    },
+    "stale_memory": {
+      "denominator": 1,
+      "numerator": 0,
+      "rate": 0.0
+    },
+    "task_completion": {
+      "denominator": 0,
+      "numerator": 0,
+      "rate": 0.0
+    },
+    "verification_improvement": {
+      "denominator": 0,
+      "numerator": 0,
+      "rate": 0.0
+    },
+    "write_latency": {
+      "count": 1,
+      "max_ms": 1.879,
+      "median_ms": 1.879,
+      "p95_ms": 1.879
+    }
+  },
+  "note": "All figures are Provalume measured against Provalume on its own fixtures. No comparison against another system is made or implied.",
+  "pass_count": 20,
+  "passed": true,
+  "scenarios": [
+    {
+      "description": "A repeat of a known-failed fix is warned about",
+      "elapsed_ms": 2.61,
+      "failures": [],
+      "id": 1,
+      "name": "repeated-failed-fix",
+      "notes": [],
+      "passed": true
+    },
+    {
+      "description": "An environment gotcha is recalled later",
+      "elapsed_ms": 1.71,
+      "failures": [],
+      "id": 2,
+      "name": "environment-gotcha",
+      "notes": [],
+      "passed": true
+    },
+    {
+      "description": "An architecture decision and its rejected options survive",
+      "elapsed_ms": 1.34,
+      "failures": [],
+      "id": 3,
+      "name": "decision-recall",
+      "notes": [],
+      "passed": true
+    },
+    {
+      "description": "A superseded fact is not served as current truth",
+      "elapsed_ms": 1.78,
+      "failures": [],
+      "id": 4,
+      "name": "stale-fact",
+      "notes": [],
+      "passed": true
+    },
+    {
+      "description": "A branch-local fact does not leak to another branch",
+      "elapsed_ms": 0.9,
+      "failures": [],
+      "id": 5,
+      "name": "branch-isolation",
+      "notes": [],
+      "passed": true
+    },
+    {
+      "description": "Concurrent branches may disagree without corruption",
+      "elapsed_ms": 2.54,
+      "failures": [],
+      "id": 6,
+      "name": "contradictory-worktrees",
+      "notes": [
+        "both branch facts retained; neither destroyed the other"
+      ],
+      "passed": true
+    },
+    {
+      "description": "Rejected-branch knowledge never becomes project truth",
+      "elapsed_ms": 1.45,
+      "failures": [],
+      "id": 7,
+      "name": "rejected-not-truth",
+      "notes": [],
+      "passed": true
+    },
+    {
+      "description": "A procedure climbs the full evidence ladder",
+      "elapsed_ms": 3.29,
+      "failures": [],
+      "id": 8,
+      "name": "procedure-promotion",
+      "notes": [],
+      "passed": true
+    },
+    {
+      "description": "A human decision carries project authority",
+      "elapsed_ms": 1.51,
+      "failures": [],
+      "id": 9,
+      "name": "human-decision",
+      "notes": [],
+      "passed": true
+    },
+    {
+      "description": "Secrets are redacted before the durable write",
+      "elapsed_ms": 2.84,
+      "failures": [],
+      "id": 10,
+      "name": "sensitive-isolation",
+      "notes": [],
+      "passed": true
+    },
+    {
+      "description": "Adversarial records never exceed observed",
+      "elapsed_ms": 2.96,
+      "failures": [],
+      "id": 11,
+      "name": "poisoning",
+      "notes": [],
+      "passed": true
+    },
+    {
+      "description": "The digest budget is a hard ceiling",
+      "elapsed_ms": 47.56,
+      "failures": [],
+      "id": 12,
+      "name": "context-budget",
+      "notes": [],
+      "passed": true
+    },
+    {
+      "description": "Projections rebuild identically from the journal",
+      "elapsed_ms": 6.1,
+      "failures": [],
+      "id": 13,
+      "name": "rebuild",
+      "notes": [],
+      "passed": true
+    },
+    {
+      "description": "Export is deterministic and import refuses conflicts",
+      "elapsed_ms": 9.13,
+      "failures": [],
+      "id": 14,
+      "name": "jsonl-merge",
+      "notes": [],
+      "passed": true
+    },
+    {
+      "description": "A query never returns another project's records",
+      "elapsed_ms": 1.44,
+      "failures": [],
+      "id": 15,
+      "name": "cross-project",
+      "notes": [],
+      "passed": true
+    },
+    {
+      "description": "Withdrawn records remain retrievable as history",
+      "elapsed_ms": 2.95,
+      "failures": [],
+      "id": 16,
+      "name": "historical-recall",
+      "notes": [],
+      "passed": true
+    },
+    {
+      "description": "Agent outcomes aggregate into performance memory",
+      "elapsed_ms": 4.16,
+      "failures": [],
+      "id": 17,
+      "name": "agent-performance",
+      "notes": [],
+      "passed": true
+    },
+    {
+      "description": "A recurring reviewer finding is retrievable",
+      "elapsed_ms": 2.15,
+      "failures": [],
+      "id": 18,
+      "name": "reviewer-finding",
+      "notes": [],
+      "passed": true
+    },
+    {
+      "description": "Unrelated actions do not trigger warnings",
+      "elapsed_ms": 2.05,
+      "failures": [],
+      "id": 19,
+      "name": "false-positives",
+      "notes": [],
+      "passed": true
+    },
+    {
+      "description": "Hybrid retrieval runs and cannot bypass governance",
+      "elapsed_ms": 55.53,
+      "failures": [],
+      "id": 20,
+      "name": "lexical-vs-hybrid",
+      "notes": [
+        "lexical 6, vector 6, fused 6 \u2014 plumbing only; the baseline embedder is non-semantic by design"
+      ],
+      "passed": true
+    }
+  ],
+  "summary": "20/20 scenarios passed",
+  "total": 20
+}

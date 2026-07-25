@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/andyyaro/provalume/security/advisories/new
+    about: Please report vulnerabilities privately, not as a public issue.
+  - name: How do I ...?
+    url: https://github.com/andyyaro/provalume/blob/main/SUPPORT.md
+    about: Diagnostics, common questions, and behaviours that are working as intended.
