@@ -121,9 +121,7 @@ class Provalume:
             self.journal, self.memories, poisoning_threshold=poisoning_threshold
         )
         self.engine = RetrievalEngine(db, self.memories, policy=self.policy, git=git)
-        self.gate = PreflightGate(
-            self.memories, git=git, allow_blocking=allow_blocking_preflight
-        )
+        self.gate = PreflightGate(self.memories, git=git, allow_blocking=allow_blocking_preflight)
         self.auditor = Auditor(db, self.journal, self.memories)
 
     # -- construction ------------------------------------------------------
@@ -238,9 +236,18 @@ class Provalume:
         exit_code: int | None = None,
         excerpt: str = "",
         purpose: str = "",
+        resolves_signature: str = "",
         **fields: Any,
     ) -> Event:
-        """Record a verification result — the primary evidence event."""
+        """Record a verification result — the primary evidence event.
+
+        ``resolves_signature`` names a failure signature this success resolves.
+        Supply it when a command that previously failed now passes: without it,
+        resolution is only inferred within the same task or run, and a failure
+        that is escalated, fixed by a human, and re-run in a *later* run never
+        gets linked. The gotcha then warns forever about something that was
+        fixed, and ``what_later_worked`` stays empty.
+        """
         return self.record_event(
             EventType.VERIFICATION_PASSED if passed else EventType.VERIFICATION_FAILED,
             source=Source.KERNEL,
@@ -249,6 +256,7 @@ class Provalume:
                 "exit_code": exit_code if exit_code is not None else (0 if passed else 1),
                 "excerpt": excerpt,
                 "purpose": purpose,
+                **({"resolves_signature": resolves_signature} if resolves_signature else {}),
                 **({"error_kind": fields.pop("error_kind")} if "error_kind" in fields else {}),
             },
             **fields,
@@ -414,8 +422,7 @@ class Provalume:
             policy_rule=decision.rule,
             actor=actor,
             actor_source=source,
-            evidence_event_ids=decision.evidence_event_ids
-            or tuple(e.event_id for e in evidence),
+            evidence_event_ids=decision.evidence_event_ids or tuple(e.event_id for e in evidence),
             scope=memory.scope.describe(),
             allowed=decision.allowed,
             note=note or decision.reason,
@@ -653,8 +660,7 @@ class Provalume:
         evidence that also imported and also validated (threat T17).
         """
         existing = {
-            e.event_id: e.payload_hash
-            for e in self.journal.iter_all(project_id=self.project_id)
+            e.event_id: e.payload_hash for e in self.journal.iter_all(project_id=self.project_id)
         }
         result = jsonl.import_directory(
             directory,

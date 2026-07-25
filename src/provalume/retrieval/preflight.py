@@ -147,9 +147,7 @@ class PreflightGate:
                             memory,
                             occurrences=1,
                             confidence=CONFIDENCE_REJECTED_ALTERNATIVE,
-                            reasons=(
-                                f"a recorded decision already rejected {alternative!r}",
-                            ),
+                            reasons=(f"a recorded decision already rejected {alternative!r}",),
                             commit_sha=commit_sha,
                         )
                     )
@@ -216,9 +214,7 @@ class PreflightGate:
         resolution = memory.content.get("resolution")
         what_worked = ""
         if isinstance(resolution, dict):
-            what_worked = str(resolution.get("command", "")) or str(
-                resolution.get("note", "")
-            )
+            what_worked = str(resolution.get("command", "")) or str(resolution.get("note", ""))
 
         provenance_bits: list[str] = []
         if memory.attempt_id:
@@ -230,9 +226,7 @@ class PreflightGate:
         if memory.commit_sha:
             provenance_bits.append(f"commit {memory.commit_sha[:12]}")
 
-        excerpt = str(memory.content.get("excerpt", "")) or str(
-            memory.content.get("finding", "")
-        )
+        excerpt = str(memory.content.get("excerpt", "")) or str(memory.content.get("finding", ""))
 
         # A record whose applicability cannot be established still warrants a
         # warning — it just warrants a quieter one. Silently dropping it would
@@ -296,8 +290,9 @@ class PreflightGate:
                 return CONFIDENCE_SUBSTANTIAL_OVERLAP, f"previously failed in {subsystem}"
         return None
 
-    def _summarize(self, matches: tuple[PreflightMatch, ...] | list[PreflightMatch],
-                   *, should_block: bool) -> str:
+    def _summarize(
+        self, matches: tuple[PreflightMatch, ...] | list[PreflightMatch], *, should_block: bool
+    ) -> str:
         """Render the warning.
 
         The shape is fixed so an agent (or a person) can read it the same way
@@ -308,21 +303,28 @@ class PreflightGate:
             return ""
 
         top = matches[0]
-        lines = ["A similar approach failed previously.", ""]
+        # A resolved failure and an open one need different headlines. Both are
+        # worth surfacing — knowing a thing broke once and how it was fixed is
+        # useful — but leading a resolved failure with "failed previously" reads
+        # as an open trap and invites the agent to avoid an approach that now
+        # works. The distinction is the difference between a warning and noise.
+        headline = (
+            "A similar approach failed previously, and was later resolved."
+            if top.what_later_worked
+            else "A similar approach failed previously."
+        )
+        lines = [headline, ""]
         lines.append(f"  Previous attempt   {_one_line(top.previous_attempt, 160)}")
         if top.occurrences > 1:
             times = "twice" if top.occurrences == 2 else f"{top.occurrences} times"
             lines.append(f"  Occurrences        failed {times}")
         if top.failure_evidence:
             lines.append(f"  Failure evidence   {_one_line(top.failure_evidence, 200)}")
-        lines.append(
-            f"  What later worked  {top.what_later_worked or '(nothing recorded yet)'}"
-        )
+        lines.append(f"  What later worked  {top.what_later_worked or '(nothing recorded yet)'}")
         lines.append(f"  Applicability      {top.applicability}")
         lines.append(f"  Provenance         {top.provenance}")
         lines.append(f"  Trust state        {top.trust_state}")
-        lines.append(f"  Match confidence   {top.confidence:.2f} "
-                     f"({'; '.join(top.match_reasons)})")
+        lines.append(f"  Match confidence   {top.confidence:.2f} ({'; '.join(top.match_reasons)})")
 
         if len(matches) > 1:
             lines.append("")
@@ -330,12 +332,8 @@ class PreflightGate:
 
         if should_block:
             lines.append("")
-            lines.append(
-                "  BLOCKED by policy: exact repeat of a high-confidence prior failure."
-            )
+            lines.append("  BLOCKED by policy: exact repeat of a high-confidence prior failure.")
         else:
             lines.append("")
-            lines.append(
-                "  This is a warning, not a block. Provalume does not override policy."
-            )
+            lines.append("  This is a warning, not a block. Provalume does not override policy.")
         return "\n".join(lines)
