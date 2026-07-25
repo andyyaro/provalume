@@ -134,14 +134,31 @@ def test_imported_events_are_marked_as_imported(exported: tuple[Provalume, Path]
     assert jsonl.record_to_event(record).source is Source.IMPORT
 
 
+def tamper_payload(directory: Path, *, key: str, value: object) -> dict:
+    """Alter one event's payload in place, leaving its declared hash stale.
+
+    Picks the record deterministically rather than taking ``lines[0]``: records
+    are sorted by ``(kind, id)`` and IDs are time-ordered, so which event lands
+    first depends on sub-millisecond timing. An earlier version of this test
+    string-replaced a marker in the first line and passed locally while failing
+    on one CI runner, because that line happened to be a different event and the
+    replacement was a no-op.
+    """
+    path = directory / jsonl.EVENTS_FILE
+    records = [json.loads(line) for line in path.read_text().splitlines()]
+    target = next(r for r in records if r["event_type"] == "verification.failed")
+    target["payload"][key] = value
+    path.write_text(canonical_json(target) + "\n")
+    return target
+
+
 def test_a_tampered_payload_with_a_stale_hash_is_rejected(
     exported: tuple[Provalume, Path]
 ) -> None:
     """The forgery shape a trusting importer would wave through as a duplicate."""
     pv, out = exported
-    lines = (out / jsonl.EVENTS_FILE).read_text().splitlines()
-    tampered = lines[0].replace("AssertionError", "TamperedError")
-    (out / jsonl.EVENTS_FILE).write_text(tampered + "\n")
+    # Payload changed, declared hash left untouched — the whole point.
+    tamper_payload(out, key="excerpt", value="E TamperedError: forged")
 
     result = pv.import_records(out, apply=False)
     assert result.rejected
@@ -151,9 +168,11 @@ def test_a_tampered_payload_with_a_stale_hash_is_rejected(
 def test_a_genuine_divergence_is_a_conflict_not_an_overwrite(
     exported: tuple[Provalume, Path]
 ) -> None:
+    """Content genuinely differs and the hash was updated to match: a real
+    divergence between two machines, not a forgery. Must be a conflict rather
+    than a silent overwrite."""
     pv, out = exported
-    record = json.loads((out / jsonl.EVENTS_FILE).read_text().splitlines()[0])
-    record["payload"]["excerpt"] = "E AssertionError: something else"
+    record = tamper_payload(out, key="excerpt", value="E AssertionError: something else")
     record["payload_hash"] = hash_payload(record["payload"])
     (out / jsonl.EVENTS_FILE).write_text(canonical_json(record) + "\n")
 
@@ -165,7 +184,7 @@ def test_a_genuine_divergence_is_a_conflict_not_an_overwrite(
 def test_a_future_record_version_is_rejected(exported: tuple[Provalume, Path]) -> None:
     """Never partially interpreted: a record from the future cannot be validated."""
     pv, out = exported
-    record = json.loads((out / jsonl.EVENTS_FILE).read_text().splitlines()[0])
+    record = json.loads(sorted((out / jsonl.EVENTS_FILE).read_text().splitlines())[0])
     record["rv"] = jsonl.RECORD_VERSION + 99
     (out / jsonl.EVENTS_FILE).write_text(canonical_json(record) + "\n")
 

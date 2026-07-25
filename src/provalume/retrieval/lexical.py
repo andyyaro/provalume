@@ -21,6 +21,7 @@ from provalume.retrieval import ranking
 from provalume.schemas.memories import Memory, MemoryFilter, MemoryType
 from provalume.schemas.provenance import Provenance, ResolutionStatus
 from provalume.schemas.retrieval import (
+    DEFAULT_RANKING_POLICY,
     Explanation,
     RankingPolicy,
     RecallQuery,
@@ -47,7 +48,7 @@ class RetrievalEngine:
     ) -> None:
         self.db = db
         self.repository = repository
-        self.policy = policy or RankingPolicy()
+        self.policy = policy or DEFAULT_RANKING_POLICY
         self.git = git
 
     # -- candidate selection ----------------------------------------------

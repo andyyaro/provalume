@@ -6,6 +6,7 @@ nothing to test in an in-memory database.
 
 from __future__ import annotations
 
+import contextlib
 import multiprocessing
 import sqlite3
 import subprocess  # nosec B404 - runs this interpreter to simulate a crash
@@ -131,12 +132,16 @@ def test_rollback_leaves_no_partial_state(file_db: Database) -> None:
     journal.append(make_event(0))
     before = journal.head()
 
-    with pytest.raises(RuntimeError), file_db.tx() as conn:
-        conn.execute(
-            "INSERT INTO projects (project_id, created_at) VALUES ('x', 'y')"
-        )
-        msg = "simulated failure mid-transaction"
-        raise RuntimeError(msg)
+    def write_then_fail() -> None:
+        with file_db.tx() as conn:
+            conn.execute(
+                "INSERT INTO projects (project_id, created_at) VALUES ('x', 'y')"
+            )
+            msg = "simulated failure mid-transaction"
+            raise RuntimeError(msg)
+
+    with pytest.raises(RuntimeError):
+        write_then_fail()
 
     assert journal.head() == before
     assert file_db.query_one(
@@ -191,12 +196,11 @@ def test_integrity_check_detects_a_corrupted_file(tmp_path: Path) -> None:
         database = open_database(path)
     except (StoreError, sqlite3.DatabaseError):
         return  # refusing to open a corrupt file is an acceptable outcome
-    try:
-        problems = database.integrity_check()
-    except sqlite3.DatabaseError:
-        return  # so is failing loudly during the check itself
-    finally:
-        database.close()
+    with contextlib.closing(database):
+        try:
+            problems = database.integrity_check()
+        except sqlite3.DatabaseError:
+            return  # so is failing loudly during the check itself
     assert problems, "corruption of real data pages was not detected"
 
 
@@ -298,11 +302,12 @@ def _append_in_process(path: str, count: int) -> int:
     journal = Journal(database)
     written = 0
     for index in range(count):
-        try:
+        # A writer that loses the race is the expected outcome under a busy
+        # timeout, not an error. What matters is that the chain stays intact,
+        # which the caller asserts.
+        with contextlib.suppress(StoreError):
             journal.append(make_event(index))
             written += 1
-        except StoreError:
-            pass
     database.close()
     return written
 
