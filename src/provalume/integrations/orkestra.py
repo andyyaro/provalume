@@ -89,8 +89,9 @@ class OrkestraAdapter:
             **self.context.fields(run_id=run_id),
         )
 
-    def run_completed(self, *, run_id: str, outcome: str, task_count: int = 0,
-                      **extra: Any) -> Event:
+    def run_completed(
+        self, *, run_id: str, outcome: str, task_count: int = 0, **extra: Any
+    ) -> Event:
         return self.pv.record_event(
             EventType.RUN_COMPLETED,
             source=Source.ADAPTER,
@@ -115,8 +116,11 @@ class OrkestraAdapter:
             source=Source.ADAPTER,
             payload={"outcome": outcome, "task_category": kind, **extra},
             **self.context.fields(
-                task_id=task_id, agent_profile=agent, adapter=adapter,
-                model=model, effort=effort,
+                task_id=task_id,
+                agent_profile=agent,
+                adapter=adapter,
+                model=model,
+                effort=effort,
             ),
         )
 
@@ -151,8 +155,13 @@ class OrkestraAdapter:
                 **extra,
             },
             **self.context.fields(
-                task_id=task_id, attempt_id=attempt_id, agent_profile=agent,
-                adapter=adapter, model=model, effort=effort, worktree=worktree,
+                task_id=task_id,
+                attempt_id=attempt_id,
+                agent_profile=agent,
+                adapter=adapter,
+                model=model,
+                effort=effort,
+                worktree=worktree,
             ),
         )
 
@@ -170,6 +179,7 @@ class OrkestraAdapter:
         agent: str | None = None,
         worktree: str | None = None,
         purpose: str = "",
+        resolves_signature: str = "",
         **extra: Any,
     ) -> Event:
         """Record a verification result — the evidence everything else needs.
@@ -181,13 +191,16 @@ class OrkestraAdapter:
         return self.pv.record_verification(
             command=command,
             passed=passed,
+            resolves_signature=resolves_signature,
             exit_code=exit_code,
             excerpt=excerpt,
             purpose=purpose,
             error_kind=extra.pop("error_kind", "verify_failed" if not passed else ""),
             **self.context.fields(
-                task_id=task_id, attempt_id=attempt_id,
-                agent_profile=agent, worktree=worktree,
+                task_id=task_id,
+                attempt_id=attempt_id,
+                agent_profile=agent,
+                worktree=worktree,
             ),
         )
 
@@ -246,9 +259,7 @@ class OrkestraAdapter:
                 "severity": severity,
                 "files": list(files),
             },
-            **self.context.fields(
-                task_id=task_id, attempt_id=attempt_id, agent_profile=reviewer
-            ),
+            **self.context.fields(task_id=task_id, attempt_id=attempt_id, agent_profile=reviewer),
         )
 
     # -- human decisions ---------------------------------------------------
@@ -349,14 +360,20 @@ class OrkestraAdapter:
         command: str = "",
         subsystem: str = "",
         files: tuple[str, ...] = (),
+        record: bool = True,
     ) -> PreflightResult:
         """Check before dispatch or retry.
 
         Returns a warning. **It cannot block**: Orkestra's policy engine remains
         the only authority, and a memory system that could override policy would
         be one an attacker could use to override policy.
+
+        Set ``record=False`` to consult the gate without writing a
+        ``warning.shown`` event. That event means "a warning was put in front of
+        someone", and it is what warning-usefulness is measured from; emitting it
+        for an internal lookup inflates the count and corrupts the measurement.
         """
-        return self.pv.preflight(command=command, subsystem=subsystem, files=files)
+        return self.pv.preflight(command=command, subsystem=subsystem, files=files, record=record)
 
 
 # --- Failure semantics ------------------------------------------------------
@@ -386,9 +403,7 @@ def safe_digest(
         return None
 
 
-def safe_preflight(
-    adapter: OrkestraAdapter, **kwargs: Any
-) -> PreflightResult | None:
+def safe_preflight(adapter: OrkestraAdapter, **kwargs: Any) -> PreflightResult | None:
     """Run the preflight gate, failing open on error."""
     try:
         return adapter.preflight(**kwargs)
