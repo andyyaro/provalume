@@ -194,6 +194,14 @@ Found by tests and by the eval harness, not by inspection.
 | 10 | Live-path writes never advanced the projection watermark, so `audit` always warned "projections are behind" | SDK smoke test | `apply()` advances it |
 | 11 | `payload.get("branch", event.branch)` returned `""` when the key was present-but-empty, so integration matched nothing | SDK smoke test | `or` chain instead of a dict default |
 | 12 | Three-rung promotions printed scrambled — same-millisecond ULIDs have arbitrary relative order | Demo output | Monotonic ID factory for transitions |
+| 13 | The Orkestra hook read `Assignment.agent`, a field that does not exist — and because the guard wrapped only the adapter call, the `AttributeError` from *building the arguments* escaped and crashed the run | Orkestra's own suite, 3 pre-existing tests | Correct field, and the guard became a context manager wrapping the whole interaction |
+| 14 | Orkestra's `run.completed` record was written after a `finally` had already closed the client, so the best-effort guard swallowed it and it never recorded | Reading the diff; then a regression test verified by reintroducing the bug | Record before the `finally` closes |
+
+Bugs 13 and 14 are the same lesson from two directions. Swallowing errors on
+memory writes is the right policy — a memory fault must not fail an
+orchestration run — but it is also what let a real defect stay invisible. So the
+wiring needs tests that assert a write **happened**, not merely that nothing
+raised.
 
 ---
 
