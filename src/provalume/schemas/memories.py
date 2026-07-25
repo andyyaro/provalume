@@ -21,6 +21,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from provalume import _ids, _time
 from provalume.schemas.scope import Scope
 from provalume.schemas.trust import (
+    CURRENT_TRUTH_STATE,
     IntegrationState,
     ReviewState,
     Source,
@@ -234,7 +235,7 @@ class Memory(BaseModel):
         if is_terminal(self.trust_state) or not self.is_current:
             return False
         if self.memory_type in REQUIRES_INTEGRATION_FOR_TRUTH:
-            return self.trust_state is TrustState.INTEGRATED and self.is_landed
+            return self.trust_state is CURRENT_TRUTH_STATE and self.is_landed
         return True
 
     @property
