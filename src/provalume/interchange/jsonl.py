@@ -104,6 +104,12 @@ def event_to_record(event: Event) -> dict[str, Any]:
         record["redaction"] = event.redaction
     if event.integrity:
         record["integrity"] = event.integrity
+
+    # Enforced rather than merely intended: a future field added to the
+    # serialiser above cannot leak this database's local chain into a file that
+    # crosses machines.
+    for local_only in _LOCAL_ONLY_FIELDS:
+        record.pop(local_only, None)
     return record
 
 

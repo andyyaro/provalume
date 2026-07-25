@@ -281,7 +281,7 @@ class Journal:
         """
         problems: list[str] = []
         prev_hash = ""
-        checked = 0
+        checked = 0  # stays 0 when the journal is empty; enumerate rebinds it
 
         for checked, event in enumerate(self.iter_all(), start=1):
             expected_payload = hash_payload(event.payload)
