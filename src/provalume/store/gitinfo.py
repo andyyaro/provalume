@@ -22,6 +22,7 @@ is reported by ``provalume doctor`` rather than hidden.
 
 from __future__ import annotations
 
+import contextlib
 import shutil
 import subprocess  # nosec B404 - read-only git invocations, never shell=True
 from pathlib import Path
@@ -120,14 +121,14 @@ class GitInfo:
         """
         if not self.available:
             return None
-        try:
+        # No remote configured, or git refused: fall through to the directory
+        # name rather than failing. A repository without a remote is normal.
+        with contextlib.suppress(GitUnavailable):
             remotes = self._run(["remote"]).split()
             if remotes:
                 url = self._run(["remote", "get-url", remotes[0]]).strip()
                 if url:
                     return url
-        except GitUnavailable:
-            pass
         try:
             return Path(self._run(["rev-parse", "--show-toplevel"]).strip()).name or None
         except GitUnavailable:
