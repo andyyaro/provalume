@@ -17,6 +17,21 @@ from provalume.schemas.memories import MemoryType
 from provalume.schemas.scope import Applicability
 from provalume.schemas.trust import TrustState
 
+__all__ = [
+    "CHARS_PER_TOKEN_ESTIMATE",
+    "DEFAULT_RANKING_POLICY",
+    "DIGEST_BANNER",
+    "Digest",
+    "DigestItem",
+    "Explanation",
+    "PreflightMatch",
+    "PreflightResult",
+    "RankingPolicy",
+    "RecallQuery",
+    "RecallResult",
+    "ScoreBreakdown",
+]
+
 #: The banner that opens every digest. Required wording, not a suggestion: it is
 #: the control for threat T4 (instruction replay). Mitigation, not prevention —
 #: Provalume cannot force a model to honour it.
