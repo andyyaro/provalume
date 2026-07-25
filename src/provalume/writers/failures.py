@@ -149,11 +149,19 @@ def normalize_command(command: str) -> str:
 #: command printed, that was a denial-of-service reachable from hostile input
 #: (threat T24). Anchoring each iteration to exactly one uppercase letter makes
 #: the split unambiguous and the match linear.
+#: Both unbounded prefixes are bounded to 64 characters, and both bounds are
+#: ReDoS fixes rather than tidiness. ``[a-z_.]*`` before the keyword alternation
+#: retried every possible split point, so input repeating the very word the
+#: pattern searches for — ``"error" * n``, entirely ordinary in a noisy log —
+#: went quadratic: 16 KB took 2.7 seconds. ``\w*`` after it compounds the same
+#: effect. A real error-class name (``ValueError``, ``my.module.PoolExhausted``)
+#: is far shorter than 64 characters, so the bound costs nothing.
 _STRONG_ERROR = re.compile(
     r"^(?:E\s+)?(?:"
-    r"(?i:\[?[a-z_.]*(?:error|exception|panic|fault)\w*\]?)\s*(?:\[[^\]]+\])?\s*:"
+    r"(?i:\[?[a-z_.]{0,64}(?:error|exception|panic|fault)\w{0,64}\]?)"
+    r"\s*(?:\[[^\]]{0,256}\])?\s*:"
     r"|(?i:fatal|panic|abort|segmentation fault)\b"
-    r"|[A-Z][a-z0-9]*(?:[A-Z][a-z0-9]*)+\s*:"
+    r"|[A-Z][a-z0-9]{0,64}(?:[A-Z][a-z0-9]{0,64}){1,32}\s*:"
     r")"
 )
 

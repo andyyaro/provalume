@@ -56,11 +56,42 @@ def test_strong_error_is_linear_on_the_reported_input() -> None:
         "E " + "Xy" * (LENGTH // 2),
         "error" + "[" * LENGTH,
         "Er" + "r" * LENGTH,
+        "a" * LENGTH,
+        "a." * (LENGTH // 2),
+        # The shapes below repeat the *keywords the pattern searches for*. The
+        # first version of this suite omitted them and missed a quadratic path:
+        # `[a-z_.]*` before the keyword alternation retried every possible split
+        # point, so `"error" * n` took 2.7s at 16 KB. Repeating the literal a
+        # pattern is looking for is an obvious adversarial shape in hindsight,
+        # and it is also entirely ordinary in a noisy log.
+        "error" * (LENGTH // 5),
+        "exception" * (LENGTH // 9),
+        "panic" * (LENGTH // 5),
+        "fault" * (LENGTH // 5),
+        "E " + "error" * (LENGTH // 5),
+        "error" * (LENGTH // 10) + "[" * (LENGTH // 2),
     ],
-    ids=["all-caps", "alternating", "pairs", "pytest-prefixed", "brackets", "long-tail"],
+    ids=[
+        "all-caps", "alternating", "pairs", "pytest-prefixed", "brackets",
+        "long-tail", "all-lower", "dotted",
+        "repeated-error", "repeated-exception", "repeated-panic",
+        "repeated-fault", "prefixed-repeated-error", "repeated-then-brackets",
+    ],
 )
 def test_strong_error_survives_adversarial_shapes(probe: str) -> None:
     assert elapsed(failures._STRONG_ERROR.match, probe) < BUDGET_S
+
+
+@pytest.mark.parametrize(
+    "keyword", ["error", "exception", "panic", "fault", "assert", "failed", "timeout"]
+)
+def test_repeating_a_searched_keyword_stays_linear(keyword: str) -> None:
+    """Generalised: repeating any literal either pattern looks for must not
+    trigger backtracking, whichever pattern is asked."""
+    probe = keyword * (LENGTH // len(keyword))
+    assert elapsed(failures._STRONG_ERROR.match, probe) < BUDGET_S
+    assert elapsed(failures._WEAK_ERROR.search, probe) < BUDGET_S
+    assert elapsed(failures.normalize_error, probe) < BUDGET_S
 
 
 def test_strong_error_still_recognises_real_error_lines() -> None:
