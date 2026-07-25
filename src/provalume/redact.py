@@ -115,13 +115,20 @@ RULES: tuple[Rule, ...] = (
     # and a negative lookahead skips the three things that are almost never
     # secrets: template placeholders, absolute paths, and status words. Without
     # that lookahead this rule redacts half of every normal log line.
+    #
+    # The identifier prefix is bounded to 40 characters. That is a **ReDoS fix,
+    # not a tidiness choice**: an unbounded lazy `*?` retried every prefix length
+    # at every position, which took 10.5 seconds on 20 KB of adversarial input
+    # and would have hung the write path on hostile command output (threat T24).
+    # Bounding it costs nothing real — no credential environment variable has a
+    # 40-character prefix before the word `token` — and it is ~240x faster.
     Rule(
         "generic",
         re.compile(
             r"""(?ix)
             (?<![A-Za-z0-9_])
             (["']?
-             [A-Za-z0-9_.\-]*?
+             [A-Za-z0-9_.\-]{0,40}?
              (?: password | passwd | secret | api[_-]?key | apikey
                | token | credential | auth[_-]?key | access[_-]?key )
              ["']?

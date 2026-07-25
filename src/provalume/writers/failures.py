@@ -139,11 +139,21 @@ def normalize_command(command: str) -> str:
 #:   - a bare CamelCase identifier, colon-terminated — `PoolExhausted: ...`,
 #:     which is how custom exceptions are named in most languages and which the
 #:     first shape misses entirely
+#:
+#: The CamelCase alternative uses ``[a-z0-9]*`` rather than ``[a-zA-Z0-9]*``
+#: inside the repeated group. That is a **ReDoS fix, not a style choice**: with
+#: uppercase allowed in the tail, ``AB`` could match as one iteration or two, and
+#: a long run of mixed-case letters with no closing colon backtracked
+#: exponentially — roughly 4x per two added characters, measured. Since this
+#: pattern parses error text that ultimately comes from whatever a failing
+#: command printed, that was a denial-of-service reachable from hostile input
+#: (threat T24). Anchoring each iteration to exactly one uppercase letter makes
+#: the split unambiguous and the match linear.
 _STRONG_ERROR = re.compile(
     r"^(?:E\s+)?(?:"
     r"(?i:\[?[a-z_.]*(?:error|exception|panic|fault)\w*\]?)\s*(?:\[[^\]]+\])?\s*:"
     r"|(?i:fatal|panic|abort|segmentation fault)\b"
-    r"|[A-Z][a-z0-9]+(?:[A-Z][a-zA-Z0-9]*)+\s*:"
+    r"|[A-Z][a-z0-9]*(?:[A-Z][a-z0-9]*)+\s*:"
     r")"
 )
 
