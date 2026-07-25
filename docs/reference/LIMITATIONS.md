@@ -7,12 +7,18 @@ Read this before adopting Provalume. It is the honest list, not a marketing
 
 ## 1. It has not been dogfooded on production runs
 
-**Partly addressed.** One real orchestration run has now been driven end to end
-(real git worktrees, real failing verification commands, real integration
-commits) with fake agents standing in for vendor CLIs. That run found three
-defects no test had caught — see `IMPLEMENTATION_TRACKER.md`, bugs 15–17. What
-it still does not establish is whether a digest measurably helps a real model,
-which needs real agents and real quota.
+**Partly addressed.** Two real orchestration runs have now been driven end to
+end — the second through failure, a genuine fix, and success — with real git
+worktrees, real failing verification commands, and real integration commits.
+Fake agents stand in for vendor CLIs. Between them these runs found seven
+defects no test, eval, or review had caught (`IMPLEMENTATION_TRACKER.md`, bugs
+15–21), including that no memory could climb past `verified` in a real run and
+that cross-run resolution was unreachable.
+
+What this still does not establish is whether a digest measurably helps a real
+model. That needs real agents and real quota. Everything verified so far
+concerns what gets *recorded* and *retrieved*, not whether an agent reads it and
+does better.
 
 
 **This is the biggest weakness of 0.1.0.**

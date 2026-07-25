@@ -201,6 +201,11 @@ Found by tests and by the eval harness, not by inspection.
 | 16 | The recorded excerpt was `outcome.summary`, a one-line headline containing no error text. Every failure of a given command therefore produced the *same* failure signature, so the gate would warn about an unrelated failure | **Dogfooding** — demonstrated by showing two unrelated failures collapsing to one signature | Excerpt now carries captured stdout/stderr |
 | 17 | `provalume events/memories/recall` printed *nothing* when the project id did not match, which is indistinguishable from "the integration recorded nothing" | **Dogfooding** — it cost a long misdiagnosis of exactly that kind | Empty results now name the projects the database actually holds |
 
+| 18 | `resolves_signature` was dead code: the projector read it to link a fix to the failure it resolved across runs, and nothing anywhere could write it. The only reachable path inferred resolution within one task or run, which the real recovery path (block → escalate → fix in a *later* run) never satisfies | **Dogfooding round 2** | `record_verification()` accepts it; the integration supplies it |
+| 19 | The Orkestra hook filed a review verdict against the *reviewer's* freshly created attempt, and recorded verification with no attempt at all. Provalume associates evidence by attempt, so the two halves never met: nothing was stamped, and **no memory could climb past `verified` in a real run** | **Dogfooding round 2** | Both now carry the attempt under review |
+| 20 | A resolved failure read exactly like an open one — the warning still opened "A similar approach failed previously" while carrying what fixed it | **Dogfooding round 2** | Resolved matches say so in the headline |
+| 21 | The gate could not be consulted without emitting `warning.shown`, so an internal lookup inflated the count warning-usefulness is measured from | **Dogfooding round 2** — I introduced it, then measured it | `preflight(record=False)` |
+
 Bugs 13 and 14 are the same lesson from two directions. Swallowing errors on
 memory writes is the right policy — a memory fault must not fail an
 orchestration run — but it is also what let a real defect stay invisible. So the
