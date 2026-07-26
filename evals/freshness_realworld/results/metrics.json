@@ -1,0 +1,277 @@
+{
+  "pooled": {
+    "points": 660,
+    "errors_excluded": 0,
+    "truth_fail_points": 14,
+    "stale_points": 14,
+    "stale_precision": [
+      1.0,
+      0.7846891945970195,
+      0.9999999999999999
+    ],
+    "stale_precision_k": 14,
+    "stale_recall": [
+      1.0,
+      0.7846891945970195,
+      0.9999999999999999
+    ],
+    "stale_recall_k": 14,
+    "false_current_rate": [
+      0.0,
+      0.0,
+      0.21531080540298042
+    ],
+    "false_current_k": 0,
+    "state_at_fail": {
+      "stale": 14
+    },
+    "suspect_precision_at_scan_JUDGMENT_LADEN": [
+      0.016835016835016835,
+      0.007211803484779854,
+      0.03879734343521786
+    ],
+    "suspect_precision_k": 5,
+    "fresh_suspect_points": 297,
+    "reason_codes_at_fresh_suspect": {
+      "comment_only": 10,
+      "body_changed": 118,
+      "import_changed": 46,
+      "signature_changed": 67,
+      "docstring_only": 56
+    },
+    "by_radius_method": {
+      "coverage": {
+        "fresh": 162,
+        "fresh_true": 5,
+        "precision": [
+          0.030864197530864196,
+          0.013253938023915453,
+          0.07020805618829942
+        ]
+      },
+      "import_graph": {
+        "fresh": 135,
+        "fresh_true": 0,
+        "precision": [
+          0.0,
+          0.0,
+          0.027667952441930887
+        ]
+      }
+    },
+    "flaky_disagreements": 0
+  },
+  "per_repo": {
+    "boltons": {
+      "setup": {},
+      "records": 0,
+      "points": 0,
+      "errors_excluded": 0,
+      "truth_fail_points": 0,
+      "stale_points": 0,
+      "stale_precision": null,
+      "stale_precision_k": 0,
+      "stale_recall": null,
+      "stale_recall_k": 0,
+      "false_current_rate": null,
+      "false_current_k": 0,
+      "state_at_fail": {},
+      "suspect_precision_at_scan_JUDGMENT_LADEN": null,
+      "suspect_precision_k": 0,
+      "fresh_suspect_points": 0,
+      "reason_codes_at_fresh_suspect": {},
+      "by_radius_method": {},
+      "flaky_disagreements": 0
+    },
+    "jmespath": {
+      "setup": {
+        "sampling": {
+          "chain_length": 60,
+          "stride": 1,
+          "sampled_commits": 60,
+          "mean_command_s": 0.16,
+          "projected_full_s": 39
+        },
+        "wall_clock_s": 32
+      },
+      "records": 2,
+      "points": 120,
+      "errors_excluded": 0,
+      "truth_fail_points": 0,
+      "stale_points": 0,
+      "stale_precision": null,
+      "stale_precision_k": 0,
+      "stale_recall": null,
+      "stale_recall_k": 0,
+      "false_current_rate": null,
+      "false_current_k": 0,
+      "state_at_fail": {},
+      "suspect_precision_at_scan_JUDGMENT_LADEN": [
+        0.0,
+        0.0,
+        0.08762160245846368
+      ],
+      "suspect_precision_k": 0,
+      "fresh_suspect_points": 40,
+      "reason_codes_at_fresh_suspect": {
+        "comment_only": 2,
+        "body_changed": 24,
+        "import_changed": 6,
+        "signature_changed": 8
+      },
+      "by_radius_method": {
+        "coverage": {
+          "fresh": 20,
+          "fresh_true": 0,
+          "precision": [
+            0.0,
+            0.0,
+            0.16112516018512968
+          ]
+        },
+        "import_graph": {
+          "fresh": 20,
+          "fresh_true": 0,
+          "precision": [
+            0.0,
+            0.0,
+            0.16112516018512968
+          ]
+        }
+      },
+      "flaky_disagreements": 0
+    },
+    "more-itertools": {
+      "setup": {
+        "sampling": {
+          "chain_length": 60,
+          "stride": 1,
+          "sampled_commits": 60,
+          "mean_command_s": 3.26,
+          "projected_full_s": 782
+        },
+        "wall_clock_s": 716
+      },
+      "records": 2,
+      "points": 120,
+      "errors_excluded": 0,
+      "truth_fail_points": 0,
+      "stale_points": 0,
+      "stale_precision": null,
+      "stale_precision_k": 0,
+      "stale_recall": null,
+      "stale_recall_k": 0,
+      "false_current_rate": null,
+      "false_current_k": 0,
+      "state_at_fail": {},
+      "suspect_precision_at_scan_JUDGMENT_LADEN": [
+        0.0,
+        0.0,
+        0.04275819793144242
+      ],
+      "suspect_precision_k": 0,
+      "fresh_suspect_points": 86,
+      "reason_codes_at_fresh_suspect": {
+        "signature_changed": 35,
+        "body_changed": 31,
+        "comment_only": 1,
+        "docstring_only": 14,
+        "import_changed": 5
+      },
+      "by_radius_method": {
+        "coverage": {
+          "fresh": 44,
+          "fresh_true": 0,
+          "precision": [
+            0.0,
+            0.0,
+            0.08029560492349135
+          ]
+        },
+        "import_graph": {
+          "fresh": 42,
+          "fresh_true": 0,
+          "precision": [
+            0.0,
+            0.0,
+            0.08379879207691124
+          ]
+        }
+      },
+      "flaky_disagreements": 0
+    },
+    "toolz": {
+      "setup": {
+        "sampling": {
+          "chain_length": 60,
+          "stride": 1,
+          "sampled_commits": 60,
+          "mean_command_s": 0.16,
+          "projected_full_s": 130
+        },
+        "wall_clock_s": 140
+      },
+      "records": 7,
+      "points": 420,
+      "errors_excluded": 0,
+      "truth_fail_points": 14,
+      "stale_points": 14,
+      "stale_precision": [
+        1.0,
+        0.7846891945970195,
+        0.9999999999999999
+      ],
+      "stale_precision_k": 14,
+      "stale_recall": [
+        1.0,
+        0.7846891945970195,
+        0.9999999999999999
+      ],
+      "stale_recall_k": 14,
+      "false_current_rate": [
+        0.0,
+        0.0,
+        0.21531080540298042
+      ],
+      "false_current_k": 0,
+      "state_at_fail": {
+        "stale": 14
+      },
+      "suspect_precision_at_scan_JUDGMENT_LADEN": [
+        0.029239766081871343,
+        0.012552802271504071,
+        0.06661296864952955
+      ],
+      "suspect_precision_k": 5,
+      "fresh_suspect_points": 171,
+      "reason_codes_at_fresh_suspect": {
+        "signature_changed": 24,
+        "docstring_only": 42,
+        "body_changed": 63,
+        "import_changed": 35,
+        "comment_only": 7
+      },
+      "by_radius_method": {
+        "coverage": {
+          "fresh": 98,
+          "fresh_true": 5,
+          "precision": [
+            0.05102040816326531,
+            0.021987311264841547,
+            0.11392451711370985
+          ]
+        },
+        "import_graph": {
+          "fresh": 73,
+          "fresh_true": 0,
+          "precision": [
+            0.0,
+            0.0,
+            0.04999200870496552
+          ]
+        }
+      },
+      "flaky_disagreements": 0
+    }
+  }
+}
