@@ -94,7 +94,7 @@ rebuild derives it. The transition sources:
 | `freshness.triggered` | record becomes `suspect`; the trigger is booked as **outstanding** until discharged. Bookkeeping is per trigger commit: a verdict answers one trigger, and the record returns to `current` only when nothing remains outstanding |
 | `relevance.assessed` (verdict `irrelevant`) | discharges exactly its trigger; record returns to `current` only if no other trigger remains outstanding |
 | `relevance.assessed` (verdict `relevant`) | record stays `suspect`; a verdict naming a never-booked trigger derives nothing |
-| `reverification.executed` (outcome `passed`) | record returns to `current` — the re-run executed the tree containing every landed commit, so it discharges **all** outstanding triggers at once; a fresh blast-radius measurement discharges them for the same reason |
+| `reverification.executed` (outcome `passed`) | discharges exactly the triggers named in `answers_triggers` — the outstanding triggers whose commits are ancestors of the HEAD the run executed at — and the record returns to `current` only when none remain outstanding. A pass at an older or detached HEAD answers only what it can see; a fresh blast-radius measurement still discharges everything, because it re-measures against the tree as it stands |
 | `reverification.executed` (outcome `failed`) | record becomes `stale` |
 | `reverification.executed` (outcome `errored`) | **no transition** — fail-open (I5): the engine's own failure is never evidence about the record |
 
@@ -120,7 +120,7 @@ underscore names map one-to-one:
 | `blast_radius_recorded` | `blast_radius.recorded` | `record_id, method (coverage\|import_graph\|commit_touch), paths[], line_ranges[]?, tool, tool_version` — the commit the radius was measured at travels as the envelope `commit_sha`, per the journal's existing convention |
 | `freshness_trigger` | `freshness.triggered` | `record_id, trigger_commit, changed_paths[], intersecting_paths[]` |
 | `relevance_assessed` | `relevance.assessed` | `record_id, trigger_commit, verdict (relevant\|irrelevant), differ_version, reason_code` |
-| `reverification_executed` | `reverification.executed` | `record_id, trigger_commit, command, exit_code, duration_ms, timeout_ms, environment_fingerprint, outcome (passed\|failed\|errored)` — `timeout_ms` is the configured bound, recorded so a kill-by-timeout is distinguishable from an ordinary failure |
+| `reverification_executed` | `reverification.executed` | `record_id, trigger_commit, command, exit_code, duration_ms, timeout_ms, environment_fingerprint, outcome (passed\|failed\|errored), executed_at_commit, answers_triggers, root, signal?` — `timeout_ms` is the configured bound, recorded so a kill-by-timeout is distinguishable from an ordinary failure; a signal death records `errored` with `signal`, never `failed` |
 
 `reason_code` is a closed enum — `whitespace_only`, `comment_only`,
 `docstring_only`, `signature_changed`, `body_changed`, `import_changed`,

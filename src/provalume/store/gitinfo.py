@@ -354,6 +354,24 @@ class GitInfo:
         self._file_cache[key] = result
         return result
 
+    def worktree_dirty(self) -> bool | None:
+        """Whether tracked files differ from HEAD (staged or unstaged).
+
+        Untracked files are deliberately ignored: build artifacts and the
+        ``.provalume`` directory itself are untracked in ordinary use, and
+        the caller (the re-verification executor) needs "is this tree at a
+        landed state", not "is it pristine". ``None`` when the question
+        cannot be answered — which callers must treat as "cannot certify",
+        never as "clean".
+        """
+        if not self.available:
+            return None
+        try:
+            output = self._run(["status", "--porcelain", "--untracked-files=no"])
+        except GitUnavailable:
+            return None
+        return bool(output.strip())
+
     def git_version(self) -> str | None:
         """The numeric version of the git executable, e.g. ``"2.39.2"``.
 

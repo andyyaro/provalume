@@ -24,6 +24,7 @@ def _git(repo: Path, *args: str) -> str:
 def _repo_with_record(tmp_path: Path) -> tuple[Path, str, str]:
     repo = tmp_path / "repo"
     repo.mkdir()
+    (repo / ".gitignore").write_text(".provalume/\n__pycache__/\n")
     (repo / "mod.py").write_text("V = 1\n")
     (repo / "check.py").write_text("import mod\nassert mod.V == 1\n")
     _git(tmp_path, "init", "-q", "-b", "main", str(repo))
@@ -62,6 +63,37 @@ def test_an_allowlist_file_enables_a_passing_rerun(cli: CliRunner, tmp_path: Pat
     assert payload["outcome"] == "passed"
     assert payload["freshness"] == "current"
     assert payload["environment_fingerprint"].startswith("sha256:")
+
+
+def test_the_allowlist_binds_to_the_databases_repository_not_the_cwd(
+    cli: CliRunner, tmp_path: Path
+) -> None:
+    """T27's opt-in is per-repository. Repo A holds the db and record and has
+    NO allowlist; repo B — where the operator happens to stand — has a
+    wide-open one. Running from B against A's db must refuse: B's allowlist
+    must not enable execution for A's records, and B's tree must not answer
+    for them (M4 review, B2)."""
+    repo_a, db, record_id = _repo_with_record(tmp_path)
+    repo_b = tmp_path / "elsewhere"
+    (repo_b / ".provalume").mkdir(parents=True)
+    (repo_b / ".provalume" / "reverify-allowlist").write_text("*\n")
+    (repo_b / "check.py").write_text("raise SystemExit(0)\n")
+    _git(tmp_path, "init", "-q", "-b", "main", str(repo_b))
+    _git(repo_b, "add", "-A")
+    _git(repo_b, "-c", "user.email=a@b", "-c", "user.name=a", "commit", "-qm", "other tree")
+
+    result = cli("reverify", record_id, "--db", db, "--project", "e2e", cwd=repo_b, expect=1)
+    assert "off" in (result.stdout + result.stderr).lower(), (
+        "the root anchors to the database's repository, where no allowlist exists"
+    )
+
+    from provalume.schemas.events import EventType
+    from provalume.sdk.client import Provalume
+
+    pv = Provalume.open(db, project_id="e2e", root=repo_a)
+    executions = [e for e in pv.events() if e.event_type == EventType.REVERIFICATION_EXECUTED]
+    pv.close()
+    assert not executions, "nothing may have executed, let alone been journaled"
 
 
 def test_a_failing_rerun_marks_stale_and_exits_two(cli: CliRunner, tmp_path: Path) -> None:

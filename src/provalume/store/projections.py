@@ -388,13 +388,30 @@ class Projector:
             return
         outcome = str(event.payload.get("outcome", ""))
         if outcome == ReverificationOutcome.PASSED.value:
-            # The re-run executed against the tree containing every landed
-            # commit, so it answers every outstanding trigger at once.
             with self.repository.db.tx():
-                self.repository.clear_triggers(
+                if "answers_triggers" in event.payload:
+                    # The executor named exactly the triggers whose commits
+                    # are ancestors of the tree it ran in (M4 review, B3):
+                    # a pass at a detached or older HEAD discharges only
+                    # what it actually answered. Deterministic — the set is
+                    # event data, so rebuild never consults git (I3).
+                    for trigger in event.payload.get("answers_triggers") or []:
+                        self.repository.discharge_trigger(
+                            project_id=memory.scope.project_id,
+                            record_id=memory.memory_id,
+                            trigger_commit=str(trigger),
+                        )
+                else:
+                    # Legacy event shape (pre-ancestry executor): trusted to
+                    # have answered everything outstanding.
+                    self.repository.clear_triggers(
+                        project_id=memory.scope.project_id, record_id=memory.memory_id
+                    )
+                outstanding = self.repository.outstanding_triggers(
                     project_id=memory.scope.project_id, record_id=memory.memory_id
                 )
-                self._set_freshness(memory, FreshnessState.CURRENT, stats)
+                if not outstanding:
+                    self._set_freshness(memory, FreshnessState.CURRENT, stats)
         elif outcome == ReverificationOutcome.FAILED.value:
             self._set_freshness(memory, FreshnessState.STALE, stats)
         # `errored` is the engine failing, not the record failing: no

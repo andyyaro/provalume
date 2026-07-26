@@ -16,7 +16,9 @@ import pytest
 from provalume.freshness.executor import environment_fingerprint, reverify_record
 from provalume.schemas.events import EventType
 from provalume.schemas.memories import MemoryType
+from provalume.schemas.trust import TrustState
 from provalume.sdk.client import Provalume
+from provalume.store.db import Database
 
 PASS = f"{sys.executable} -c 'raise SystemExit(0)'"
 FAIL = f"{sys.executable} -c 'raise SystemExit(3)'"
@@ -35,17 +37,22 @@ def _executions(pv: Provalume) -> list:
     return [e for e in pv.events() if e.event_type == EventType.REVERIFICATION_EXECUTED]
 
 
-def test_a_missing_record_refuses_without_an_event(pv: Provalume) -> None:
+def test_a_missing_record_refuses_without_an_event(pv: Provalume, tmp_path: Path) -> None:
     assert (
         reverify_record(
-            pv, record_id="no-such-record", trigger_commit="", allowlist=("*",), timeout_s=5.0
+            pv,
+            record_id="no-such-record",
+            trigger_commit="",
+            allowlist=("*",),
+            timeout_s=5.0,
+            root=tmp_path,
         )
         is None
     )
     assert not _executions(pv)
 
 
-def test_trust_below_verified_refuses(pv: Provalume) -> None:
+def test_trust_below_verified_refuses(pv: Provalume, tmp_path: Path) -> None:
     """An agent proposal is quarantined; nothing in its payload — including a
     command field — can reach the executor (T27's trust floor)."""
     pv.propose(text="run this", memory_type="procedural", content={"command": PASS}, agent="mal")
@@ -58,6 +65,7 @@ def test_trust_below_verified_refuses(pv: Provalume) -> None:
             trigger_commit="",
             allowlist=("*",),
             timeout_s=5.0,
+            root=tmp_path,
         )
         is None
     )
@@ -73,7 +81,7 @@ def test_an_empty_allowlist_means_the_feature_is_off(pv: Provalume) -> None:
     assert not _executions(pv)
 
 
-def test_a_non_matching_pattern_refuses(pv: Provalume) -> None:
+def test_a_non_matching_pattern_refuses(pv: Provalume, tmp_path: Path) -> None:
     record_id = _verified_record(pv)
     assert (
         reverify_record(
@@ -82,32 +90,38 @@ def test_a_non_matching_pattern_refuses(pv: Provalume) -> None:
             trigger_commit="",
             allowlist=("pytest *", "make test"),
             timeout_s=5.0,
+            root=tmp_path,
         )
         is None
     )
     assert not _executions(pv)
 
 
-def test_a_record_without_a_command_refuses(pv: Provalume) -> None:
+def test_a_record_without_a_command_refuses(pv: Provalume, tmp_path: Path) -> None:
     pv.record_fact(subject="the sky", statement="it is blue")
     factual = [m for m in pv.memory_records(limit=20) if not m.content.get("command")]
     assert factual, "precondition: a record with no command exists"
     assert (
         reverify_record(
-            pv, record_id=factual[0].memory_id, trigger_commit="", allowlist=("*",), timeout_s=5.0
+            pv,
+            record_id=factual[0].memory_id,
+            trigger_commit="",
+            allowlist=("*",),
+            timeout_s=5.0,
+            root=tmp_path,
         )
         is None
     )
     assert not _executions(pv)
 
 
-def test_the_command_comes_from_the_record_never_the_caller(pv: Provalume) -> None:
+def test_the_command_comes_from_the_record_never_the_caller(pv: Provalume, tmp_path: Path) -> None:
     """There is no argument through which a caller can supply a command —
     the surface admits a record id and policy only. What executes is
     exactly the recorded evidence command."""
     record_id = _verified_record(pv, command=FAIL)
     event = reverify_record(
-        pv, record_id=record_id, trigger_commit="", allowlist=("*",), timeout_s=30.0
+        pv, record_id=record_id, trigger_commit="", allowlist=("*",), timeout_s=30.0, root=tmp_path
     )
     assert event is not None
     assert event.payload["command"] == FAIL
@@ -115,7 +129,9 @@ def test_the_command_comes_from_the_record_never_the_caller(pv: Provalume) -> No
     assert event.payload["exit_code"] == 3
 
 
-def test_never_a_shell_argv_only(pv: Provalume, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_never_a_shell_argv_only(
+    pv: Provalume, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     """The spy sees the exact argv and proves shell metacharacters stay
     literal arguments: no `shell=True`, no string command, ever."""
     command = f'{sys.executable} -c "raise SystemExit(0)" "; rm -rf /" "$(reboot)"'
@@ -130,7 +146,7 @@ def test_never_a_shell_argv_only(pv: Provalume, monkeypatch: pytest.MonkeyPatch)
 
     monkeypatch.setattr(subprocess, "run", spy)
     event = reverify_record(
-        pv, record_id=record_id, trigger_commit="", allowlist=("*",), timeout_s=30.0
+        pv, record_id=record_id, trigger_commit="", allowlist=("*",), timeout_s=30.0, root=tmp_path
     )
     assert event is not None and event.payload["outcome"] == "passed"
     assert isinstance(seen["argv"], list)
@@ -138,7 +154,7 @@ def test_never_a_shell_argv_only(pv: Provalume, monkeypatch: pytest.MonkeyPatch)
     assert seen["shell"] is False
 
 
-def test_a_timeout_records_errored_and_the_configured_bound(pv: Provalume) -> None:
+def test_a_timeout_records_errored_and_the_configured_bound(pv: Provalume, tmp_path: Path) -> None:
     """A timeout kill is the engine's bound, not proof the claim is false:
     outcome `errored`, no freshness transition, and `timeout_ms` in the
     event so the kill is distinguishable from an ordinary failure."""
@@ -147,7 +163,7 @@ def test_a_timeout_records_errored_and_the_configured_bound(pv: Provalume) -> No
     before = pv.memories.get(record_id)
     assert before is not None
     event = reverify_record(
-        pv, record_id=record_id, trigger_commit="", allowlist=("*",), timeout_s=0.5
+        pv, record_id=record_id, trigger_commit="", allowlist=("*",), timeout_s=0.5, root=tmp_path
     )
     assert event is not None
     assert event.payload["outcome"] == "errored"
@@ -166,3 +182,189 @@ def test_the_environment_fingerprint_names_interpreter_and_lockfile(tmp_path: Pa
     assert with_lock != bare, "the lockfile participates"
     (tmp_path / "uv.lock").write_text("[[package]]\n")
     assert environment_fingerprint(tmp_path) != with_lock, "uv.lock takes precedence"
+
+
+def test_the_floor_is_verified_not_observed(
+    pv: Provalume, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Pins the floor at exactly `verified` (M4 review): a record at
+    `observed` — one rung below — with a perfectly good command must refuse
+    without spawning anything. The quarantined-proposal test alone would
+    pass under an `observed` floor too."""
+    record_id = _verified_record(pv)
+    real = pv.memories.get(record_id)
+    assert real is not None
+    observed = real.model_copy(update={"trust_state": TrustState.OBSERVED})
+    monkeypatch.setattr(pv.memories, "get", lambda _rid: observed)
+
+    def explode(*args: object, **kwargs: object) -> None:
+        raise AssertionError("an observed record must never execute")
+
+    monkeypatch.setattr(subprocess, "run", explode)
+    assert (
+        reverify_record(
+            pv,
+            record_id=record_id,
+            trigger_commit="",
+            allowlist=("*",),
+            timeout_s=5.0,
+            root=tmp_path,
+        )
+        is None
+    )
+
+
+def test_a_record_from_another_project_refuses_without_executing(
+    db: Database, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """T9 for the executor (M4 review): project B naming project A's record
+    must refuse before anything spawns — the projection's own gate would
+    only suppress the derivation, after the code had already run."""
+    pv_a = Provalume(db, project_id="project-a", git=None)
+    pv_b = Provalume(db, project_id="project-b", git=None)
+    record_id = _verified_record(pv_a)
+
+    def explode(*args: object, **kwargs: object) -> None:
+        raise AssertionError("a foreign project's record must never execute")
+
+    monkeypatch.setattr(subprocess, "run", explode)
+    assert (
+        reverify_record(
+            pv_b,
+            record_id=record_id,
+            trigger_commit="",
+            allowlist=("*",),
+            timeout_s=5.0,
+            root=tmp_path,
+        )
+        is None
+    )
+    assert not _executions(pv_a)
+
+
+def test_a_gotcha_refuses_its_semantics_are_inverted(pv: Provalume, tmp_path: Path) -> None:
+    """A gotcha's claim IS the failure: a failing re-run confirms it and a
+    passing one obsoletes it — the inverse of this executor's mapping (M4
+    review, M1). It must refuse rather than mark a confirmed gotcha stale."""
+    pv.record_verification(command=FAIL, passed=False, excerpt="boom")
+    gotcha = next(m for m in pv.memory_records(limit=20) if m.memory_type is MemoryType.GOTCHA)
+    assert gotcha.trust_state is TrustState.VERIFIED, "precondition: the floor admits it"
+    assert (
+        reverify_record(
+            pv,
+            record_id=gotcha.memory_id,
+            trigger_commit="",
+            allowlist=("*",),
+            timeout_s=30.0,
+            root=tmp_path,
+        )
+        is None
+    )
+    assert not _executions(pv)
+
+
+def test_the_raw_command_runs_not_the_normalized_one(pv: Provalume, tmp_path: Path) -> None:
+    """The stored `command` field is normalize_command's rewrite, which
+    collapses whitespace even inside quoted arguments; re-running it let
+    the engine's own rewriting mark a TRUE record stale (M4 review, B1).
+    The executor must run and journal `raw_command`."""
+    command = f"{sys.executable} -c \"import sys; sys.exit(0 if len('  ') == 2 else 3)\""
+    pv.record_verification(command=command, passed=True)
+    record = next(
+        m
+        for m in pv.memory_records(limit=20)
+        if m.memory_type is MemoryType.PROCEDURAL and m.content.get("raw_command") == command
+    )
+    assert record.content.get("command") != command, (
+        "precondition: normalization really did rewrite this command"
+    )
+    event = reverify_record(
+        pv,
+        record_id=record.memory_id,
+        trigger_commit="",
+        allowlist=("*",),
+        timeout_s=30.0,
+        root=tmp_path,
+    )
+    assert event is not None
+    assert event.payload["outcome"] == "passed", "the true claim must not be broken by rewriting"
+    assert event.payload["command"] == command
+
+
+def test_a_signal_death_is_errored_not_failed(pv: Provalume, tmp_path: Path) -> None:
+    """A child killed by a signal (OOM killer, SIGTERM) is the environment
+    acting on the process, not the command answering the claim (M4 review,
+    M2): outcome `errored`, the signal recorded, no transition."""
+    command = f"{sys.executable} -c 'import os, signal; os.kill(os.getpid(), signal.SIGTERM)'"
+    record_id = _verified_record(pv, command=command)
+    before = pv.memories.get(record_id)
+    assert before is not None
+    event = reverify_record(
+        pv,
+        record_id=record_id,
+        trigger_commit="",
+        allowlist=("*",),
+        timeout_s=30.0,
+        root=tmp_path,
+    )
+    assert event is not None
+    assert event.payload["outcome"] == "errored"
+    assert event.payload["signal"] == 15
+    after = pv.memories.get(record_id)
+    assert after is not None and after.freshness is before.freshness
+
+
+def test_the_event_carries_the_real_preexecution_fingerprint(pv: Provalume, tmp_path: Path) -> None:
+    """The journaled fingerprint must be the environment the command ran
+    IN, computed before the run — a command that rewrites the lockfile must
+    not fingerprint its own aftermath (M4 review, M4/m3)."""
+    (tmp_path / "uv.lock").write_text("original\n")
+    expected = environment_fingerprint(tmp_path)
+    command = (
+        f"{sys.executable} -c \"import pathlib; pathlib.Path('uv.lock').write_text('rewritten')\""
+    )
+    record_id = _verified_record(pv, command=command)
+    event = reverify_record(
+        pv,
+        record_id=record_id,
+        trigger_commit="",
+        allowlist=("*",),
+        timeout_s=30.0,
+        root=tmp_path,
+    )
+    assert event is not None and event.payload["outcome"] == "passed"
+    assert event.payload["environment_fingerprint"] == expected
+    assert environment_fingerprint(tmp_path) != expected, (
+        "positive control: the command really did change the lockfile"
+    )
+
+
+def test_journaling_failure_after_execution_fails_open_and_screams(
+    pv: Provalume, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The outer fail-open (M4 review, M3/M4): with the journal write
+    exploding AFTER the command ran, nothing raises, the record is
+    unchanged — and the execution is at least in the log, because T27
+    requires every execution journaled."""
+    marker = tmp_path / "ran.marker"
+    command = f"{sys.executable} -c \"import pathlib; pathlib.Path('ran.marker').touch()\""
+    record_id = _verified_record(pv, command=command)
+    before = pv.memories.get(record_id)
+    assert before is not None
+
+    def explode(*args: object, **kwargs: object) -> None:
+        raise OSError("injected: journal write failure")
+
+    monkeypatch.setattr(pv, "record_event", explode)
+    result = reverify_record(
+        pv,
+        record_id=record_id,
+        trigger_commit="",
+        allowlist=("*",),
+        timeout_s=30.0,
+        root=tmp_path,
+    )
+    assert result is None
+    assert marker.exists(), "the command really executed before the journal failed"
+    after = pv.memories.get(record_id)
+    assert after is not None and after.freshness is before.freshness

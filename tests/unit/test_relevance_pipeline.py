@@ -102,6 +102,9 @@ def test_priority_covers_every_reason_and_ranks_deletion_over_imports() -> None:
         "python -m bandit -r src",
         "make LINT=1 lint-all",
         "FLAKE8_CONFIG=x flake8 .",
+        "coverage run -m pytest",
+        "python -m pytest --cov=src --cov-fail-under=90",
+        "interrogate -f 95 mod.py",
     ],
 )
 def test_comment_reading_commands_get_no_irrelevant_short_circuit(command: str) -> None:

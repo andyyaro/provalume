@@ -41,6 +41,10 @@ def _setup(tmp_path: Path) -> tuple[Path, Provalume, str]:
     """A repo whose verified record runs `python check.py`, importing mod."""
     repo = tmp_path / "repo"
     repo.mkdir()
+    # .provalume/ is gitignored by Provalume convention; without this the
+    # test's own `git add -A` would track the database, whose journal
+    # writes would then read as a dirty worktree to the executor's gate.
+    (repo / ".gitignore").write_text(".provalume/\n__pycache__/\n")
     (repo / "mod.py").write_text("V = 1\n")
     (repo / "check.py").write_text(_CHECK)
     _git(tmp_path, "init", "-q", "-b", "main", str(repo))
@@ -137,6 +141,84 @@ def test_the_default_configuration_leaves_execution_off(tmp_path: Path) -> None:
         assert refused is None
         executions = [e for e in pv.events() if e.event_type == EventType.REVERIFICATION_EXECUTED]
         assert not executions
+        assert _freshness(pv, record_id) is FreshnessState.SUSPECT
+    finally:
+        pv.close()
+
+
+def test_a_dirty_worktree_refuses_to_answer_for_landed_commits(tmp_path: Path) -> None:
+    """Worktree state never triggers freshness; it must not clear it either.
+    An uncommitted local fix answering for a landed breaking commit would be
+    a false `current` (M4 review, B3)."""
+    repo, pv, record_id = _setup(tmp_path)
+    try:
+        breaking = _land(repo, "mod.py", "V = 2222\n")
+        process_landed_commit(pv, commit_sha=breaking)
+        assert _freshness(pv, record_id) is FreshnessState.SUSPECT
+
+        (repo / "mod.py").write_text("V = 1\n")  # uncommitted local fix
+        refused = reverify_record(
+            pv,
+            record_id=record_id,
+            trigger_commit=breaking,
+            allowlist=("*",),
+            timeout_s=60.0,
+            root=repo,
+        )
+        assert refused is None
+        assert _freshness(pv, record_id) is FreshnessState.SUSPECT
+
+        _git(repo, "add", "-A")
+        _git(repo, "-c", "user.email=a@b", "-c", "user.name=a", "commit", "-qm", "real fix")
+        landed_fix = _git(repo, "rev-parse", "HEAD")
+        process_landed_commit(pv, commit_sha=landed_fix)
+        passed = reverify_record(
+            pv,
+            record_id=record_id,
+            trigger_commit=landed_fix,
+            allowlist=("*",),
+            timeout_s=60.0,
+            root=repo,
+        )
+        assert passed is not None and passed.payload["outcome"] == "passed"
+        assert _freshness(pv, record_id) is FreshnessState.CURRENT
+    finally:
+        pv.close()
+
+
+def test_a_pass_at_an_older_head_discharges_only_what_it_answers(tmp_path: Path) -> None:
+    """A detached checkout of a good old commit passes the command, but that
+    pass says nothing about the landed breaking tip: only ancestor triggers
+    discharge, and the record stays suspect (M4 review, B3 case 2)."""
+    repo, pv, record_id = _setup(tmp_path)
+    try:
+        seed = _git(repo, "rev-parse", "HEAD")
+        breaking = _land(repo, "mod.py", "V = 2222\n")
+        process_landed_commit(pv, commit_sha=breaking)
+        assert _freshness(pv, record_id) is FreshnessState.SUSPECT
+
+        _git(repo, "checkout", "-q", "--detach", seed)
+        try:
+            event = reverify_record(
+                pv,
+                record_id=record_id,
+                trigger_commit=breaking,
+                allowlist=("*",),
+                timeout_s=60.0,
+                root=repo,
+            )
+        finally:
+            _git(repo, "checkout", "-q", "main")
+        assert event is not None and event.payload["outcome"] == "passed"
+        assert event.payload["executed_at_commit"] == seed
+        assert event.payload["answers_triggers"] == [], (
+            "the breaking commit is not an ancestor of the old HEAD"
+        )
+        assert _freshness(pv, record_id) is FreshnessState.SUSPECT, (
+            "a pass at an old tree must not clear suspicion about the tip"
+        )
+        assert pv.memories.outstanding_triggers(project_id=pv.project_id, record_id=record_id)
+        pv.rebuild()
         assert _freshness(pv, record_id) is FreshnessState.SUSPECT
     finally:
         pv.close()
