@@ -15,6 +15,7 @@ than merely discouraged:
 
 from __future__ import annotations
 
+import contextlib
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
@@ -248,7 +249,7 @@ class Provalume:
         gets linked. The gotcha then warns forever about something that was
         fixed, and ``what_later_worked`` stays empty.
         """
-        return self.record_event(
+        event = self.record_event(
             EventType.VERIFICATION_PASSED if passed else EventType.VERIFICATION_FAILED,
             source=Source.KERNEL,
             payload={
@@ -261,6 +262,17 @@ class Provalume:
             },
             **fields,
         )
+        with contextlib.suppress(Exception):
+            # Freshness (ADR-0020): anchor the claim records this verification
+            # produced to the code they depend on, via the non-executing
+            # extraction methods only. Fail-open (I5): a missing repository or
+            # a failed extraction leaves the verification exactly as recorded.
+            # The engine logs its own failures; this suppression is the belt
+            # over that, so recording can never break on freshness account.
+            from provalume.freshness.blast_radius import record_radii_for_verification
+
+            record_radii_for_verification(self, event)
+        return event
 
     def record_review(
         self,
