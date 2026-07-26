@@ -423,10 +423,6 @@ def test_surface_guard_rejects_a_freshness_tool() -> None:
 # --- I5: fail open at every stage --------------------------------------------
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="red until M1: blast-radius extraction does not exist yet",
-)
 def test_extraction_fails_open(
     pv: Provalume, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
