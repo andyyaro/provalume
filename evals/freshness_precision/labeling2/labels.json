@@ -1,0 +1,57 @@
+[
+  {"case_id": "fmt_statement_split",
+   "label": "no",
+   "rationale": "Collapsing the return into `value = helper(1) + 1;  return value` is valid Python and compute() still returns 3; I ran `python check.py` in the reconstructed post-commit tree and it exited 0."},
+
+  {"case_id": "logic_equivalent_rewrite",
+   "label": "no",
+   "rationale": "`x + x` is arithmetically identical to `x * 2` for the integer input the check exercises, so compute() still returns 3 and the command exited 0 in the post-commit tree."},
+
+  {"case_id": "logic_unrelated_function",
+   "label": "no",
+   "rationale": "Adding an `unrelated()` function touches nothing the check imports or calls; the post-commit run of the command exited 0 and the claim's subject is untouched."},
+
+  {"case_id": "logic_dead_branch_added",
+   "label": "no",
+   "rationale": "The `if False:` branch is unreachable, so compute() still returns 3; executed the command against the post-commit tree and it exited 0."},
+
+  {"case_id": "logic_error_message_changed",
+   "label": "no",
+   "rationale": "The reworded ValueError sits behind `if 1 > 2:` and can never be raised; compute() still returns 3 and the command exited 0 after the commit."},
+
+  {"case_id": "sig_param_added_with_default",
+   "label": "no",
+   "rationale": "The new `scale=2` parameter defaults to the previous behavior, so the existing `helper(1)` call still yields 2 and compute() still returns 3; the command exited 0 post-commit."},
+
+  {"case_id": "imp_unused_added",
+   "label": "no",
+   "rationale": "An added unused `import os` (stdlib, always importable) changes no behavior the check observes; the post-commit run exited 0."},
+
+  {"case_id": "imp_stdlib_now_used",
+   "label": "no",
+   "rationale": "`int(math.floor(2 + 1.2))` evaluates to 3, which is exactly what the check asserts; I confirmed compute() returns 3 and the command exited 0 in the post-commit tree."},
+
+  {"case_id": "imp_helper_moved_out",
+   "label": "no",
+   "rationale": "`helper` moved to helpers.py in the same commit and mod.py imports it, so mod.compute() still returns 3; the command exited 0 against the reconstructed post-commit tree."},
+
+  {"case_id": "struct_renamed_import_fixed",
+   "label": "no",
+   "rationale": "mod.py was deleted, but core.py is a verbatim rename and check.py was updated to `import core as mod` in the same commit, so an equivalent module answers for the deleted one and the command still exited 0 post-commit."},
+
+  {"case_id": "struct_check_tightened",
+   "label": "no",
+   "rationale": "The added `assert mod.helper(0) == 0` holds (helper(0) is 0), so the command still exits 0 — verified by execution; the check only became strictly stronger, which does not weaken or change the claim that the command succeeds."},
+
+  {"case_id": "str_asserted_value_changed",
+   "label": "no",
+   "rationale": "greet()'s return value and the assertion were changed together in the same commit, so the command still exited 0 in the post-commit tree; the record's claim is exactly that this command succeeds, and it still does and still means that."},
+
+  {"case_id": "str_whitespace_inside_string",
+   "label": "no",
+   "rationale": "The extra space inside the returned literal does not affect `startswith('hi')`; I confirmed greet() returns 'hi  there' and the command exited 0 after the commit."},
+
+  {"case_id": "mix_docstring_and_harmless",
+   "label": "no",
+   "rationale": "A reworded docstring plus an added unused `extra()` function leave compute() returning 3; the post-commit run of the command exited 0."}
+]
