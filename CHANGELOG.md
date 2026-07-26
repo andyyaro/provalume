@@ -41,6 +41,19 @@ the MCP recall payload, `recall`/`explain`/`memories` in the CLI all carry
 the state. There is no daemon: scanning is explicit, and LIMITATIONS §9d
 says what that means for the word `current`.
 
+**The relevance filter.** Every trigger is now assessed by a deterministic
+stdlib-`ast`/`tokenize` differ — never a model call — with a closed set of
+reason codes. Whitespace-, comment-, and docstring-only landings discharge
+their own trigger and leave the record `current`; signature, import, and
+body changes keep it `suspect`; a file the differ cannot parse escalates,
+because a differ that cannot read a change does not get to call it
+harmless. Bookkeeping is per trigger commit: a verdict answers exactly the
+landing it assessed. The differ's blind spots are chosen in the escalating
+direction (token-level classifications are cross-checked against the AST,
+which closes a genuine false-trivia hole with lone-CR line endings), and
+`differ_version` rides on every verdict so a future precision measurement
+can name what it measured.
+
 ## [0.1.4] — 2026-07-25
 
 Found by an independent reviewer running the Orkestra integration, then by
