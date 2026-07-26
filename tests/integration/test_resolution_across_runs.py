@@ -146,3 +146,30 @@ def test_a_warning_labels_the_command_output_it_quotes(tmp_path: Path) -> None:
         "the label follows the payload it is meant to qualify"
     )
     pv.close()
+
+
+def test_a_pass_that_never_landed_does_not_resolve_anything(tmp_path: Path) -> None:
+    """Resolution is a claim about the repository, so only a landing can make it.
+
+    A verification proves a command succeeded in some worktree. An orchestrator
+    discards worktrees for merge conflicts, rejected reviews and exhausted retry
+    budgets, so a pass can be entirely real and still describe state that no
+    longer exists anywhere. Recording the resolution from the pass let a live,
+    still-broken failure be marked fixed.
+    """
+    pv = Provalume.open(tmp_path / "m.db", project_id="p", use_git=False)
+    pv.record_verification(command=COMMAND, passed=False, excerpt=FAILURE, task_id="task-A")
+    signature = _gotcha(pv)["failure_signature"]
+
+    # The same command passes in a later run — but nothing lands.
+    pv.record_verification(command=COMMAND, passed=True, task_id="task-B")
+    assert _gotcha(pv)["resolution"] is None, (
+        "a pass with no landing behind it was accepted as what later worked"
+    )
+
+    # Now the work lands, naming the failure it resolves.
+    pv.record_integration(commit_sha="c" * 40, task_id="task-B", resolves_signature=signature)
+    assert _gotcha(pv)["resolution"] is not None, (
+        "a landing that named the signature still did not resolve it"
+    )
+    pv.close()
