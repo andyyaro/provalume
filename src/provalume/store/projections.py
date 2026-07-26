@@ -344,8 +344,23 @@ class Projector:
             return
         verdict = str(event.payload.get("verdict", ""))
         trigger_commit = str(event.payload.get("trigger_commit", ""))
-        if verdict == RelevanceVerdict.IRRELEVANT.value and trigger_commit:
+        if not trigger_commit or not self.repository.trigger_seen(
+            project_id=memory.scope.project_id,
+            record_id=memory.memory_id,
+            trigger_commit=trigger_commit,
+        ):
+            # A verdict for a trigger that was never booked answers a
+            # question nobody asked: stored, derives nothing. Without this
+            # gate a stray `relevant` verdict could *create* suspicion on a
+            # record with an empty outstanding set (M3 review, finding 16).
+            return
+        if verdict == RelevanceVerdict.IRRELEVANT.value:
             with self.repository.db.tx():
+                self.repository.mark_trigger_assessed(
+                    project_id=memory.scope.project_id,
+                    record_id=memory.memory_id,
+                    trigger_commit=trigger_commit,
+                )
                 self.repository.discharge_trigger(
                     project_id=memory.scope.project_id,
                     record_id=memory.memory_id,
@@ -356,11 +371,15 @@ class Projector:
                 )
                 if not outstanding and memory.freshness is FreshnessState.SUSPECT:
                     self._set_freshness(memory, FreshnessState.CURRENT, stats)
-        elif (
-            verdict == RelevanceVerdict.RELEVANT.value
-            and memory.freshness is not FreshnessState.STALE
-        ):
-            self._set_freshness(memory, FreshnessState.SUSPECT, stats)
+        elif verdict == RelevanceVerdict.RELEVANT.value:
+            with self.repository.db.tx():
+                self.repository.mark_trigger_assessed(
+                    project_id=memory.scope.project_id,
+                    record_id=memory.memory_id,
+                    trigger_commit=trigger_commit,
+                )
+                if memory.freshness is not FreshnessState.STALE:
+                    self._set_freshness(memory, FreshnessState.SUSPECT, stats)
         # Any other verdict is a malformed event: stored, derives nothing.
 
     def _on_reverification(self, event: Event, landing: TrustState, stats: ProjectionStats) -> None:

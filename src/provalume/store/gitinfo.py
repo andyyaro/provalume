@@ -70,6 +70,7 @@ class GitInfo:
         self._ancestor_cache: dict[tuple[str, str], bool | None] = {}
         self._exists_cache: dict[str, bool] = {}
         self._changed_cache: dict[str, tuple[str, ...] | None] = {}
+        self._file_cache: dict[tuple[str, str], str | None] = {}
         self._version_cache: str | None = None
 
     # -- availability ------------------------------------------------------
@@ -97,10 +98,15 @@ class GitInfo:
         command string; arguments are passed as a list.
         """
         try:
+            # Pinned encoding: a blob's decoding must not depend on the
+            # machine's locale, or the same journal replayed on two hosts
+            # would diverge. surrogateescape never raises, so an undecodable
+            # blob becomes text `ast.parse` rejects — escalation, not a crash.
             completed = subprocess.run(  # noqa: S603 - fixed argv, no shell  # nosec B603 B607
                 ["git", "-C", str(self.root), *args],
                 capture_output=True,
-                text=True,
+                encoding="utf-8",
+                errors="surrogateescape",
                 timeout=_TIMEOUT_S,
                 check=False,
             )
@@ -320,21 +326,33 @@ class GitInfo:
         """The file's text at a commit, or ``None``.
 
         ``None`` covers every shape of "cannot answer": bad revision, a path
-        absent at that commit (added or deleted files), an unreadable or
-        undecodable blob. The sha is hex-gated and the path rides inside the
-        fused ``sha:path`` revision argument after ``--``-free plumbing, so
-        neither can be read as an option.
+        absent at that commit (added or deleted files), an unreadable blob.
+        The sha is hex-gated and the path rides inside the fused ``sha:path``
+        revision argument after ``--``-free plumbing, so neither can be read
+        as an option. The ``./`` prefix makes git resolve the path relative
+        to this instance's root (the ``-C`` directory) rather than the repo
+        toplevel — radius paths are root-relative, and without the prefix a
+        client rooted in a subdirectory could never read its own files.
+        Cached per (sha, path): one scan asks about the same pre/post images
+        once per record that shares a radius path, and the answer at a fixed
+        commit never changes.
         """
         if not self.available or not sha or not _HEX_SHA.match(sha):
             return None
+        key = (sha, path)
+        cached = self._file_cache.get(key, _UNSET)
+        if cached is not _UNSET:
+            return cached  # type: ignore[return-value]
         try:
-            return self._run(["show", f"{sha}:{path}"])
+            result: str | None = self._run(["show", f"{sha}:./{path}"])
         except GitUnavailable:
-            return None
+            result = None
         except Exception:
-            # An undecodable (binary) blob raises out of text-mode capture;
-            # a file the differ cannot read is a file it cannot clear.
-            return None
+            # Belt over the encoding pin: a blob the differ cannot read is a
+            # file it cannot clear.
+            result = None
+        self._file_cache[key] = result
+        return result
 
     def git_version(self) -> str | None:
         """The numeric version of the git executable, e.g. ``"2.39.2"``.

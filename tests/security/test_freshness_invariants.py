@@ -54,6 +54,7 @@ from provalume.schemas.freshness import (
     RelevanceVerdict,
     ReverificationOutcome,
 )
+from provalume.schemas.memories import MemoryType
 from provalume.schemas.trust import Source, TrustState
 from provalume.sdk.client import Provalume
 
@@ -534,6 +535,82 @@ def test_trigger_fails_open(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
         process_landed_commit(pv, commit_sha=sha2)
         after = [e for e in pv.events() if e.event_type == EventType.FRESHNESS_TRIGGERED]
         assert after == healthy, "a failed trigger pass must append nothing"
+    finally:
+        pv.close()
+
+
+def test_relevance_fails_open(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """I5, assessment stage. Positive control: a fault-free trivia landing is
+    assessed irrelevant and the record returns to ``current``. Then with git
+    plumbing exploding *inside the assessment* (the trigger already booked),
+    the scan appends the trigger but no verdict, counts the failure, leaves
+    the record ``suspect`` — escalation, never a false ``current`` — and
+    raises nothing. A later healthy re-scan recovers the unassessed trigger."""
+    from provalume.freshness.watcher import process_landed_commit
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(  # noqa: S603 - fixed argv, throwaway directory
+        ["git", "-C", str(repo), "init", "-q", "-b", "main"], check=True
+    )
+    _land_commit(repo, "mod.py", "x = 1  # a\n")
+    pv = Provalume.open(repo / ".provalume" / "guard.db", project_id="guard", root=repo)
+    try:
+        pv.record_verification(command="pytest -q tests/", passed=True)
+        # The procedural record specifically: `memory_records` breaks the
+        # recorded-at tie by ULID, and the manual radius landing on the
+        # episodic sibling instead would leave TWO radius-bearing records
+        # (auto-extraction covers the procedural one) and double every count
+        # below, at random.
+        record_id = next(
+            m.memory_id
+            for m in pv.memory_records(limit=10)
+            if m.memory_type is MemoryType.PROCEDURAL
+        )
+        pv.record_event(
+            EventType.BLAST_RADIUS_RECORDED,
+            source=Source.KERNEL,
+            payload={
+                "record_id": record_id,
+                "method": "import_graph",
+                "paths": ["mod.py"],
+                "tool": "ast",
+                "tool_version": "1",
+            },
+        )
+
+        def freshness() -> FreshnessState:
+            memory = pv.memories.get(record_id)
+            assert memory is not None
+            return memory.freshness
+
+        sha = _land_commit(repo, "mod.py", "x = 1  # b\n")
+        healthy = process_landed_commit(pv, commit_sha=sha)
+        assert healthy.assessed and healthy.assessment_failed == 0, (
+            "positive control: the healthy path must assess"
+        )
+        assert freshness() is FreshnessState.CURRENT
+
+        def explode(*args: object, **kwargs: object) -> None:
+            raise OSError("injected: git plumbing failure mid-assessment")
+
+        sha2 = _land_commit(repo, "mod.py", "x = 1  # c\n")
+        monkeypatch.setattr(pv.git, "parents", explode)
+        faulted = process_landed_commit(pv, commit_sha=sha2)
+        assert faulted.triggered, "the trigger itself precedes the fault and must land"
+        assert not faulted.assessed
+        assert faulted.assessment_failed == 1, "a swallowed failure is a failure nobody retries"
+        assert freshness() is FreshnessState.SUSPECT, "fail-open escalates, never clears"
+        verdicts = [e for e in pv.events() if e.event_type == EventType.RELEVANCE_ASSESSED]
+        assert all(e.payload.get("trigger_commit") != sha2 for e in verdicts), (
+            "a failed assessment must append no verdict"
+        )
+
+        monkeypatch.undo()
+        recovered = process_landed_commit(pv, commit_sha=sha2)
+        assert not recovered.triggered, "recovery must not re-book the trigger (T29)"
+        assert recovered.assessed, "a seen-but-unassessed trigger is retried, not skipped"
+        assert freshness() is FreshnessState.CURRENT
     finally:
         pv.close()
 

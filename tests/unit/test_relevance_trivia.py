@@ -218,13 +218,14 @@ def test_reindentation_width_escalates_to_the_backstop(case: str) -> None:
     from four spaces to two (or to a tab) is not stream-identical and this
     stage returns ``None`` rather than reinterpreting a frozen contract that
     says "identical ignoring only ``NL``". The change is still not re-run: the
-    pipeline's AST backstop catches it and lands it irrelevant under the
-    broader ``COMMENT_ONLY`` name. A coarser label, never a false ``current``.
+    pipeline's AST backstop catches it — and labels it ``WHITESPACE_ONLY``,
+    because no comment token differs and calling a reindent a comment change
+    would degrade the audit trail the closed enum exists for.
     """
     pre, post = REINDENT_PAIRS[case]
     assert_escalates(pre, post, pipeline=RelevanceVerdict.IRRELEVANT)
     assert _dump(pre) == _dump(post)
-    assert assess_file(pre, post) == (RelevanceVerdict.IRRELEVANT, ReasonCode.COMMENT_ONLY)
+    assert assess_file(pre, post) == (RelevanceVerdict.IRRELEVANT, ReasonCode.WHITESPACE_ONLY)
 
 
 # --- comment-only ------------------------------------------------------------

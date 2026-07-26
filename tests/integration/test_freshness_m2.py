@@ -144,6 +144,30 @@ def test_only_kernel_sourced_events_derive_freshness(pv: Provalume) -> None:
     _trigger(pv, record_id, source=Source.KERNEL)
     assert _freshness(pv, record_id) is FreshnessState.SUSPECT
 
+    # The gate matters most on the one event that moves a record TOWARD
+    # `current`: an imported or agent-sourced "irrelevant" verdict must not
+    # discharge a genuine kernel trigger (M3 review, finding 17).
+    for source in (Source.IMPORT, Source.AGENT):
+        pv.record_event(
+            EventType.RELEVANCE_ASSESSED,
+            source=source,
+            payload={
+                "record_id": record_id,
+                "trigger_commit": "b" * 40,
+                "verdict": "irrelevant",
+                "differ_version": "1",
+                "reason_code": "comment_only",
+            },
+        )
+        assert _freshness(pv, record_id) is FreshnessState.SUSPECT, (
+            "a non-kernel verdict must not clear suspicion (T17/T28)"
+        )
+    assert pv.memories.outstanding_triggers(project_id=pv.project_id, record_id=record_id), (
+        "the kernel trigger stays outstanding"
+    )
+    pv.rebuild()
+    assert _freshness(pv, record_id) is FreshnessState.SUSPECT
+
 
 def test_a_crafted_record_id_cannot_reach_another_project(db: Database) -> None:
     """T9: a freshness event in project B naming project A's record derives
