@@ -111,9 +111,19 @@ def _run_case(case: Case, workdir: Path) -> dict[str, object]:
             raise RuntimeError(f"corpus bug: no record for {case.case_id}")
         initial = memory.freshness.value
 
+        radius_events = [
+            e
+            for e in pv.events()
+            if e.event_type.value == "blast_radius.recorded"
+            and str(e.payload.get("record_id")) == record_id
+        ]
+        radius_method = str(radius_events[-1].payload.get("method")) if radius_events else None
+        radius_path_count = len(radius_events[-1].payload.get("paths", [])) if radius_events else 0
+
         sha = ""
         after_scan = initial
         reason_code = None
+        intersecting_count = 0
         if case.files_after:
             _materialize(repo, dict(case.files_after))
             sha = _commit_all(repo, f"land {case.case_id}")
@@ -125,6 +135,9 @@ def _run_case(case: Case, workdir: Path) -> dict[str, object]:
             verdicts = [e for e in scan.assessed if str(e.payload.get("record_id")) == record_id]
             if verdicts:
                 reason_code = str(verdicts[-1].payload.get("reason_code"))
+            triggers = [e for e in scan.triggered if str(e.payload.get("record_id")) == record_id]
+            if triggers:
+                intersecting_count = len(triggers[-1].payload.get("intersecting_paths", []))
 
         rerun = reverify_record(
             pv,
@@ -145,6 +158,12 @@ def _run_case(case: Case, workdir: Path) -> dict[str, object]:
             "reason_code": reason_code,
             "rerun_outcome": None if rerun is None else str(rerun.payload.get("outcome")),
             "freshness_final": memory.freshness.value,
+            # Diagnostics (task: false-suspect cross-tabulation). Extra
+            # fields; score.py ignores them.
+            "radius_method": radius_method,
+            "radius_path_count": radius_path_count,
+            "intersecting_path_count": intersecting_count,
+            "record_type": memory.memory_type.value,
         }
     finally:
         pv.close()
