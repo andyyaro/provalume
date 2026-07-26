@@ -184,34 +184,55 @@ def test_the_environment_fingerprint_names_interpreter_and_lockfile(tmp_path: Pa
     assert environment_fingerprint(tmp_path) != with_lock, "uv.lock takes precedence"
 
 
+def _git_only_spy(monkeypatch: pytest.MonkeyPatch) -> list[list[str]]:
+    """A delegating spy: git (the executor's own plumbing) passes through;
+    any other spawn is recorded. An explode-everything spy is vacuous here —
+    it trips on GitInfo's probe and the AssertionError is swallowed by the
+    executor's fail-open, so the test passes for the wrong reason (M4
+    review, N2)."""
+    non_git: list[list[str]] = []
+    original_run = subprocess.run
+
+    def spy(argv, *args, **kwargs):  # type: ignore[no-untyped-def]
+        head = Path(argv[0]).name if isinstance(argv, (list, tuple)) else str(argv)
+        if head != "git":
+            non_git.append(list(argv))
+        return original_run(argv, *args, **kwargs)
+
+    monkeypatch.setattr(subprocess, "run", spy)
+    return non_git
+
+
 def test_the_floor_is_verified_not_observed(
-    pv: Provalume, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    pv: Provalume,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     """Pins the floor at exactly `verified` (M4 review): a record at
     `observed` — one rung below — with a perfectly good command must refuse
-    without spawning anything. The quarantined-proposal test alone would
-    pass under an `observed` floor too."""
+    for THAT reason, without spawning anything. The quarantined-proposal
+    test alone would pass under an `observed` floor too."""
     record_id = _verified_record(pv)
     real = pv.memories.get(record_id)
     assert real is not None
     observed = real.model_copy(update={"trust_state": TrustState.OBSERVED})
     monkeypatch.setattr(pv.memories, "get", lambda _rid: observed)
-
-    def explode(*args: object, **kwargs: object) -> None:
-        raise AssertionError("an observed record must never execute")
-
-    monkeypatch.setattr(subprocess, "run", explode)
-    assert (
-        reverify_record(
-            pv,
-            record_id=record_id,
-            trigger_commit="",
-            allowlist=("*",),
-            timeout_s=5.0,
-            root=tmp_path,
+    non_git = _git_only_spy(monkeypatch)
+    with caplog.at_level("WARNING", logger="provalume.freshness"):
+        assert (
+            reverify_record(
+                pv,
+                record_id=record_id,
+                trigger_commit="",
+                allowlist=("*",),
+                timeout_s=5.0,
+                root=tmp_path,
+            )
+            is None
         )
-        is None
-    )
+    assert non_git == [], "an observed record must never execute"
+    assert "below the verified floor" in caplog.text
 
 
 def test_a_record_from_another_project_refuses_without_executing(
@@ -223,11 +244,7 @@ def test_a_record_from_another_project_refuses_without_executing(
     pv_a = Provalume(db, project_id="project-a", git=None)
     pv_b = Provalume(db, project_id="project-b", git=None)
     record_id = _verified_record(pv_a)
-
-    def explode(*args: object, **kwargs: object) -> None:
-        raise AssertionError("a foreign project's record must never execute")
-
-    monkeypatch.setattr(subprocess, "run", explode)
+    non_git = _git_only_spy(monkeypatch)
     assert (
         reverify_record(
             pv_b,
@@ -239,6 +256,7 @@ def test_a_record_from_another_project_refuses_without_executing(
         )
         is None
     )
+    assert non_git == [], "a foreign project's record must never execute"
     assert not _executions(pv_a)
 
 
@@ -340,7 +358,10 @@ def test_the_event_carries_the_real_preexecution_fingerprint(pv: Provalume, tmp_
 
 
 def test_journaling_failure_after_execution_fails_open_and_screams(
-    pv: Provalume, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    pv: Provalume,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     """The outer fail-open (M4 review, M3/M4): with the journal write
     exploding AFTER the command ran, nothing raises, the record is
@@ -356,15 +377,168 @@ def test_journaling_failure_after_execution_fails_open_and_screams(
         raise OSError("injected: journal write failure")
 
     monkeypatch.setattr(pv, "record_event", explode)
-    result = reverify_record(
-        pv,
-        record_id=record_id,
-        trigger_commit="",
-        allowlist=("*",),
-        timeout_s=30.0,
-        root=tmp_path,
-    )
+    with caplog.at_level("ERROR", logger="provalume.freshness"):
+        result = reverify_record(
+            pv,
+            record_id=record_id,
+            trigger_commit="",
+            allowlist=("*",),
+            timeout_s=30.0,
+            root=tmp_path,
+        )
     assert result is None
     assert marker.exists(), "the command really executed before the journal failed"
+    assert "EXECUTED" in caplog.text and "journaling" in caplog.text, (
+        "T27's auditability rests on this log line; it must actually fire"
+    )
     after = pv.memories.get(record_id)
     assert after is not None and after.freshness is before.freshness
+
+
+def test_a_half_known_repository_identity_refuses(
+    pv: Provalume,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """The identity gate is strict equality, fail-closed (M4 review, R1): a
+    record with no repository identity must not execute in an identified
+    tree, and an identified record must not execute in an anonymous one.
+    Only both-unknown passes."""
+    record_id = _verified_record(pv)
+    real = pv.memories.get(record_id)
+    assert real is not None and real.scope.repository_id is None
+    monkeypatch.setattr(pv, "repository_id", "some-real-repo")
+    non_git = _git_only_spy(monkeypatch)
+    with caplog.at_level("WARNING", logger="provalume.freshness"):
+        assert (
+            reverify_record(
+                pv,
+                record_id=record_id,
+                trigger_commit="",
+                allowlist=("*",),
+                timeout_s=5.0,
+                root=tmp_path,
+            )
+            is None
+        )
+    assert non_git == []
+    assert "unidentified tree must not answer" in caplog.text
+
+
+def test_an_uncertifiable_worktree_refuses(
+    pv: Provalume, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """`worktree_dirty() is None` means "cannot certify", and cannot-certify
+    must never read as clean (M4 review: this branch was unpinned)."""
+    subprocess.run(  # noqa: S603 - fixed argv, throwaway directory
+        ["git", "-C", str(tmp_path), "init", "-q", "-b", "main"], check=True
+    )
+    record_id = _verified_record(pv)
+    from provalume.store.gitinfo import GitInfo
+
+    monkeypatch.setattr(GitInfo, "worktree_dirty", lambda self: None)
+    assert (
+        reverify_record(
+            pv,
+            record_id=record_id,
+            trigger_commit="",
+            allowlist=("*",),
+            timeout_s=5.0,
+            root=tmp_path,
+        )
+        is None
+    )
+    assert not _executions(pv)
+
+
+def test_a_legacy_tmp_placeholder_command_refuses(
+    pv: Provalume, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A legacy record whose only stored command carries the <TMP>
+    normalization placeholder cannot be faithfully re-run (M4 review: the
+    guard was unpinned)."""
+    record_id = _verified_record(pv)
+    real = pv.memories.get(record_id)
+    assert real is not None
+    legacy = real.model_copy(update={"content": {"command": "pytest <TMP>/suite"}})
+    monkeypatch.setattr(pv.memories, "get", lambda _rid: legacy)
+    non_git = _git_only_spy(monkeypatch)
+    assert (
+        reverify_record(
+            pv,
+            record_id=record_id,
+            trigger_commit="",
+            allowlist=("*",),
+            timeout_s=5.0,
+            root=tmp_path,
+        )
+        is None
+    )
+    assert non_git == []
+
+
+def test_a_redacted_command_refuses(
+    pv: Provalume, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Redaction runs at admission, so a credential-shaped token leaves
+    `[REDACTED]` inside the STORED raw_command; executing it would let the
+    engine's own redaction break a true claim and mark it stale (M4 review,
+    N1 — the same class as re-running the normalized rewrite)."""
+    from provalume.redact import REDACTED
+
+    record_id = _verified_record(pv)
+    real = pv.memories.get(record_id)
+    assert real is not None
+    redacted = real.model_copy(
+        update={
+            "content": {
+                **real.content,
+                "raw_command": f"curl -H 'Authorization: Bearer {REDACTED}' https://x/health",
+            }
+        }
+    )
+    monkeypatch.setattr(pv.memories, "get", lambda _rid: redacted)
+    non_git = _git_only_spy(monkeypatch)
+    assert (
+        reverify_record(
+            pv,
+            record_id=record_id,
+            trigger_commit="",
+            allowlist=("*",),
+            timeout_s=5.0,
+            root=tmp_path,
+        )
+        is None
+    )
+    assert non_git == [], "a mangled command must never execute"
+    assert not _executions(pv)
+
+
+def test_the_outer_fail_open_swallows_and_logs(
+    pv: Provalume,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """I5's outer handler, exercised directly (M4 review: it was never
+    reached by any test): an exception before the controls even run leaves
+    the caller unraised and the log naming the failure."""
+
+    def explode(_rid: str) -> None:
+        raise RuntimeError("injected: store failure")
+
+    monkeypatch.setattr(pv.memories, "get", explode)
+    with caplog.at_level("WARNING", logger="provalume.freshness"):
+        assert (
+            reverify_record(
+                pv,
+                record_id="whatever",
+                trigger_commit="",
+                allowlist=("*",),
+                timeout_s=5.0,
+                root=tmp_path,
+            )
+            is None
+        )
+    assert "failed open" in caplog.text

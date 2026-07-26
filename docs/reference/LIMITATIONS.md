@@ -287,6 +287,15 @@ something the command does not see (CPython's `__pycache__` validates by
 mtime-seconds and size, build systems by their own rules) can likewise make
 a re-run answer for an older tree.
 
+Ancestry discharge has a rewrite blind spot: after a `reset --hard`, an
+amend, or a squash that removes a trigger's commit from the branch's
+history, that trigger is never an ancestor of any future HEAD, so
+`reverify` alone can never discharge it and the record stays `suspect` on
+every pass. Fail-safe by construction, and not a stuck state — a fresh
+blast-radius measurement (re-verifying through the SDK, or a new landing
+that re-anchors the record) discharges everything — but worth knowing on
+rebase-heavy branches.
+
 Only procedural records whose verification passed are re-runnable. A
 gotcha's claim is the failure itself — a failing re-run *confirms* it, so
 the pass/fail outcome mapping would be inverted — and an episodic record is
