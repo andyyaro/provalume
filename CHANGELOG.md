@@ -4,6 +4,56 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versioning: [semantic versioning](https://semver.org/spec/v2.0.0.html), with the
 pre-1.0 caveat that `0.x` minor bumps may break the SDK.
 
+## [0.1.4] — 2026-07-25
+
+Found by an independent reviewer running the Orkestra integration, then by
+verification agents re-running the result. The theme: a record that is *false*
+is worse than one that is missing, because the feature exists to be trusted.
+
+### Changed
+
+**A resolution is claimed at the landing, not at the verification that passed.**
+A pass proves a command succeeded in some worktree, and an orchestrator discards
+worktrees for merge conflicts, rejected reviews, exhausted retry budgets, and
+tasks whose commit turns out empty. In each case the pass is real and the work
+still vanishes — so a failure could be marked fixed by work nobody would ever
+see again. `record_integration()` now accepts `resolves_signature`, and the
+projector honours it, because a landing is the first event that proves the tree
+changed.
+
+Failure evidence still records eagerly at verification time: a failing attempt
+genuinely failed, and repetition is exactly what elevates a warning from "this
+once failed" to "this keeps failing".
+
+### Fixed
+
+**A landing named no command, so "what later worked" rendered empty** and read
+as "(nothing recorded yet)" even though the link was recorded correctly. A
+landing's answer is a commit: it now reads "work landed on <branch> as commit
+<sha>".
+
+**An integration event wrote its branch only into the payload,** so the event
+envelope fell back to whatever branch the recording process had checked out. The
+row read as though the work landed on `main` while the payload correctly named
+the integration branch, and a consumer reading the column drew the opposite
+conclusion.
+
+**Every landing re-anchored every record on its branch,** leaving them all
+wearing the last commit to land, whichever task produced it. Promotion is
+branch-wide — a landing does make the branch's claims promotable — but
+`commit_sha` says which commit a record is true of, and only one task's work
+rode in any given commit. A record is now re-anchored only by its own task's
+landing, and an integrated record carries what landed rather than the base its
+worktree branched from.
+
+### Notes
+
+`LIMITATIONS.md` gains §9a: a failure signature is keyed on the command and the
+error, not on the task, so under a repo-wide verification gate a sibling task's
+landing can resolve a signature a still-blocked task shares. Only landed work
+can resolve anything, which is enforced and tested; the residual is stated
+rather than left implicit.
+
 ## [0.1.3] — 2026-07-25
 
 Found by an independent reviewer who ran the Orkestra integration rather than
