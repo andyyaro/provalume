@@ -32,7 +32,7 @@ import re
 from typing import Final
 
 from provalume.schemas.memories import Memory, MemoryFilter, MemoryType
-from provalume.schemas.retrieval import PreflightMatch, PreflightResult
+from provalume.schemas.retrieval import PREFLIGHT_BANNER, PreflightMatch, PreflightResult
 from provalume.schemas.scope import Applicability
 from provalume.schemas.trust import TrustState
 from provalume.store.gitinfo import GitInfo, applicability_at
@@ -373,7 +373,9 @@ class PreflightGate:
             if top.what_later_worked
             else "A similar approach failed previously."
         )
-        lines = [headline, ""]
+        # The banner leads, before any quoted evidence: a reader (or a model)
+        # that stops early must still have seen the label.
+        lines = [PREFLIGHT_BANNER, "", headline, ""]
         lines.append(f"  Previous attempt   {_one_line(top.previous_attempt, 160)}")
         if top.occurrences > 1:
             times = "twice" if top.occurrences == 2 else f"{top.occurrences} times"

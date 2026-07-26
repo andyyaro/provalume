@@ -86,7 +86,9 @@ def test_the_warning_renders_the_commit_on_its_own_line(pv: Provalume) -> None:
     summary = _warn(pv).summary
     line = next(ln for ln in summary.splitlines() if "What later worked" in ln)
     assert FIX_COMMIT[:12] in line, f"the warning line reads {line!r}"
-    assert "resolved" in summary.splitlines()[0].lower()
+    # The headline, not line 0: the untrusted-data banner leads the summary.
+    headline = next(row for row in summary.splitlines() if row.startswith("A similar approach"))
+    assert "resolved" in headline.lower()
 
 
 def test_a_genuinely_different_command_is_still_named(pv: Provalume) -> None:
