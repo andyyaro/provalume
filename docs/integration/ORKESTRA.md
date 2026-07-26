@@ -69,7 +69,9 @@ the poisoning primitive this design refuses.
 ### Review verdicts need an explicit call
 
 Orkestra keeps verdicts inside `attempts.result` JSON — there is no `reviews`
-table (verified by reading its schema at v0.4.4). So the adapter takes verdicts
+table (verified by reading its schema at v0.4.4; re-checked against v0.5.3 on
+2026-07-26 — the table set is unchanged and `attempts.result` is still where
+verdicts live). So the adapter takes verdicts
 as an explicit call at the point the verdict is produced, rather than reading a
 table that does not exist.
 
@@ -214,7 +216,10 @@ neither is depended on. The brief splice needs neither
 
 ## Constraints inherited
 
-Verified against Orkestra v0.4.4:
+Verified against Orkestra v0.4.4, re-checked against v0.5.3 (2026-07-26;
+note Orkestra's README mentions "v0.1.1" only as the release its own
+dogfooding review shipped in — its current version lives in
+`pyproject.toml` and `CHANGELOG.md`):
 
 | Constraint | Provalume |
 |---|---|
