@@ -24,9 +24,10 @@ A similar approach failed previously, and was later resolved.
   Occurrences        failed twice
   Failure evidence   exit 1 - deadlock in db fixture teardown
   What later worked  pytest -p no:xdist tests/integration, recorded 2026-07-26T00:28:32.796Z
-  Applicability      current
+  Applicability      current (ancestry)
   Provenance         attempt attempt-1; agent agent-A
   Trust state        verified
+  Freshness          unverifiable (code since verification)
   Match confidence   0.85 (same command failed previously)
 
   This is a warning, not a block. Provalume does not override policy.

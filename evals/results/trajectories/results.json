@@ -1,8 +1,8 @@
 {
   "metrics": {
     "context": {
-      "max_chars": 1823,
-      "mean_chars": 483.7,
+      "max_chars": 1793,
+      "mean_chars": 468.0,
       "samples": 22
     },
     "cross_scope_leakage": {
@@ -37,9 +37,9 @@
     },
     "rebuild_latency": {
       "count": 4,
-      "max_ms": 8.642,
-      "median_ms": 6.241,
-      "p95_ms": 8.642
+      "max_ms": 8.33,
+      "median_ms": 6.254,
+      "p95_ms": 8.33
     },
     "recall_coverage": {
       "denominator": 4,
@@ -63,9 +63,9 @@
     },
     "retrieval_latency": {
       "count": 66,
-      "max_ms": 0.67,
-      "median_ms": 0.163,
-      "p95_ms": 0.524
+      "max_ms": 0.649,
+      "median_ms": 0.157,
+      "p95_ms": 0.497
     },
     "review_cycle_reduction": {
       "denominator": 0,
@@ -89,9 +89,9 @@
     },
     "write_latency": {
       "count": 73,
-      "max_ms": 2.285,
-      "median_ms": 0.678,
-      "p95_ms": 1.501
+      "max_ms": 2.278,
+      "median_ms": 0.705,
+      "p95_ms": 1.487
     }
   },
   "note": "All figures are Provalume measured against Provalume, replaying call logs captured from real Orkestra runs. No comparison against another system is made or implied.",
@@ -102,56 +102,47 @@
   "trajectories": [
     {
       "description": "A dependency-shaped failure (ModuleNotFoundError at collection) is recorded, recalled by its error text, resolved by a landing \u2014 and stays invisible to a feature-description query",
-      "elapsed_ms": 29.05,
+      "elapsed_ms": 28.87,
       "failures": [],
       "id": 1,
       "name": "env-gotcha",
       "notes": [
-        "drift@6 brief_digest: captured items=1 chars=182, replayed items=1 chars=197",
-        "drift@12 brief_digest: captured items=2 chars=257, replayed items=2 chars=287",
-        "drift@19 brief_digest: captured items=4 chars=1740, replayed items=4 chars=1821",
+        "drift@19 brief_digest: captured items=4 chars=1740, replayed items=4 chars=1791",
         "probe#2(recall) exercised: LIMITATIONS.md \u00a713: the gotcha is findable by its error text, not by a description of the problem"
       ],
       "passed": true
     },
     {
       "description": "A task fails its gate twice, a fix lands in run 2, and the resolution is presented at every later decision point",
-      "elapsed_ms": 26.02,
+      "elapsed_ms": 26.37,
       "failures": [],
       "id": 2,
       "name": "fix-lands",
       "notes": [
-        "drift@6 brief_digest: captured items=1 chars=182, replayed items=1 chars=197",
-        "drift@12 brief_digest: captured items=2 chars=257, replayed items=2 chars=287",
-        "drift@26 brief_digest: captured items=4 chars=1742, replayed items=4 chars=1823",
+        "drift@26 brief_digest: captured items=4 chars=1742, replayed items=4 chars=1793",
         "probe#2(recall) exercised: LIMITATIONS.md \u00a713: the gotcha is keyed on command and error, so the feature description finds nothing under lexical retrieval"
       ],
       "passed": true
     },
     {
       "description": "The same gate fails four times across two runs with no fix; occurrences accumulate, nothing is ever presented as resolved, and the abort decision is remembered",
-      "elapsed_ms": 16.45,
+      "elapsed_ms": 16.89,
       "failures": [],
       "id": 3,
       "name": "repeat-blocked",
       "notes": [
-        "drift@6 brief_digest: captured items=1 chars=182, replayed items=1 chars=197",
-        "drift@12 brief_digest: captured items=2 chars=257, replayed items=2 chars=287",
-        "drift@16 brief_digest: captured items=2 chars=257, replayed items=2 chars=287",
         "probe#3(recall) exercised: LIMITATIONS.md \u00a713: the gotcha stays invisible to the feature description; the decision matches only through the literal word 'retry' in its rejected option"
       ],
       "passed": true
     },
     {
       "description": "A two-command gate where lint always passes and pytest fails: the gate warns about the failing command at every decision point and never once warns about the passing one",
-      "elapsed_ms": 34.28,
+      "elapsed_ms": 34.53,
       "failures": [],
       "id": 4,
       "name": "two-command-gate",
       "notes": [
-        "drift@8 brief_digest: captured items=1 chars=182, replayed items=1 chars=197",
-        "drift@16 brief_digest: captured items=2 chars=257, replayed items=2 chars=287",
-        "drift@36 brief_digest: captured items=4 chars=1742, replayed items=4 chars=1823"
+        "drift@36 brief_digest: captured items=4 chars=1742, replayed items=4 chars=1793"
       ],
       "passed": true
     }

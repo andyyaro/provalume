@@ -269,6 +269,7 @@ class MemoryFilter(BaseModel):
     attempt_id: str | None = None
     subject_key: str | None = None
     author_agent: str | None = None
+    freshness: FreshnessState | None = None
     limit: int = Field(default=50, ge=1, le=1_000)
     offset: int = Field(default=0, ge=0)
 

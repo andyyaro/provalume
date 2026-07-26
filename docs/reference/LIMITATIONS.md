@@ -220,6 +220,17 @@ claim about the landings Provalume was shown, never about the repository in
 general. If the hook is not installed, the axis degrades to exactly what
 existed before it: nothing, honestly labelled.
 
+A minimal hook (`.git/hooks/post-merge`, `chmod +x`):
+
+```sh
+#!/bin/sh
+provalume freshness "$(git rev-parse HEAD)"
+```
+
+With several projects sharing one database, run it once per `--project` —
+the intersection is project-scoped. Re-scanning a commit is idempotent, and
+an unreadable commit exits non-zero rather than reporting a clean no-op.
+
 ## 10. Single writer, single machine
 
 Provalume assumes one writing process. Concurrent writers serialise on SQLite's

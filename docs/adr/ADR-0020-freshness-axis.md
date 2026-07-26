@@ -91,10 +91,10 @@ rebuild derives it. The transition sources:
 | Event (wire name) | Effect on freshness |
 |---|---|
 | `blast_radius.recorded` | record becomes `current` (it is now watchable); when a record accrues several radii — a repeated failure re-anchors its gotcha — the latest by journal order is the one derivation and intersection read |
-| `freshness.triggered` | record becomes `suspect`, unless a relevance verdict for the same trigger says otherwise |
+| `freshness.triggered` | record becomes `suspect`; the trigger is booked as **outstanding** until discharged. Bookkeeping is per trigger commit: a verdict answers one trigger, and the record returns to `current` only when nothing remains outstanding |
 | `relevance.assessed` (verdict `irrelevant`) | the trigger is discharged; record returns to `current` |
 | `relevance.assessed` (verdict `relevant`) | record stays `suspect` |
-| `reverification.executed` (outcome `passed`) | record returns to `current` |
+| `reverification.executed` (outcome `passed`) | record returns to `current` — the re-run executed the tree containing every landed commit, so it discharges **all** outstanding triggers at once; a fresh blast-radius measurement discharges them for the same reason |
 | `reverification.executed` (outcome `failed`) | record becomes `stale` |
 | `reverification.executed` (outcome `errored`) | **no transition** — fail-open (I5): the engine's own failure is never evidence about the record |
 
@@ -148,7 +148,11 @@ them. Ranking may apply a bounded demotion to `suspect` and `stale` records;
 no record is ever excluded from retrieval on freshness alone. Suppressing
 suspect records would convert a labelling mechanism into a deniability
 mechanism (threat T28); the point is that the reader sees
-`[INTEGRATED · STALE]` and decides.
+`[VERIFIED+LANDED · STALE]` (the digest's integrated-trust label) and
+decides. Rendering notes: `current` is the unmarked state, and
+`unverifiable` renders only on radius-bearing types (procedural, gotcha) —
+on types that can never carry a radius it is the only possible value, and a
+constant marker is noise that trains readers to ignore the axis.
 
 ### Execution posture
 

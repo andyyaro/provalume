@@ -384,9 +384,10 @@ class PreflightGate:
         if top.failure_evidence:
             lines.append(f"  Failure evidence   {_one_line(top.failure_evidence, 200)}")
         lines.append(f"  What later worked  {top.what_later_worked or '(nothing recorded yet)'}")
-        lines.append(f"  Applicability      {top.applicability}")
+        lines.append(f"  Applicability      {top.applicability} (ancestry)")
         lines.append(f"  Provenance         {top.provenance}")
         lines.append(f"  Trust state        {top.trust_state}")
+        lines.append(f"  Freshness          {top.freshness} (code since verification)")
         lines.append(f"  Match confidence   {top.confidence:.2f} ({'; '.join(top.match_reasons)})")
 
         if len(matches) > 1:

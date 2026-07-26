@@ -164,12 +164,14 @@ class MemoryRepository:
                 conn.execute("DELETE FROM memory_vectors")
                 conn.execute("DELETE FROM memory_transitions")
                 conn.execute("DELETE FROM blast_radii")
+                conn.execute("DELETE FROM freshness_triggers")
                 conn.execute("DELETE FROM memories")
             else:
                 conn.execute("DELETE FROM memory_links WHERE project_id = ?", (project_id,))
                 conn.execute("DELETE FROM contradictions WHERE project_id = ?", (project_id,))
                 conn.execute("DELETE FROM failure_signatures WHERE project_id = ?", (project_id,))
                 conn.execute("DELETE FROM blast_radii WHERE project_id = ?", (project_id,))
+                conn.execute("DELETE FROM freshness_triggers WHERE project_id = ?", (project_id,))
                 conn.execute(
                     "DELETE FROM memory_vectors WHERE memory_id IN "
                     "(SELECT memory_id FROM memories WHERE project_id = ?)",
@@ -226,7 +228,10 @@ class MemoryRepository:
         the watcher's intersection is an indexed lookup.
         """
         with self.db.tx() as conn:
-            conn.execute("DELETE FROM blast_radii WHERE record_id = ?", (record_id,))
+            conn.execute(
+                "DELETE FROM blast_radii WHERE project_id = ? AND record_id = ?",
+                (project_id, record_id),
+            )
             conn.executemany(
                 "INSERT INTO blast_radii (record_id, project_id, method, path) VALUES (?, ?, ?, ?)",
                 [(record_id, project_id, method, path) for path in paths],
@@ -237,19 +242,64 @@ class MemoryRepository:
     ) -> dict[str, tuple[str, ...]]:
         """Record ids whose blast radius intersects ``paths``, with the
         intersecting paths per record. Chunked so a large landing cannot
-        exceed the bound-parameter limit."""
+        exceed the bound-parameter limit. Terminal records are excluded: a
+        withdrawn record has nothing left to be suspect about, and a trigger
+        for it would only be noise."""
         touched: dict[str, set[str]] = {}
+        terminal = tuple(state.value for state in TERMINAL_STATES)
+        terminal_marks = ", ".join("?" for _ in terminal)
         for start in range(0, len(paths), 500):
             chunk = paths[start : start + 500]
             placeholders = ", ".join("?" for _ in chunk)
             rows = self.db.query(
-                "SELECT record_id, path FROM blast_radii "  # noqa: S608 - placeholders only  # nosec B608
-                f"WHERE project_id = ? AND path IN ({placeholders})",
-                (project_id, *chunk),
+                "SELECT b.record_id, b.path FROM blast_radii b "  # noqa: S608 - placeholders only  # nosec B608
+                "JOIN memories m ON m.memory_id = b.record_id "
+                f"WHERE b.project_id = ? AND b.path IN ({placeholders}) "
+                f"AND m.trust_state NOT IN ({terminal_marks})",
+                (project_id, *chunk, *terminal),
             )
             for row in rows:
                 touched.setdefault(row["record_id"], set()).add(row["path"])
         return {record_id: tuple(sorted(paths_)) for record_id, paths_ in sorted(touched.items())}
+
+    def add_outstanding_trigger(
+        self, *, project_id: str, record_id: str, trigger_commit: str
+    ) -> bool:
+        """Register a not-yet-discharged trigger. ``False`` when it already
+        exists — which is also how the watcher stays idempotent."""
+        with self.db.tx() as conn:
+            cursor = conn.execute(
+                "INSERT OR IGNORE INTO freshness_triggers "
+                "(project_id, record_id, trigger_commit) VALUES (?, ?, ?)",
+                (project_id, record_id, trigger_commit),
+            )
+            return bool(cursor.rowcount)
+
+    def discharge_trigger(self, *, project_id: str, record_id: str, trigger_commit: str) -> None:
+        with self.db.tx() as conn:
+            conn.execute(
+                "DELETE FROM freshness_triggers "
+                "WHERE project_id = ? AND record_id = ? AND trigger_commit = ?",
+                (project_id, record_id, trigger_commit),
+            )
+
+    def clear_triggers(self, *, project_id: str, record_id: str) -> None:
+        """Discharge everything outstanding — a fresh radius measurement or a
+        passing re-run answered for the tree that contains every landed
+        commit."""
+        with self.db.tx() as conn:
+            conn.execute(
+                "DELETE FROM freshness_triggers WHERE project_id = ? AND record_id = ?",
+                (project_id, record_id),
+            )
+
+    def outstanding_triggers(self, *, project_id: str, record_id: str) -> tuple[str, ...]:
+        rows = self.db.query(
+            "SELECT trigger_commit FROM freshness_triggers "
+            "WHERE project_id = ? AND record_id = ? ORDER BY trigger_commit",
+            (project_id, record_id),
+        )
+        return tuple(row["trigger_commit"] for row in rows)
 
     def find(self, spec: MemoryFilter) -> list[Memory]:
         clauses, params = self._build_filter(spec)
@@ -273,6 +323,9 @@ class MemoryRepository:
         if spec.project_id is not None:
             clauses.append("project_id = ?")
             params.append(spec.project_id)
+        if spec.freshness is not None:
+            clauses.append("freshness = ?")
+            params.append(spec.freshness.value)
         if spec.memory_types:
             placeholders = ", ".join("?" for _ in spec.memory_types)
             clauses.append(f"memory_type IN ({placeholders})")

@@ -130,20 +130,34 @@ def trust_label(result: RecallResult) -> str:
     return state.value.upper()
 
 
+#: The types blast radii attach to. For every other type `unverifiable` is
+#: the only value it can ever hold — a constant is not a signal, and marking
+#: every episodic line forever would train readers to ignore the marker
+#: (exactly the warning fatigue the M5 kill criterion is about).
+RADIUS_BEARING_TYPES = frozenset({MemoryType.PROCEDURAL, MemoryType.GOTCHA})
+
+
 def rendered_label(result: RecallResult) -> str:
     """Both axes in one bracket: trust, then freshness when it is a signal.
 
     ``current`` is the unmarked state — the axis speaks up only when it has
-    something to say (`SUSPECT`, `STALE`, `UNVERIFIABLE`), which also keeps
-    the word "current" out of the rendered output entirely, where it would
-    collide with the applicability line's vocabulary (ADR-0020). A digest
-    line reading ``[VERIFIED]`` for a record whose covering code changed this
-    morning is the exact failure the freshness axis exists to eliminate.
+    something to say, which also keeps the word "current" out of the rendered
+    output entirely, where it would collide with the applicability line's
+    vocabulary (ADR-0020). ``unverifiable`` renders only on the types a
+    radius can attach to (procedural, gotcha), where it genuinely means
+    "recorded before code-grounding, or extraction failed"; on every other
+    type it is the only possible value and would be noise. ``SUSPECT`` and
+    ``STALE`` always render — a digest line reading ``[VERIFIED]`` for a
+    record whose covering code changed this morning is the exact failure the
+    freshness axis exists to eliminate.
     """
     label = trust_label(result)
-    if result.freshness is not FreshnessState.CURRENT:
-        label += f" · {result.freshness.value.upper()}"
-    return label
+    freshness = result.freshness
+    if freshness is FreshnessState.CURRENT:
+        return label
+    if freshness is FreshnessState.UNVERIFIABLE and result.memory_type not in RADIUS_BEARING_TYPES:
+        return label
+    return label + f" · {freshness.value.upper()}"
 
 
 def render_item(result: RecallResult, *, include_reasons: bool) -> str:

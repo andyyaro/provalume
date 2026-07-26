@@ -334,8 +334,39 @@ CREATE TABLE blast_radii (
 CREATE INDEX idx_blast_radii_path ON blast_radii(project_id, path);
 """
 
+_003_FRESHNESS_TRIGGERS = """
+-- ----------------------------------------------------------------------------
+-- Per-trigger freshness bookkeeping (ADR-0020, M2 review). A relevance verdict
+-- answers ONE trigger; deriving freshness from "the last event seen" let a
+-- single irrelevant verdict discharge every outstanding trigger — a false
+-- `current`, the exact failure this axis exists to prevent. The outstanding
+-- set is a projection: derived from events, cleared and rebuilt by
+-- `provalume rebuild`.
+-- ----------------------------------------------------------------------------
+CREATE TABLE freshness_triggers (
+    project_id      TEXT NOT NULL,
+    record_id       TEXT NOT NULL,
+    trigger_commit  TEXT NOT NULL,
+    PRIMARY KEY (project_id, record_id, trigger_commit)
+);
+
+-- blast_radii gains project_id in its key: project scoping as constraint,
+-- not convention. Rebuilt rather than altered (SQLite cannot change a PK).
+CREATE TABLE blast_radii_v2 (
+    record_id   TEXT NOT NULL,
+    project_id  TEXT NOT NULL,
+    method      TEXT NOT NULL,
+    path        TEXT NOT NULL,
+    PRIMARY KEY (project_id, record_id, path)
+);
+INSERT INTO blast_radii_v2 SELECT record_id, project_id, method, path FROM blast_radii;
+DROP TABLE blast_radii;
+ALTER TABLE blast_radii_v2 RENAME TO blast_radii;
+CREATE INDEX idx_blast_radii_path ON blast_radii(project_id, path);
+"""
+
 #: Every migration, in order. Index + 1 is the resulting schema version.
-MIGRATIONS: Final[tuple[str, ...]] = (_001_INITIAL, _002_FRESHNESS)
+MIGRATIONS: Final[tuple[str, ...]] = (_001_INITIAL, _002_FRESHNESS, _003_FRESHNESS_TRIGGERS)
 
 #: The schema version this build writes and expects.
 SCHEMA_VERSION: Final = len(MIGRATIONS)

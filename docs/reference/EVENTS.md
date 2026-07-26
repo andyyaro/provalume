@@ -137,7 +137,11 @@ silently-dropped one is what an attacker wants.
 
 **None of these can promote a memory.** They move the freshness axis only —
 deliberately absent from the evidence set, so code-grounded invalidation
-gains no trust authority.
+gains no trust authority. **Only kernel-sourced freshness events derive
+anything**: an imported or agent-sourced freshness event is stored
+append-only and moves nothing (threats T17, T28). A relevance verdict
+answers one trigger; a record returns to `current` only when no trigger
+remains outstanding.
 
 | Type | Moves freshness | Payload |
 |---|---|---|

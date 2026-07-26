@@ -37,9 +37,9 @@
     },
     "rebuild_latency": {
       "count": 1,
-      "max_ms": 1.062,
-      "median_ms": 1.062,
-      "p95_ms": 1.062
+      "max_ms": 1.084,
+      "median_ms": 1.084,
+      "p95_ms": 1.084
     },
     "recall_coverage": {
       "denominator": 1,
@@ -63,9 +63,9 @@
     },
     "retrieval_latency": {
       "count": 1,
-      "max_ms": 0.867,
-      "median_ms": 0.867,
-      "p95_ms": 0.867
+      "max_ms": 0.785,
+      "median_ms": 0.785,
+      "p95_ms": 0.785
     },
     "review_cycle_reduction": {
       "denominator": 0,
@@ -89,9 +89,9 @@
     },
     "write_latency": {
       "count": 1,
-      "max_ms": 2.264,
-      "median_ms": 2.264,
-      "p95_ms": 2.264
+      "max_ms": 2.274,
+      "median_ms": 2.274,
+      "p95_ms": 2.274
     }
   },
   "note": "All figures are Provalume measured against Provalume on its own fixtures. No comparison against another system is made or implied.",
@@ -100,7 +100,7 @@
   "scenarios": [
     {
       "description": "A repeat of a known-failed fix is warned about",
-      "elapsed_ms": 2.84,
+      "elapsed_ms": 2.69,
       "failures": [],
       "id": 1,
       "name": "repeated-failed-fix",
@@ -109,7 +109,7 @@
     },
     {
       "description": "An environment gotcha is recalled later",
-      "elapsed_ms": 1.47,
+      "elapsed_ms": 1.1,
       "failures": [],
       "id": 2,
       "name": "environment-gotcha",
@@ -118,7 +118,7 @@
     },
     {
       "description": "An architecture decision and its rejected options survive",
-      "elapsed_ms": 1.09,
+      "elapsed_ms": 0.81,
       "failures": [],
       "id": 3,
       "name": "decision-recall",
@@ -127,7 +127,7 @@
     },
     {
       "description": "A superseded fact is not served as current truth",
-      "elapsed_ms": 1.13,
+      "elapsed_ms": 1.05,
       "failures": [],
       "id": 4,
       "name": "stale-fact",
@@ -136,7 +136,7 @@
     },
     {
       "description": "A branch-local fact does not leak to another branch",
-      "elapsed_ms": 0.56,
+      "elapsed_ms": 0.55,
       "failures": [],
       "id": 5,
       "name": "branch-isolation",
@@ -145,7 +145,7 @@
     },
     {
       "description": "Concurrent branches may disagree without corruption",
-      "elapsed_ms": 1.09,
+      "elapsed_ms": 1.05,
       "failures": [],
       "id": 6,
       "name": "contradictory-worktrees",
@@ -156,7 +156,7 @@
     },
     {
       "description": "Rejected-branch knowledge never becomes project truth",
-      "elapsed_ms": 0.86,
+      "elapsed_ms": 0.85,
       "failures": [],
       "id": 7,
       "name": "rejected-not-truth",
@@ -165,7 +165,7 @@
     },
     {
       "description": "A procedure climbs the full evidence ladder",
-      "elapsed_ms": 2.54,
+      "elapsed_ms": 2.06,
       "failures": [],
       "id": 8,
       "name": "procedure-promotion",
@@ -174,7 +174,7 @@
     },
     {
       "description": "A human decision carries project authority",
-      "elapsed_ms": 0.98,
+      "elapsed_ms": 1.09,
       "failures": [],
       "id": 9,
       "name": "human-decision",
@@ -183,7 +183,7 @@
     },
     {
       "description": "Secrets are redacted before the durable write",
-      "elapsed_ms": 1.79,
+      "elapsed_ms": 1.63,
       "failures": [],
       "id": 10,
       "name": "sensitive-isolation",
@@ -192,7 +192,7 @@
     },
     {
       "description": "Adversarial records never exceed observed",
-      "elapsed_ms": 1.7,
+      "elapsed_ms": 1.59,
       "failures": [],
       "id": 11,
       "name": "poisoning",
@@ -201,7 +201,7 @@
     },
     {
       "description": "The digest budget is a hard ceiling",
-      "elapsed_ms": 29.4,
+      "elapsed_ms": 27.08,
       "failures": [],
       "id": 12,
       "name": "context-budget",
@@ -210,7 +210,7 @@
     },
     {
       "description": "Projections rebuild identically from the journal",
-      "elapsed_ms": 3.15,
+      "elapsed_ms": 3.12,
       "failures": [],
       "id": 13,
       "name": "rebuild",
@@ -219,7 +219,7 @@
     },
     {
       "description": "Export is deterministic and import refuses conflicts",
-      "elapsed_ms": 4.97,
+      "elapsed_ms": 4.88,
       "failures": [],
       "id": 14,
       "name": "jsonl-merge",
@@ -228,7 +228,7 @@
     },
     {
       "description": "A query never returns another project's records",
-      "elapsed_ms": 0.89,
+      "elapsed_ms": 0.86,
       "failures": [],
       "id": 15,
       "name": "cross-project",
@@ -237,7 +237,7 @@
     },
     {
       "description": "Withdrawn records remain retrievable as history",
-      "elapsed_ms": 1.16,
+      "elapsed_ms": 1.27,
       "failures": [],
       "id": 16,
       "name": "historical-recall",
@@ -246,7 +246,7 @@
     },
     {
       "description": "Agent outcomes aggregate into performance memory",
-      "elapsed_ms": 2.35,
+      "elapsed_ms": 2.26,
       "failures": [],
       "id": 17,
       "name": "agent-performance",
@@ -255,7 +255,7 @@
     },
     {
       "description": "A recurring reviewer finding is retrievable",
-      "elapsed_ms": 1.47,
+      "elapsed_ms": 1.08,
       "failures": [],
       "id": 18,
       "name": "reviewer-finding",
@@ -264,7 +264,7 @@
     },
     {
       "description": "Unrelated actions do not trigger warnings",
-      "elapsed_ms": 1.29,
+      "elapsed_ms": 1.16,
       "failures": [],
       "id": 19,
       "name": "false-positives",
@@ -273,7 +273,7 @@
     },
     {
       "description": "Hybrid retrieval runs and cannot bypass governance",
-      "elapsed_ms": 30.5,
+      "elapsed_ms": 27.11,
       "failures": [],
       "id": 20,
       "name": "lexical-vs-hybrid",
