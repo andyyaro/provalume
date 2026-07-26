@@ -144,7 +144,7 @@ gains no trust authority.
 | `blast_radius.recorded` | → `current` (the record becomes watchable) | `record_id`, `method` (`coverage` \| `import_graph` \| `commit_touch`), `paths`, `line_ranges` (optional), `tool`, `tool_version`; envelope `commit_sha` names the commit the radius was measured at |
 | `freshness.triggered` | → `suspect`, unless a relevance verdict for the same trigger discharges it | `record_id`, `trigger_commit`, `changed_paths`, `intersecting_paths` |
 | `relevance.assessed` | verdict `irrelevant` → back to `current`; `relevant` → stays `suspect` | `record_id`, `trigger_commit`, `verdict` (`relevant` \| `irrelevant`), `differ_version`, `reason_code` (closed enum: `whitespace_only`, `comment_only`, `docstring_only`, `signature_changed`, `body_changed`, `import_changed`, `unparseable`) |
-| `reverification.executed` | outcome `passed` → `current`; `failed` → `stale`; `errored` → **no transition** (fail-open) | `record_id`, `trigger_commit`, `command`, `exit_code`, `duration_ms`, `environment_fingerprint`, `outcome` (`passed` \| `failed` \| `errored`) |
+| `reverification.executed` | outcome `passed` → `current`; `failed` → `stale`; `errored` → **no transition** (fail-open) | `record_id`, `trigger_commit`, `command`, `exit_code`, `duration_ms`, `timeout_ms` (the configured bound — a timeout kill must be distinguishable from an ordinary failure), `environment_fingerprint`, `outcome` (`passed` \| `failed` \| `errored`) |
 
 `environment_fingerprint` is a hash over the interpreter version and the
 dependency lockfile — without it, `stale` cannot distinguish "the code broke
@@ -152,6 +152,16 @@ this" from "the environment drifted".
 
 `freshness.triggered` fires only for **landed** commits, consistent with the
 rule that semantic truth requires a landing. Worktree state never triggers.
+Only **kernel-sourced** freshness events participate in freshness derivation:
+an agent-sourced or imported freshness event is stored append-only and
+derives nothing (threats T17, T28).
+
+These four types are declared ahead of their writers, deliberately: the
+schema was locked at design time (ADR-0020) and the writers arrive milestone
+by milestone (blast radius at M1, triggering at M2, relevance at M3,
+re-execution at M4). Until then the events are exactly what the closed-set
+rationale predicts — stored and inert — which here is the intended state,
+not an accident.
 
 ## Recording events
 

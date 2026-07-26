@@ -17,12 +17,16 @@ Two existing mechanisms come close and must not be confused with this one:
 - **Bi-temporal validity** (`valid_at`/`invalid_at`, threat T7) tracks
   *asserted* supersession — someone recorded that a fact changed. It does not
   notice code changing under a fact nobody has re-asserted.
-- **Applicability** (CURRENT / HISTORICAL / UNCERTAIN, ADR-0006) answers a
-  *query-relative* question: how does this record's commit anchor relate to
-  the commit being asked about, by ancestry. It says nothing about whether the
-  evidence still covers the claim. A record can be applicability-CURRENT (its
-  anchor is an ancestor of the queried commit) while the exact lines its
-  verification executed were rewritten in between.
+- **Applicability** (CURRENT / HISTORICAL / CROSS_SCOPE / UNCERTAIN,
+  ADR-0006) answers a *query-relative* question: how does this record's
+  commit anchor relate to the commit being asked about, by ancestry. It says
+  nothing about whether the evidence still covers the claim. A record can be
+  applicability-CURRENT (its anchor is an ancestor of the queried commit)
+  while the exact lines its verification executed were rewritten in between.
+  Note the deliberate naming collision: `Applicability.CURRENT` and
+  `FreshnessState.CURRENT` share the string value `"current"` while meaning
+  different things; comparisons must be enum-typed, and rendered labels must
+  be axis-qualified so a digest reader can never mistake one for the other.
 
 The missing question is: **does the code still support this record's
 evidence?** That is a property of the record against the landed history, not
@@ -66,13 +70,17 @@ destroy the invariant that trust only moves on evidence or judgement.
 
 ### `stale` is not `invalidated`
 
-`invalidated` is a terminal trust judgement made by a person or reviewer: the
-claim is wrong. `stale` is a machine observation: the claim's re-run failed at
-a specific commit under a specific environment. Observations can be
-overturned by the next landing; judgements are withdrawn only by the same
-authority that made them. The freshness machinery can never produce
-`invalidated`, and invalidation does not consult freshness. Merging them
-would let a failing CI run silently exercise reviewer authority.
+The distinction is axis and terminality, not who acted. `invalidated` is a
+**terminal trust state**: the record leaves the ladder and is never again
+served as truth. It is reached by reviewer judgement — and also by the
+existing machine rule `invalidate.commit_reverted`, when the landing a record
+depended on is reverted; the machinery is not human-only and this ADR does
+not pretend otherwise. `stale` is a **freshness label on a live record**: the
+record keeps its trust state, keeps its history, keeps being served — with
+the label attached — and the next landing whose re-run passes returns it to
+`current`. The freshness machinery can never produce `invalidated` or any
+other trust transition, and invalidation does not consult freshness. Merging
+the two would let a failing re-run silently exercise withdrawal authority.
 
 ### Derivation
 
@@ -90,6 +98,14 @@ rebuild derives it. The transition sources:
 | `reverification.executed` (outcome `failed`) | record becomes `stale` |
 | `reverification.executed` (outcome `errored`) | **no transition** — fail-open (I5): the engine's own failure is never evidence about the record |
 
+**Only kernel-sourced events participate in this derivation.** A freshness
+event arriving with any other `source` — an agent, or a JSONL import — is
+stored append-only like every event, and derives nothing: an imported
+`freshness.triggered` must not be able to relabel a local record any more
+than an imported claim can raise its trust (threats T17, T28). The engine
+emits as the kernel because, like the original verification, its authority
+comes from having run the computation itself.
+
 A reverting commit needs no special case: it lands, triggers, is assessed
 relevant, re-runs pass, and the record returns to `current` through the
 ordinary cycle.
@@ -101,10 +117,10 @@ underscore names map one-to-one:
 
 | Spec name | Wire name | Payload |
 |---|---|---|
-| `blast_radius_recorded` | `blast_radius.recorded` | `record_id, method (coverage\|import_graph\|commit_touch), paths[], line_ranges[]?, tool, tool_version, commit_sha` |
+| `blast_radius_recorded` | `blast_radius.recorded` | `record_id, method (coverage\|import_graph\|commit_touch), paths[], line_ranges[]?, tool, tool_version` — the commit the radius was measured at travels as the envelope `commit_sha`, per the journal's existing convention |
 | `freshness_trigger` | `freshness.triggered` | `record_id, trigger_commit, changed_paths[], intersecting_paths[]` |
 | `relevance_assessed` | `relevance.assessed` | `record_id, trigger_commit, verdict (relevant\|irrelevant), differ_version, reason_code` |
-| `reverification_executed` | `reverification.executed` | `record_id, trigger_commit, command, exit_code, duration_ms, environment_fingerprint, outcome (passed\|failed\|errored)` |
+| `reverification_executed` | `reverification.executed` | `record_id, trigger_commit, command, exit_code, duration_ms, timeout_ms, environment_fingerprint, outcome (passed\|failed\|errored)` — `timeout_ms` is the configured bound, recorded so a kill-by-timeout is distinguishable from an ordinary failure |
 
 `reason_code` is a closed enum — `whitespace_only`, `comment_only`,
 `docstring_only`, `signature_changed`, `body_changed`, `import_changed`,

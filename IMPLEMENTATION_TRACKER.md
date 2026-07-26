@@ -15,7 +15,7 @@ and what was deliberately not done. It is not a plan; it is evidence.
 |---|---|---|
 | 0 — Inventory, name clearance, competitor trials | done | `docs/research/NAME_CLEARANCE.md`, `COMPETITOR_TRIALS.md`, `RESEARCH_VALIDATION.md` |
 | 1 — Threat, trust, poisoning, privacy models | done | `docs/security/` (4 documents, written before the engine) |
-| 2 — ADR-0001..0018 | done | `docs/adr/` (18 records, each with a Consequences section) |
+| 2 — ADR-0001..0020 | done | `docs/adr/` (20 records, each with a Consequences section) |
 | 3 — Repository foundation | done | `pyproject.toml`, `src/` layout, LICENSE, NOTICE, CI, design tokens |
 | 4 — Immutable event journal | done | `store/journal.py`, `store/db.py`, `store/migrations.py` |
 | 5 — Memory model | done | `schemas/memories.py`, six categories with per-type ceilings |
