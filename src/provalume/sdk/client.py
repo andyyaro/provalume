@@ -357,6 +357,14 @@ class Provalume:
         reviews and exhausted budgets. Only a landing proves the repository
         changed, which is what "what later worked" claims.
         """
+        # The envelope branch too, not only the payload. Without it the event
+        # falls back to whatever branch the recording process has checked out —
+        # for an orchestrator that is the *base* branch, so the row read "landed
+        # on main" while the payload correctly named the integration branch, and
+        # a consumer reading the column drew the opposite conclusion.
+        event_fields = dict(fields)
+        if branch:
+            event_fields.setdefault("branch", branch)
         return self.record_event(
             EventType.INTEGRATION_LANDED,
             source=Source.KERNEL,
@@ -366,14 +374,7 @@ class Provalume:
                 **({"resolves_signature": resolves_signature} if resolves_signature else {}),
             },
             commit_sha=commit_sha,
-            # The envelope branch too, not only the payload. Without this the
-            # event falls back to whatever branch the recording process happens
-            # to have checked out — for an orchestrator that is the *base*
-            # branch, so the row read "landed on main" while the payload
-            # correctly named the integration branch. A consumer reading the
-            # column rather than the payload drew the opposite conclusion.
-            **({"branch": branch} if branch else {}),
-            **fields,
+            **event_fields,
         )
 
     def propose(
