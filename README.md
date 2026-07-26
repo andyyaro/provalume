@@ -60,8 +60,11 @@ dependencies. One SQLite file in your project.
 
 ## Install
 
+Not on PyPI yet — install from source:
+
 ```sh
-uv tool install provalume     # or: pipx install provalume, pip install provalume
+git clone https://github.com/andyyaro/provalume && cd provalume
+uv tool install .             # or: pipx install . , pip install .
 ```
 
 ## 60-second quickstart

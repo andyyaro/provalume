@@ -4,8 +4,11 @@ Sixty seconds to a useful memory. No API key, no agent CLI, no network.
 
 ## Install
 
+Not on PyPI yet — install from source:
+
 ```sh
-uv tool install provalume      # or: pipx install provalume, pip install provalume
+git clone https://github.com/andyyaro/provalume && cd provalume
+uv tool install .              # or: pipx install . , pip install .
 ```
 
 ## See it work
