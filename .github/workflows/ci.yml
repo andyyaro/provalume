@@ -65,6 +65,12 @@ jobs:
       - name: Ruff
         run: uv run ruff check src tests
 
+      # Added after 50 of 98 files had drifted: `ruff check` never looked at
+      # formatting, so the drift grew silently and every unrelated diff carried
+      # reformatting noise.
+      - name: Ruff format
+        run: uv run ruff format --check src tests
+
       - name: mypy (strict)
         run: uv run mypy
 

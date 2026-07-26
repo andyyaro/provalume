@@ -41,9 +41,7 @@ def test_url_userinfo_keeps_context_and_drops_the_password() -> None:
 
 def test_pem_private_key_block_is_removed() -> None:
     pem = (
-        "-----BEGIN RSA PRIVATE KEY-----\n"
-        "MIIEpAIBAAKCAQEA1234567890\n"
-        "-----END RSA PRIVATE KEY-----"
+        "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA1234567890\n-----END RSA PRIVATE KEY-----"
     )
     out, _ = redact.redact_text(f"key:\n{pem}\ndone")
     assert "MIIEpAIBAAKCAQEA" not in out
@@ -146,8 +144,9 @@ def test_hashes_cover_redacted_content(pv: Provalume) -> None:
 
 
 def test_audit_reports_a_clean_credential_scan(pv: Provalume) -> None:
-    pv.record_verification(command="deploy", passed=False,
-                           excerpt="sk-ant-api03-abcdefghijklmnop", error_kind="e")
+    pv.record_verification(
+        command="deploy", passed=False, excerpt="sk-ant-api03-abcdefghijklmnop", error_kind="e"
+    )
     report = pv.audit(deep=True)
     assert not [f for f in report.errors if f.check == "credential_scan"]
 

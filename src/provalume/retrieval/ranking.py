@@ -215,9 +215,7 @@ def build_reasons(
         reasons.append("contested by another current record on the same subject")
 
     if memory.poisoning_risk > 0:
-        reasons.append(
-            f"carries a poisoning-risk penalty of {memory.poisoning_risk:.2f}"
-        )
+        reasons.append(f"carries a poisoning-risk penalty of {memory.poisoning_risk:.2f}")
 
     return tuple(reasons)
 
@@ -244,9 +242,7 @@ def build_warnings(
                 "in history, so it reflects one branch or one attempt"
             )
         elif memory.trust_state.value in {"invalidated", "superseded", "rejected"}:
-            warnings.append(
-                f"withdrawn ({memory.trust_state}); retained as history, not as fact"
-            )
+            warnings.append(f"withdrawn ({memory.trust_state}); retained as history, not as fact")
         else:
             warnings.append(f"not established truth (trust state {memory.trust_state})")
 

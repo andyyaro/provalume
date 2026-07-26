@@ -127,9 +127,7 @@ def _pinned_keys(pairs: tuple[str, ...] | None, *, flag: str) -> dict[str, bytes
     for pair in pairs or ():
         key_id, separator, path = pair.partition("=")
         if not key_id or not separator or not path:
-            err_console.print(
-                f"[pv.error]error:[/] {flag} expects KEY_ID=PATH, got {pair!r}"
-            )
+            err_console.print(f"[pv.error]error:[/] {flag} expects KEY_ID=PATH, got {pair!r}")
             raise typer.Exit(code=2)
         try:
             keys[key_id] = _key_material(Path(path).read_bytes())

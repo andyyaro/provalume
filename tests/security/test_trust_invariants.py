@@ -105,8 +105,9 @@ def test_sdk_refuses_agent_promotion_and_records_the_refusal(pv: Provalume) -> N
     target = records[0]
 
     with pytest.raises(TrustError):
-        pv.promote(target.memory_id, TrustState.OBSERVED, actor="agent-A",
-                   actor_source=Source.AGENT)
+        pv.promote(
+            target.memory_id, TrustState.OBSERVED, actor="agent-A", actor_source=Source.AGENT
+        )
 
     transitions = pv.memories.transitions_for(target.memory_id)
     refusals = [t for t in transitions if not t["allowed"]]
@@ -188,7 +189,8 @@ def test_self_review_is_refused() -> None:
 def test_independent_review_is_accepted() -> None:
     record = memory(trust_state=TrustState.VERIFIED, author_agent="agent-A")
     approval = evidence(
-        EventType.REVIEW_APPROVED, payload={"reviewer": "reviewer-2"},
+        EventType.REVIEW_APPROVED,
+        payload={"reviewer": "reviewer-2"},
         agent_profile="reviewer-2",
     )
     decision = promotion.can_promote(
@@ -200,9 +202,7 @@ def test_independent_review_is_accepted() -> None:
 
 def test_case_and_whitespace_do_not_defeat_the_self_review_check() -> None:
     record = memory(trust_state=TrustState.VERIFIED, author_agent="Agent-A")
-    approval = evidence(
-        EventType.REVIEW_APPROVED, payload={"reviewer": "  agent-a  "}
-    )
+    approval = evidence(EventType.REVIEW_APPROVED, payload={"reviewer": "  agent-a  "})
     decision = promotion.can_promote(
         record, TrustState.REVIEWED, evidence=(approval,), actor_source=Source.KERNEL
     )
@@ -350,9 +350,7 @@ def test_invalidated_can_revalidate_with_fresh_evidence() -> None:
         trust_state=TrustState.INVALIDATED,
         invalid_at="2026-01-01T00:00:00.000Z",
     )
-    fresh = evidence(
-        EventType.VERIFICATION_PASSED, recorded_at="2026-06-01T00:00:00.000Z"
-    )
+    fresh = evidence(EventType.VERIFICATION_PASSED, recorded_at="2026-06-01T00:00:00.000Z")
     decision = promotion.can_promote(
         record, TrustState.VERIFIED, evidence=(fresh,), actor_source=Source.HUMAN
     )
@@ -365,18 +363,14 @@ def test_revalidation_requires_evidence_recorded_after_the_invalidation() -> Non
         trust_state=TrustState.INVALIDATED,
         invalid_at="2026-06-01T00:00:00.000Z",
     )
-    stale = evidence(
-        EventType.VERIFICATION_PASSED, recorded_at="2026-01-01T00:00:00.000Z"
-    )
+    stale = evidence(EventType.VERIFICATION_PASSED, recorded_at="2026-01-01T00:00:00.000Z")
     assert not promotion.can_promote(
         record, TrustState.VERIFIED, evidence=(stale,), actor_source=Source.HUMAN
     ).allowed
 
 
 def test_revalidation_cannot_exceed_verified() -> None:
-    record = memory(
-        trust_state=TrustState.INVALIDATED, invalid_at="2026-01-01T00:00:00.000Z"
-    )
+    record = memory(trust_state=TrustState.INVALIDATED, invalid_at="2026-01-01T00:00:00.000Z")
     fresh = evidence(
         EventType.INTEGRATION_LANDED,
         commit_sha="a" * 40,
@@ -399,7 +393,5 @@ def test_every_decision_names_a_policy_rule() -> None:
         (memory(trust_state=TrustState.OBSERVED), TrustState.VERIFIED, Source.KERNEL),
     ]
     for record, target, source in cases:
-        decision = promotion.can_promote(
-            record, target, evidence=(), actor_source=source
-        )
+        decision = promotion.can_promote(record, target, evidence=(), actor_source=source)
         assert decision.rule, f"a decision without a rule: {record.trust_state}->{target}"

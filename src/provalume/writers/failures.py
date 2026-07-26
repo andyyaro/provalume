@@ -286,9 +286,7 @@ def build_gotcha(
     error_kind = str(payload.get("error_kind", ""))
     excerpt = str(payload.get("excerpt", payload.get("error", "")))
 
-    text = gotcha_text(
-        command=command, error_kind=error_kind, excerpt=excerpt, branch=event.branch
-    )
+    text = gotcha_text(command=command, error_kind=error_kind, excerpt=excerpt, branch=event.branch)
     content: dict[str, Any] = {
         "command": command,
         "error_kind": error_kind,
@@ -410,7 +408,7 @@ def build_resolution_link(
     updated = gotcha.model_copy(
         update={
             "content": content,
-            "text": text[: 8192],
+            "text": text[:8192],
             "source_event_ids": tuple(
                 dict.fromkeys([*gotcha.source_event_ids, resolution_event.event_id])
             ),
@@ -432,9 +430,7 @@ def _derive_memory_id(event_id: str, kind: str) -> str:
 def _with_content_hash(memory: Memory) -> Memory:
     from provalume.interchange.hashing import hash_content
 
-    return memory.model_copy(
-        update={"content_hash": hash_content(memory.content, memory.text)}
-    )
+    return memory.model_copy(update={"content_hash": hash_content(memory.content, memory.text)})
 
 
 def merge_occurrence(gotcha: Memory, event: Event, occurrences: int) -> Memory:
@@ -450,9 +446,7 @@ def merge_occurrence(gotcha: Memory, event: Event, occurrences: int) -> Memory:
     updated = gotcha.model_copy(
         update={
             "content": content,
-            "source_event_ids": tuple(
-                dict.fromkeys([*gotcha.source_event_ids, event.event_id])
-            ),
+            "source_event_ids": tuple(dict.fromkeys([*gotcha.source_event_ids, event.event_id])),
             "valid_at": min(gotcha.valid_at, event.recorded_at),
         }
     )

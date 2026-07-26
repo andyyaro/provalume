@@ -61,8 +61,14 @@ def test_an_export_can_be_signed_and_the_import_verifies_it(
     out = tmp_path / "signed"
 
     cli(
-        "export", "--out", str(out), "--project", PROJECT,
-        "--sign-hmac", f"team={key}", cwd=project,
+        "export",
+        "--out",
+        str(out),
+        "--project",
+        PROJECT,
+        "--sign-hmac",
+        f"team={key}",
+        cwd=project,
     )
     record = json.loads((out / "events.jsonl").read_text().splitlines()[0])
     assert record["signature"]["scheme"] == "hmac-sha256"
@@ -82,8 +88,14 @@ def test_a_signature_that_does_not_verify_is_quarantined_by_the_cli(
     wrong = key_file(tmp_path, "wrong.key", "not the shared secret")
     out = tmp_path / "signed"
     cli(
-        "export", "--out", str(out), "--project", PROJECT,
-        "--sign-hmac", f"team={real}", cwd=project,
+        "export",
+        "--out",
+        str(out),
+        "--project",
+        PROJECT,
+        "--sign-hmac",
+        f"team={real}",
+        cwd=project,
     )
 
     payload = imported(cli, out, "--hmac-key", f"team={wrong}", cwd=target)
@@ -100,8 +112,14 @@ def test_an_unknown_signer_is_quarantined_by_the_cli(
     other = key_file(tmp_path, "other.key", "a different secret")
     out = tmp_path / "signed"
     cli(
-        "export", "--out", str(out), "--project", PROJECT,
-        "--sign-hmac", f"team={key}", cwd=project,
+        "export",
+        "--out",
+        str(out),
+        "--project",
+        PROJECT,
+        "--sign-hmac",
+        f"team={key}",
+        cwd=project,
     )
 
     payload = imported(cli, out, "--hmac-key", f"someone-else={other}", cwd=target)
@@ -142,8 +160,14 @@ def test_a_malformed_key_option_is_a_usage_error(
     cli("export", "--out", str(out), "--project", PROJECT, cwd=project)
 
     result = cli(
-        "import", str(out), "--project", PROJECT,
-        "--hmac-key", "no-equals-sign", cwd=project, expect=2,
+        "import",
+        str(out),
+        "--project",
+        PROJECT,
+        "--hmac-key",
+        "no-equals-sign",
+        cwd=project,
+        expect=2,
     )
 
     assert "KEY_ID=PATH" in result.stderr
@@ -162,8 +186,14 @@ def test_ed25519_signing_round_trips_through_the_cli(
     out = tmp_path / "signed"
 
     cli(
-        "export", "--out", str(out), "--project", PROJECT,
-        "--sign-ed25519", f"me={private_path}", cwd=project,
+        "export",
+        "--out",
+        str(out),
+        "--project",
+        PROJECT,
+        "--sign-ed25519",
+        f"me={private_path}",
+        cwd=project,
     )
     record = json.loads((out / "events.jsonl").read_text().splitlines()[0])
     assert record["signature"]["scheme"] == "ed25519"
@@ -187,8 +217,14 @@ def test_an_import_conflict_exits_non_zero_without_a_traceback(
     shared = tmp_path / "shared.db"
     cli("export", "--out", str(out), "--project", PROJECT, cwd=project)
     cli(
-        "import", str(out), "--db", str(shared), "--project", "first-owner",
-        "--allow-foreign-project", cwd=project,
+        "import",
+        str(out),
+        "--db",
+        str(shared),
+        "--project",
+        "first-owner",
+        "--allow-foreign-project",
+        cwd=project,
     )
 
     altered = []
@@ -200,8 +236,15 @@ def test_an_import_conflict_exits_non_zero_without_a_traceback(
     (out / "events.jsonl").write_text("\n".join(altered) + "\n", encoding="utf-8")
 
     result = cli(
-        "import", str(out), "--db", str(shared), "--project", "second-owner",
-        "--allow-foreign-project", cwd=project, expect=1,
+        "import",
+        str(out),
+        "--db",
+        str(shared),
+        "--project",
+        "second-owner",
+        "--allow-foreign-project",
+        cwd=project,
+        expect=1,
     )
 
     assert "Traceback" not in result.stderr

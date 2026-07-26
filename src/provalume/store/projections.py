@@ -371,9 +371,7 @@ class Projector:
                     link_type="resolved_by",
                 )
 
-    def _link_resolution(
-        self, event: Event, signature: str, stats: ProjectionStats
-    ) -> None:
+    def _link_resolution(self, event: Event, signature: str, stats: ProjectionStats) -> None:
         """Attach a success that names the failure signature it resolves.
 
         The declared path reaches across runs, where inference cannot, and it
@@ -425,13 +423,9 @@ class Projector:
             key = invalidation.subject_key(subject)
             for memory in self._lessons_naming_subject(event.project_id, key):
                 if not memory.content.get("resolution"):
-                    self._write(
-                        reviews.attach_approval(memory, event), stats, update=True
-                    )
+                    self._write(reviews.attach_approval(memory, event), stats, update=True)
 
-    def _on_review_finding(
-        self, event: Event, landing: TrustState, stats: ProjectionStats
-    ) -> None:
+    def _on_review_finding(self, event: Event, landing: TrustState, stats: ProjectionStats) -> None:
         finding = reviews.build_finding(event, landing_state=landing)
         if finding is not None:
             self._write(finding, stats)
@@ -457,9 +451,7 @@ class Projector:
         self._detect_contradictions(semantic, stats)
         self._try_promote(semantic, (event,), stats)
 
-    def _on_fact_changed(
-        self, event: Event, landing: TrustState, stats: ProjectionStats
-    ) -> None:
+    def _on_fact_changed(self, event: Event, landing: TrustState, stats: ProjectionStats) -> None:
         """A fact changed: supersede the old record, never overwrite it."""
         semantic = verification.build_semantic(event, landing_state=landing)
         if semantic is None:
@@ -470,9 +462,7 @@ class Projector:
         if replaced_id:
             old = self.repository.get(replaced_id)
         else:
-            for candidate in self._memories_with_subject(
-                event.project_id, semantic.subject_key
-            ):
+            for candidate in self._memories_with_subject(event.project_id, semantic.subject_key):
                 if (
                     candidate.memory_type is MemoryType.SEMANTIC
                     and candidate.is_current
@@ -508,22 +498,16 @@ class Projector:
                     link_type="supersedes",
                 )
             else:
-                stats.notes.append(
-                    f"supersession refused for {old.memory_id}: {decision.reason}"
-                )
+                stats.notes.append(f"supersession refused for {old.memory_id}: {decision.reason}")
 
         self._write(semantic, stats)
         self._try_promote(semantic, (event,), stats)
 
-    def _on_integration(
-        self, event: Event, landing: TrustState, stats: ProjectionStats
-    ) -> None:
+    def _on_integration(self, event: Event, landing: TrustState, stats: ProjectionStats) -> None:
         """Work landed: records from that branch or task become promotable."""
         target = str(event.payload.get("target", "run"))
         state = (
-            IntegrationState.ACCEPTED_USER
-            if target == "user"
-            else IntegrationState.INTEGRATED_RUN
+            IntegrationState.ACCEPTED_USER if target == "user" else IntegrationState.INTEGRATED_RUN
         )
         for memory in self._memories_for_landing(event):
             updated = memory.model_copy(
@@ -579,12 +563,8 @@ class Projector:
         branch = str(event.payload.get("branch") or event.branch or "").strip()
         if not branch:
             return
-        for memory in self.repository.find(
-            _branch_filter(event.project_id, branch)
-        ):
-            decision = invalidation.can_reject(
-                memory, rule=invalidation.RULE_REJECT_BRANCH
-            )
+        for memory in self.repository.find(_branch_filter(event.project_id, branch)):
+            decision = invalidation.can_reject(memory, rule=invalidation.RULE_REJECT_BRANCH)
             if not decision.allowed:
                 continue
             rejected = memory.model_copy(
@@ -611,9 +591,7 @@ class Projector:
         if memory is None:
             return
         memory_id = memory.memory_id
-        decision = invalidation.can_invalidate(
-            memory, rule=invalidation.RULE_INVALIDATE_HUMAN
-        )
+        decision = invalidation.can_invalidate(memory, rule=invalidation.RULE_INVALIDATE_HUMAN)
         if not decision.allowed:
             stats.notes.append(f"invalidation refused for {memory_id}: {decision.reason}")
             return
@@ -704,9 +682,7 @@ class Projector:
         try:
             memory_type = MemoryType(raw_type)
         except ValueError:
-            stats.notes.append(
-                f"proposal {event.event_id} names unknown memory type {raw_type!r}"
-            )
+            stats.notes.append(f"proposal {event.event_id} names unknown memory type {raw_type!r}")
             return
 
         text = str(event.payload.get("text", "")).strip()
@@ -896,9 +872,7 @@ class Projector:
         else:
             stats.memories_written += 1
 
-    def _apply_review_state(
-        self, event: Event, state: ReviewState, stats: ProjectionStats
-    ) -> None:
+    def _apply_review_state(self, event: Event, state: ReviewState, stats: ProjectionStats) -> None:
         """Stamp a review verdict onto the records it actually concerns.
 
         Only claim types (semantic, procedural, decision) are stamped by attempt
@@ -920,9 +894,7 @@ class Projector:
             named_by_subject = _names_subject(memory, subject_match)
             if memory.memory_type not in CLAIM_TYPES and not named_by_subject:
                 continue
-            source_event_ids = tuple(
-                dict.fromkeys([*memory.source_event_ids, event.event_id])
-            )
+            source_event_ids = tuple(dict.fromkeys([*memory.source_event_ids, event.event_id]))
             if memory.review_state is state and source_event_ids == memory.source_event_ids:
                 continue
             self._write(
@@ -1049,9 +1021,7 @@ class Projector:
         )
 
     def _detect_contradictions(self, memory: Memory, stats: ProjectionStats) -> None:
-        for other in self._memories_with_subject(
-            memory.scope.project_id, memory.subject_key
-        ):
+        for other in self._memories_with_subject(memory.scope.project_id, memory.subject_key):
             if invalidation.contradicts(memory, other):
                 self.repository.add_contradiction(
                     project_id=memory.scope.project_id,

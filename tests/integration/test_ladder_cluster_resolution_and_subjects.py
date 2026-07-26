@@ -189,9 +189,7 @@ def test_an_approval_of_another_subject_resolves_nothing(pv: Provalume) -> None:
     pv.record_review(
         reviewer="rev-1", approved=False, subject=SUBJECT, finding=FINDING, task_id="t1"
     )
-    pv.record_review(
-        reviewer="rev-2", approved=True, subject="log rotation policy", task_id="t2"
-    )
+    pv.record_review(reviewer="rev-2", approved=True, subject="log rotation policy", task_id="t2")
 
     assert _the_gotcha(pv).content["resolution"] is None
 

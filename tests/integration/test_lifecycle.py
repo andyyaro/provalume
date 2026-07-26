@@ -16,8 +16,9 @@ EXCERPT = "E   TimeoutError: deadlock in db fixture teardown"
 def test_failure_produces_one_gotcha_with_an_occurrence_count(pv: Provalume) -> None:
     """Repeats fold into one record. Repetition is a count, not a new record."""
     for _ in range(3):
-        pv.record_verification(command=FAILING, passed=False, excerpt=EXCERPT,
-                               error_kind="test_failure", task_id="t1")
+        pv.record_verification(
+            command=FAILING, passed=False, excerpt=EXCERPT, error_kind="test_failure", task_id="t1"
+        )
 
     gotchas = pv.memory_records(memory_types=[MemoryType.GOTCHA], limit=10)
     assert len(gotchas) == 1
@@ -27,8 +28,9 @@ def test_failure_produces_one_gotcha_with_an_occurrence_count(pv: Provalume) -> 
 
 def test_gotcha_is_verified_by_its_failure(pv: Provalume) -> None:
     """The case that forced trust_state and verification_state apart."""
-    pv.record_verification(command=FAILING, passed=False, excerpt=EXCERPT,
-                           error_kind="test_failure")
+    pv.record_verification(
+        command=FAILING, passed=False, excerpt=EXCERPT, error_kind="test_failure"
+    )
     gotcha = pv.memory_records(memory_types=[MemoryType.GOTCHA])[0]
     assert gotcha.trust_state is TrustState.VERIFIED
     assert gotcha.verification_state.value == "failed"
@@ -41,11 +43,17 @@ def test_a_later_success_is_linked_as_the_resolution(pv: Provalume) -> None:
     one task are only two commands in one task, and inferring a resolution from
     that credits the wrong success.
     """
-    pv.record_verification(command=FAILING, passed=False, excerpt=EXCERPT,
-                           error_kind="test_failure", purpose="the integration suite",
-                           task_id="t1")
-    pv.record_verification(command=WORKING, passed=True,
-                           purpose="the integration suite", task_id="t1")
+    pv.record_verification(
+        command=FAILING,
+        passed=False,
+        excerpt=EXCERPT,
+        error_kind="test_failure",
+        purpose="the integration suite",
+        task_id="t1",
+    )
+    pv.record_verification(
+        command=WORKING, passed=True, purpose="the integration suite", task_id="t1"
+    )
 
     gotcha = pv.memory_records(memory_types=[MemoryType.GOTCHA])[0]
     assert gotcha.content["resolution"] is not None
@@ -54,13 +62,13 @@ def test_a_later_success_is_linked_as_the_resolution(pv: Provalume) -> None:
 
 
 def test_full_promotion_ladder_is_recorded_rung_by_rung(pv: Provalume) -> None:
-    pv.record_verification(command=WORKING, passed=True, purpose="suite",
-                           agent_profile="agent-A", task_id="t1")
+    pv.record_verification(
+        command=WORKING, passed=True, purpose="suite", agent_profile="agent-A", task_id="t1"
+    )
     procedure = pv.memory_records(memory_types=[MemoryType.PROCEDURAL])[0]
     assert procedure.trust_state is TrustState.VERIFIED
 
-    pv.record_review(reviewer="reviewer-2", approved=True, agent_profile="reviewer-2",
-                     task_id="t1")
+    pv.record_review(reviewer="reviewer-2", approved=True, agent_profile="reviewer-2", task_id="t1")
     pv.record_integration(commit_sha="a" * 40, target="user", task_id="t1")
 
     promoted = pv.memories.get(procedure.memory_id)
@@ -83,8 +91,9 @@ def test_full_promotion_ladder_is_recorded_rung_by_rung(pv: Provalume) -> None:
 
 def test_a_review_does_not_approve_the_failure_it_prompted(pv: Provalume) -> None:
     """A reviewer approving a fix has not approved the bug."""
-    pv.record_verification(command=FAILING, passed=False, excerpt=EXCERPT,
-                           error_kind="test_failure", task_id="t1")
+    pv.record_verification(
+        command=FAILING, passed=False, excerpt=EXCERPT, error_kind="test_failure", task_id="t1"
+    )
     pv.record_verification(command=WORKING, passed=True, task_id="t1")
     pv.record_review(reviewer="reviewer-2", approved=True, task_id="t1")
 
@@ -95,8 +104,9 @@ def test_a_review_does_not_approve_the_failure_it_prompted(pv: Provalume) -> Non
 
 def test_landing_does_not_integrate_a_failure_record(pv: Provalume) -> None:
     """What lands is the fix; the failure is still a failure."""
-    pv.record_verification(command=FAILING, passed=False, excerpt=EXCERPT,
-                           error_kind="test_failure", task_id="t1")
+    pv.record_verification(
+        command=FAILING, passed=False, excerpt=EXCERPT, error_kind="test_failure", task_id="t1"
+    )
     pv.record_integration(commit_sha="b" * 40, target="user", task_id="t1")
 
     gotcha = pv.memory_records(memory_types=[MemoryType.GOTCHA])[0]
@@ -106,8 +116,12 @@ def test_landing_does_not_integrate_a_failure_record(pv: Provalume) -> None:
 
 def test_human_decision_reaches_integrated_on_authority(pv: Provalume) -> None:
     """A decision has no command to verify; its authority is a person."""
-    pv.record_decision(selected="use uv", rejected=["pip", "poetry"],
-                       rationale="faster and lockfile-native", authority="tech-lead")
+    pv.record_decision(
+        selected="use uv",
+        rejected=["pip", "poetry"],
+        rationale="faster and lockfile-native",
+        authority="tech-lead",
+    )
     decision = pv.memory_records(memory_types=[MemoryType.DECISION])[0]
     assert decision.trust_state is TrustState.INTEGRATED
     assert decision.content["rejected"] == ["pip", "poetry"]
@@ -144,8 +158,12 @@ def test_rejected_branch_records_become_permanently_non_truth(pv: Provalume) -> 
     from provalume.schemas.trust import Source
 
     pv.record_fact(statement="A flag exists.", subject="flag", branch="feature/x")
-    pv.record_event(EventType.BRANCH_REJECTED, source=Source.HUMAN,
-                    payload={"branch": "feature/x"}, branch="feature/x")
+    pv.record_event(
+        EventType.BRANCH_REJECTED,
+        source=Source.HUMAN,
+        payload={"branch": "feature/x"},
+        branch="feature/x",
+    )
 
     records = pv.memory_records(include_terminal=True, current_only=False, limit=20)
     rejected = [m for m in records if m.trust_state is TrustState.REJECTED]
@@ -155,8 +173,9 @@ def test_rejected_branch_records_become_permanently_non_truth(pv: Provalume) -> 
 
 def test_rebuild_reproduces_projections_byte_for_byte(pv: Provalume) -> None:
     """ADR-0002's claim in executable form."""
-    pv.record_verification(command=FAILING, passed=False, excerpt=EXCERPT,
-                           error_kind="test_failure", task_id="t1")
+    pv.record_verification(
+        command=FAILING, passed=False, excerpt=EXCERPT, error_kind="test_failure", task_id="t1"
+    )
     pv.record_verification(command=WORKING, passed=True, task_id="t1")
     pv.record_review(reviewer="reviewer-2", approved=True, task_id="t1")
     pv.record_integration(commit_sha="c" * 40, target="user", task_id="t1")
@@ -179,8 +198,9 @@ def test_writers_are_pure_functions_of_their_event(pv: Provalume) -> None:
     """Same event in, same record out — including the identifier."""
     from provalume.writers.failures import build_gotcha
 
-    event = pv.record_verification(command=FAILING, passed=False, excerpt=EXCERPT,
-                                   error_kind="test_failure")
+    event = pv.record_verification(
+        command=FAILING, passed=False, excerpt=EXCERPT, error_kind="test_failure"
+    )
     first, sig1 = build_gotcha(event, landing_state=TrustState.OBSERVED)
     second, sig2 = build_gotcha(event, landing_state=TrustState.OBSERVED)
     assert first.memory_id == second.memory_id
@@ -197,8 +217,9 @@ def test_status_reports_the_chain_head(pv: Provalume) -> None:
 
 
 def test_audit_passes_on_a_healthy_database(pv: Provalume) -> None:
-    pv.record_verification(command=FAILING, passed=False, excerpt=EXCERPT,
-                           error_kind="test_failure")
+    pv.record_verification(
+        command=FAILING, passed=False, excerpt=EXCERPT, error_kind="test_failure"
+    )
     pv.record_decision(selected="x")
     report = pv.audit()
     assert report.ok, [str(f) for f in report.errors]
@@ -214,15 +235,14 @@ def test_proposals_never_escape_quarantine_without_evidence(pv: Provalume) -> No
 
 
 def test_preflight_records_a_warning_event(pv: Provalume) -> None:
-    pv.record_verification(command=FAILING, passed=False, excerpt=EXCERPT,
-                           error_kind="test_failure")
+    pv.record_verification(
+        command=FAILING, passed=False, excerpt=EXCERPT, error_kind="test_failure"
+    )
     result = pv.preflight(command=FAILING, error_kind="test_failure", error_text=EXCERPT)
     assert result.matched
     assert result.warning_event_id
 
-    outcome = pv.record_warning_outcome(
-        warning_event_id=result.warning_event_id, heeded=True
-    )
+    outcome = pv.record_warning_outcome(warning_event_id=result.warning_event_id, heeded=True)
     assert outcome.causal_parent_event_id == result.warning_event_id
 
 

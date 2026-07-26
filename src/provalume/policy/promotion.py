@@ -175,8 +175,7 @@ def can_promote(
         return Decision(
             False,
             REFUSE_DOWNGRADE,
-            f"{target} is a withdrawal, not a promotion; use invalidate, supersede, "
-            "or reject",
+            f"{target} is a withdrawal, not a promotion; use invalidate, supersede, or reject",
         )
 
     if rank(target) <= rank(current):
@@ -244,9 +243,7 @@ def can_promote(
 def _to_observed(memory: Memory, evidence: tuple[Event, ...]) -> Decision:
     """quarantined -> observed: evidence that the record ties to something real."""
     linked = tuple(
-        e.event_id
-        for e in evidence
-        if e.run_id or e.task_id or e.attempt_id or e.commit_sha
+        e.event_id for e in evidence if e.run_id or e.task_id or e.attempt_id or e.commit_sha
     )
     if not linked:
         return Decision(
@@ -264,9 +261,7 @@ def _to_observed(memory: Memory, evidence: tuple[Event, ...]) -> Decision:
 
 def _human_decision_events(evidence: tuple[Event, ...]) -> tuple[Event, ...]:
     return tuple(
-        e
-        for e in evidence
-        if e.event_type is EventType.HUMAN_DECISION and e.source is Source.HUMAN
+        e for e in evidence if e.event_type is EventType.HUMAN_DECISION and e.source is Source.HUMAN
     )
 
 
@@ -287,11 +282,7 @@ def _semantic_authority(memory: Memory, evidence: tuple[Event, ...]) -> tuple[Ev
     proves nothing about it.
     """
     landed = (
-        tuple(
-            e
-            for e in evidence
-            if e.event_type is EventType.INTEGRATION_LANDED and e.commit_sha
-        )
+        tuple(e for e in evidence if e.event_type is EventType.INTEGRATION_LANDED and e.commit_sha)
         if memory.is_landed
         else ()
     )
@@ -322,8 +313,7 @@ def _to_verified(memory: Memory, evidence: tuple[Event, ...]) -> Decision:
             return Decision(
                 True,
                 RULE_DECISION_HUMAN,
-                "a recorded human decision is its own evidence; there is no command "
-                "to verify",
+                "a recorded human decision is its own evidence; there is no command to verify",
                 tuple(e.event_id for e in human),
             )
 
@@ -347,9 +337,7 @@ def _to_verified(memory: Memory, evidence: tuple[Event, ...]) -> Decision:
         )
 
     trusted = tuple(
-        e
-        for e in verifications
-        if e.source in {Source.KERNEL, Source.ADAPTER, Source.HUMAN}
+        e for e in verifications if e.source in {Source.KERNEL, Source.ADAPTER, Source.HUMAN}
     )
     if not trusted:
         return Decision(
@@ -480,9 +468,7 @@ def _to_integrated(
             )
 
     landed = tuple(
-        e
-        for e in evidence
-        if e.event_type is EventType.INTEGRATION_LANDED and e.commit_sha
+        e for e in evidence if e.event_type is EventType.INTEGRATION_LANDED and e.commit_sha
     )
     if not landed:
         return Decision(
@@ -524,9 +510,7 @@ def _revalidation(
 
     invalid_at = memory.invalid_at
     fresh = tuple(
-        e
-        for e in evidence
-        if e.is_evidence and (invalid_at is None or e.recorded_at > invalid_at)
+        e for e in evidence if e.is_evidence and (invalid_at is None or e.recorded_at > invalid_at)
     )
     if not fresh:
         return Decision(

@@ -186,10 +186,15 @@ class Provenance(BaseModel):
             reviewer = approvals[0].reviewer
             independent = "" if approvals[0].independent else " (not independent)"
             parts.append(f"approved by {reviewer}{independent}")
-        landed = [i for i in self.integrations if i.state in {
-            IntegrationState.INTEGRATED_RUN,
-            IntegrationState.ACCEPTED_USER,
-        }]
+        landed = [
+            i
+            for i in self.integrations
+            if i.state
+            in {
+                IntegrationState.INTEGRATED_RUN,
+                IntegrationState.ACCEPTED_USER,
+            }
+        ]
         if landed:
             parts.append(f"landed in {landed[0].commit_sha[:12]}")
         if self.resolution is not ResolutionStatus.RESOLVED:

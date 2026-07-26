@@ -64,9 +64,7 @@ TRANSITIONS_FILE: Final = "transitions.jsonl"
 #: describe this database's local chain, not the record. Exporting them would
 #: invite an importer to treat a foreign chain as its own, and the chain is a
 #: local tamper-evidence mechanism rather than a global ledger (ADR-0002).
-_LOCAL_ONLY_FIELDS: Final[frozenset[str]] = frozenset(
-    {"seq", "event_hash", "prev_event_hash"}
-)
+_LOCAL_ONLY_FIELDS: Final[frozenset[str]] = frozenset({"seq", "event_hash", "prev_event_hash"})
 
 
 # --- Export ----------------------------------------------------------------
@@ -515,9 +513,7 @@ def import_directory(
                 )
                 break
             if not text:
-                result.rejected.append(
-                    ImportIssue(line_no, filename, "line exceeds the size cap")
-                )
+                result.rejected.append(ImportIssue(line_no, filename, "line exceeds the size cap"))
                 continue
 
             try:
@@ -630,9 +626,7 @@ def import_directory(
                         )
                     except (OversizedInputError, ValidationError) as exc:
                         result.rejected.append(
-                            ImportIssue(
-                                line_no, filename, f"failed admission: {exc}", record_id
-                            )
+                            ImportIssue(line_no, filename, f"failed admission: {exc}", record_id)
                         )
                         continue
                     result.events.append(admitted.event)

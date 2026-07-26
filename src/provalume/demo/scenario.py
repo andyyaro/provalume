@@ -48,6 +48,7 @@ def _beat(console: Console, number: int, title: str) -> None:
 
 def _init_repo(path: Path) -> str:
     """Create a throwaway Git repository so commit validity is exercised for real."""
+
     def git(*args: str) -> str:
         return subprocess.run(  # noqa: S603 - fixed argv, throwaway directory  # nosec B603 B607
             ["git", "-C", str(path), *args],
@@ -114,8 +115,10 @@ def run_demo(
         gotchas = pv.memory_records(memory_types=("gotcha",), limit=5)
         gotcha = gotchas[0]
         out.print(f"     [pv.trust.verified]{gotcha.trust_state}[/] {gotcha.text[:96]}")
-        out.print(f"     [pv.muted]signature {gotcha.content['failure_signature'][7:19]} — "
-                  f"paths, timings, and PIDs normalised away[/]")
+        out.print(
+            f"     [pv.muted]signature {gotcha.content['failure_signature'][7:19]} — "
+            f"paths, timings, and PIDs normalised away[/]"
+        )
 
         # A second agent hits the same wall, so the count elevates.
         pv.record_verification(
@@ -129,8 +132,9 @@ def run_demo(
             task_id="task-2",
             attempt_id="attempt-2",
         )
-        out.print("     [pv.muted]agent-B hits it too — folded into one record, "
-                  "occurrences now 2[/]")
+        out.print(
+            "     [pv.muted]agent-B hits it too — folded into one record, occurrences now 2[/]"
+        )
 
         # 4 -------------------------------------------------------------
         _beat(out, 4, "Agent B is warned before repeating it")
@@ -159,8 +163,10 @@ def run_demo(
         out.print("     [pv.success]exit 0[/] — 43 passed")
         procedures = pv.memory_records(memory_types=("procedural",), limit=5)
         procedure = procedures[0]
-        out.print(f"     [pv.trust.verified]{procedure.trust_state}[/] "
-                  "procedure recorded, keyed on the exact command")
+        out.print(
+            f"     [pv.trust.verified]{procedure.trust_state}[/] "
+            "procedure recorded, keyed on the exact command"
+        )
 
         # 7 -------------------------------------------------------------
         _beat(out, 7, "An independent reviewer approves")
@@ -172,14 +178,14 @@ def run_demo(
             task_id="task-2",
             attempt_id="attempt-3",
         )
-        out.print("     [pv.muted]reviewer-2 is not the author (agent-B), so the "
-                  "review counts as independent[/]")
+        out.print(
+            "     [pv.muted]reviewer-2 is not the author (agent-B), so the "
+            "review counts as independent[/]"
+        )
 
         # 8-9 -----------------------------------------------------------
         _beat(out, 8, "The commit is integrated")
-        pv.record_integration(
-            commit_sha=head, target="user", branch="main", task_id="task-2"
-        )
+        pv.record_integration(commit_sha=head, target="user", branch="main", task_id="task-2")
         out.print(f"     [pv.muted]landed at {head[:12]}[/]")
 
         _beat(out, 9, "The procedure is promoted to verified+landed")
@@ -188,8 +194,10 @@ def run_demo(
         transitions = pv.memories.transitions_for(procedure.memory_id)
         for transition in reversed(transitions):
             if transition["allowed"]:
-                out.print(f"       [pv.lineage]{transition['from_state']} -> "
-                          f"{transition['to_state']}[/]  {transition['policy_rule']}")
+                out.print(
+                    f"       [pv.lineage]{transition['from_state']} -> "
+                    f"{transition['to_state']}[/]  {transition['policy_rule']}"
+                )
 
         # 10 ------------------------------------------------------------
         _beat(out, 10, "A stale fact is superseded, not overwritten")
@@ -206,17 +214,18 @@ def run_demo(
             marker = "superseded" if fact.trust_state is TrustState.SUPERSEDED else "current"
             style = "pv.trust.superseded" if marker == "superseded" else "pv.trust.observed"
             out.print(f"     [{style}]{marker:<11}[/] {fact.text[:76]}")
-        out.print("     [pv.muted]history survives — the old fact is retained, "
-                  "not deleted[/]")
+        out.print("     [pv.muted]history survives — the old fact is retained, not deleted[/]")
 
         # 11-12 ---------------------------------------------------------
         _beat(out, 11, "A later task retrieves the verified memory with provenance")
         response = pv.recall("integration tests parallel", limit=4)
         for result in response.results:
             state = result.trust_state.value
-            out.print(f"     [pv.trust.{state}]{state:<11}[/] "
-                      f"[pv.type.{result.memory_type.value}]{result.memory_type:<11}[/] "
-                      f"{result.text[:62]}")
+            out.print(
+                f"     [pv.trust.{state}]{state:<11}[/] "
+                f"[pv.type.{result.memory_type.value}]{result.memory_type:<11}[/] "
+                f"{result.text[:62]}"
+            )
             if result.provenance_summary:
                 out.print(f"       [pv.provenance]{result.provenance_summary}[/]")
 
@@ -227,8 +236,9 @@ def run_demo(
         out.print("     [pv.muted]score breakdown:[/]")
         for name, value, contribution in top.explanation.breakdown.as_table():
             if value or contribution:
-                out.print(f"       [pv.muted]{name:<14} {value:>6.3f} "
-                          f"x weight = {contribution:+.3f}[/]")
+                out.print(
+                    f"       [pv.muted]{name:<14} {value:>6.3f} x weight = {contribution:+.3f}[/]"
+                )
         out.print(f"       [pv.muted]{'TOTAL':<14} {top.explanation.breakdown.total:>6.3f}[/]")
 
         # Digest ---------------------------------------------------------
@@ -242,8 +252,10 @@ def run_demo(
                 out.print(f"  [pv.heading]{line}[/]")
             else:
                 out.print(f"  {line}")
-        out.print(f"\n  [pv.muted]{digest.chars_used}/{digest.char_budget} characters, "
-                  f"{digest.omitted_count} omitted[/]")
+        out.print(
+            f"\n  [pv.muted]{digest.chars_used}/{digest.char_budget} characters, "
+            f"{digest.omitted_count} omitted[/]"
+        )
 
         # Audit ----------------------------------------------------------
         report = pv.audit()
@@ -252,8 +264,10 @@ def run_demo(
 
         elapsed = time.monotonic() - started
         out.print(f"\n[pv.success]Done[/] in {elapsed:.1f}s — no API key, no network.")
-        out.print("[pv.muted]Every line above came from the real engine: same storage, "
-                  "same policy, same retrieval.[/]")
+        out.print(
+            "[pv.muted]Every line above came from the real engine: same storage, "
+            "same policy, same retrieval.[/]"
+        )
 
         summary: dict[str, Any] = {
             "elapsed_s": round(elapsed, 3),
@@ -327,7 +341,7 @@ td {{ vertical-align: top; }}
 <body><div class="pv-wrap">
 <h1>Provalume demo</h1>
 <p><strong>Facts your agents proved, not things they said.</strong></p>
-<p>Generated offline in {summary['elapsed_s']}s from {summary['events']} journal events.
+<p>Generated offline in {summary["elapsed_s"]}s from {summary["events"]} journal events.
 No API key, no network, no LLM.</p>
 
 <div class="pv-card">
@@ -344,7 +358,7 @@ Every digest opens with this banner. Retrieved memory is data, never instruction
 
 <h2>Memory records</h2>
 <table><thead><tr><th>Trust</th><th>Type</th><th>Text</th></tr></thead>
-<tbody>{''.join(rows)}</tbody></table>
+<tbody>{"".join(rows)}</tbody></table>
 
 <p class="pv-lineage"><small>Gold marks attested states, mauve marks lineage,
 green marks action. Colour is reinforcement; every state is labelled in text.</small></p>

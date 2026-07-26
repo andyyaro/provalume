@@ -39,18 +39,26 @@ def _all_gotchas(pv: Provalume) -> list:
 def _gotchas(pv: Provalume) -> dict[str, dict]:
     """Every gotcha, keyed by the command that produced it."""
     return {
-        str(m.content["command"]): {"content": m.content, "text": m.text}
-        for m in _all_gotchas(pv)
+        str(m.content["command"]): {"content": m.content, "text": m.text} for m in _all_gotchas(pv)
     }
 
 
 def test_an_unrelated_success_does_not_claim_credit_for_a_failure(pv: Provalume) -> None:
     """Two gates, one task. The passing one did not fix the other."""
-    pv.record_verification(command=LINT, passed=False, excerpt="E501 line too long",
-                           error_kind="lint_error", task_id="task-1")
-    pv.record_verification(command=PARALLEL, passed=False,
-                           excerpt="E TimeoutError: deadlock in db fixture teardown",
-                           error_kind="test_failure", task_id="task-1")
+    pv.record_verification(
+        command=LINT,
+        passed=False,
+        excerpt="E501 line too long",
+        error_kind="lint_error",
+        task_id="task-1",
+    )
+    pv.record_verification(
+        command=PARALLEL,
+        passed=False,
+        excerpt="E TimeoutError: deadlock in db fixture teardown",
+        error_kind="test_failure",
+        task_id="task-1",
+    )
     pv.record_verification(command=SERIAL, passed=True, task_id="task-1")
 
     lint = _gotchas(pv)[LINT]
@@ -61,8 +69,9 @@ def test_an_unrelated_success_does_not_claim_credit_for_a_failure(pv: Provalume)
         f"memory holds a falsified sentence: {lint['text']!r}"
     )
 
-    warning = pv.preflight(command=LINT, error_kind="lint_error",
-                           error_text="E501 line too long", record=False)
+    warning = pv.preflight(
+        command=LINT, error_kind="lint_error", error_text="E501 line too long", record=False
+    )
     assert "resolved" not in warning.summary.lower().splitlines()[0], (
         "an open failure is announced as resolved"
     )
@@ -71,8 +80,13 @@ def test_an_unrelated_success_does_not_claim_credit_for_a_failure(pv: Provalume)
 
 def test_a_false_attribution_does_not_lock_out_the_genuine_fix(pv: Provalume) -> None:
     """The signature must stay open, or the real fix can never attach."""
-    pv.record_verification(command=LINT, passed=False, excerpt="E501 line too long",
-                           error_kind="lint_error", task_id="task-1")
+    pv.record_verification(
+        command=LINT,
+        passed=False,
+        excerpt="E501 line too long",
+        error_kind="lint_error",
+        task_id="task-1",
+    )
     pv.record_verification(command=SERIAL, passed=True, task_id="task-1")
 
     # The lint gate is fixed and re-run, later in the same task.
@@ -84,8 +98,13 @@ def test_a_false_attribution_does_not_lock_out_the_genuine_fix(pv: Provalume) ->
 
 
 def test_the_same_command_passing_resolves_its_own_failure(pv: Provalume) -> None:
-    pv.record_verification(command=PARALLEL, passed=False, excerpt="E TimeoutError: x",
-                           error_kind="test_failure", task_id="task-1")
+    pv.record_verification(
+        command=PARALLEL,
+        passed=False,
+        excerpt="E TimeoutError: x",
+        error_kind="test_failure",
+        task_id="task-1",
+    )
     pv.record_verification(command=PARALLEL, passed=True, task_id="task-1")
 
     resolution = _gotchas(pv)[PARALLEL]["content"]["resolution"]
@@ -95,11 +114,17 @@ def test_the_same_command_passing_resolves_its_own_failure(pv: Provalume) -> Non
 
 def test_a_different_command_with_the_same_purpose_resolves(pv: Provalume) -> None:
     """The case the loose match existed to serve, now supported by evidence."""
-    pv.record_verification(command=PARALLEL, passed=False, excerpt="E TimeoutError: x",
-                           error_kind="test_failure", purpose="the integration suite",
-                           task_id="task-1")
-    pv.record_verification(command=SERIAL, passed=True,
-                           purpose="the integration suite", task_id="task-1")
+    pv.record_verification(
+        command=PARALLEL,
+        passed=False,
+        excerpt="E TimeoutError: x",
+        error_kind="test_failure",
+        purpose="the integration suite",
+        task_id="task-1",
+    )
+    pv.record_verification(
+        command=SERIAL, passed=True, purpose="the integration suite", task_id="task-1"
+    )
 
     resolution = _gotchas(pv)[PARALLEL]["content"]["resolution"]
     assert resolution is not None, "a declared shared purpose did not link the fix"
@@ -108,11 +133,20 @@ def test_a_different_command_with_the_same_purpose_resolves(pv: Provalume) -> No
 
 def test_one_success_may_resolve_two_failures_of_the_same_command(pv: Provalume) -> None:
     """One command, two distinct errors, two signatures — one fix for both."""
-    pv.record_verification(command=PARALLEL, passed=False, excerpt="E TimeoutError: x",
-                           error_kind="test_failure", task_id="task-1")
-    pv.record_verification(command=PARALLEL, passed=False,
-                           excerpt="E ConnectionError: upstream reset",
-                           error_kind="test_failure", task_id="task-1")
+    pv.record_verification(
+        command=PARALLEL,
+        passed=False,
+        excerpt="E TimeoutError: x",
+        error_kind="test_failure",
+        task_id="task-1",
+    )
+    pv.record_verification(
+        command=PARALLEL,
+        passed=False,
+        excerpt="E ConnectionError: upstream reset",
+        error_kind="test_failure",
+        task_id="task-1",
+    )
     pv.record_verification(command=PARALLEL, passed=True, task_id="task-1")
 
     found = _all_gotchas(pv)

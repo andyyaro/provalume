@@ -76,9 +76,7 @@ class Database:
     def _check_fts5(self) -> None:
         """Fail at open with a clear message rather than at first query."""
         try:
-            self._conn.execute(
-                "CREATE VIRTUAL TABLE temp.provalume_fts_probe USING fts5(x)"
-            )
+            self._conn.execute("CREATE VIRTUAL TABLE temp.provalume_fts_probe USING fts5(x)")
             self._conn.execute("DROP TABLE temp.provalume_fts_probe")
         except sqlite3.Error as exc:
             msg = (
@@ -223,9 +221,7 @@ class Database:
             msg = f"query failed: {exc}"
             raise StoreError(msg) from exc
 
-    def query(
-        self, sql: str, params: tuple[Any, ...] | dict[str, Any] = ()
-    ) -> list[sqlite3.Row]:
+    def query(self, sql: str, params: tuple[Any, ...] | dict[str, Any] = ()) -> list[sqlite3.Row]:
         return self.execute(sql, params).fetchall()
 
     def query_one(

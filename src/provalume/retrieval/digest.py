@@ -101,8 +101,7 @@ def _rollup_tags(result: RecallResult) -> set[str]:
 
 def _omitted_notice(omitted: int, budget: int) -> str:
     return (
-        f"\n\n[{omitted} further record(s) matched but did not fit the "
-        f"{budget}-character budget.]"
+        f"\n\n[{omitted} further record(s) matched but did not fit the {budget}-character budget.]"
     )
 
 

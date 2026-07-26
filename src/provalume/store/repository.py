@@ -165,9 +165,7 @@ class MemoryRepository:
             else:
                 conn.execute("DELETE FROM memory_links WHERE project_id = ?", (project_id,))
                 conn.execute("DELETE FROM contradictions WHERE project_id = ?", (project_id,))
-                conn.execute(
-                    "DELETE FROM failure_signatures WHERE project_id = ?", (project_id,)
-                )
+                conn.execute("DELETE FROM failure_signatures WHERE project_id = ?", (project_id,))
                 conn.execute(
                     "DELETE FROM memory_vectors WHERE memory_id IN "
                     "(SELECT memory_id FROM memories WHERE project_id = ?)",
@@ -183,9 +181,7 @@ class MemoryRepository:
     # -- read --------------------------------------------------------------
 
     def get(self, memory_id: str) -> Memory | None:
-        row = self.db.query_one(
-            f"{_SELECT_MEMORY} WHERE memory_id = ?", (memory_id,)
-        )
+        row = self.db.query_one(f"{_SELECT_MEMORY} WHERE memory_id = ?", (memory_id,))
         return None if row is None else _row_to_memory(row)
 
     def get_many(self, memory_ids: tuple[str, ...]) -> list[Memory]:
@@ -201,10 +197,7 @@ class MemoryRepository:
     def find(self, spec: MemoryFilter) -> list[Memory]:
         clauses, params = self._build_filter(spec)
         where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
-        sql = (
-            f"{_SELECT_MEMORY}{where} ORDER BY recorded_at DESC, memory_id "
-            "LIMIT ? OFFSET ?"
-        )
+        sql = f"{_SELECT_MEMORY}{where} ORDER BY recorded_at DESC, memory_id LIMIT ? OFFSET ?"
         params.extend([spec.limit, spec.offset])
         return [_row_to_memory(r) for r in self.db.query(sql, tuple(params))]
 
@@ -270,10 +263,7 @@ class MemoryRepository:
                 sql = f"{_SELECT_MEMORY} ORDER BY memory_id LIMIT ? OFFSET ?"
                 params: tuple[Any, ...] = (batch, offset)
             else:
-                sql = (
-                    f"{_SELECT_MEMORY} WHERE project_id = ? "
-                    "ORDER BY memory_id LIMIT ? OFFSET ?"
-                )
+                sql = f"{_SELECT_MEMORY} WHERE project_id = ? ORDER BY memory_id LIMIT ? OFFSET ?"
                 params = (project_id, batch, offset)
             rows = self.db.query(sql, params)
             if not rows:
@@ -336,9 +326,7 @@ class MemoryRepository:
 
     # -- links -------------------------------------------------------------
 
-    def add_link(
-        self, *, project_id: str, from_id: str, to_id: str, link_type: str
-    ) -> None:
+    def add_link(self, *, project_id: str, from_id: str, to_id: str, link_type: str) -> None:
         with self.db.tx() as conn:
             conn.execute(
                 "INSERT OR IGNORE INTO memory_links "
@@ -350,8 +338,7 @@ class MemoryRepository:
     def links_from(self, memory_id: str, *, link_type: str | None = None) -> list[dict[str, Any]]:
         if link_type is None:
             rows = self.db.query(
-                "SELECT from_id, to_id, link_type, recorded_at FROM memory_links "
-                "WHERE from_id = ?",
+                "SELECT from_id, to_id, link_type, recorded_at FROM memory_links WHERE from_id = ?",
                 (memory_id,),
             )
         else:
@@ -365,8 +352,7 @@ class MemoryRepository:
     def links_to(self, memory_id: str, *, link_type: str | None = None) -> list[dict[str, Any]]:
         if link_type is None:
             rows = self.db.query(
-                "SELECT from_id, to_id, link_type, recorded_at FROM memory_links "
-                "WHERE to_id = ?",
+                "SELECT from_id, to_id, link_type, recorded_at FROM memory_links WHERE to_id = ?",
                 (memory_id,),
             )
         else:
@@ -386,8 +372,7 @@ class MemoryRepository:
         # orderings.
         first, second = sorted((memory_id_a, memory_id_b))
         existing = self.db.query_one(
-            "SELECT contradiction_id FROM contradictions "
-            "WHERE memory_id_a = ? AND memory_id_b = ?",
+            "SELECT contradiction_id FROM contradictions WHERE memory_id_a = ? AND memory_id_b = ?",
             (first, second),
         )
         if existing is not None:
@@ -495,9 +480,7 @@ class MemoryRepository:
     # -- projection state --------------------------------------------------
 
     def projection_seq(self) -> int:
-        return int(
-            self.db.scalar("SELECT last_event_seq FROM projection_state WHERE id = 1") or 0
-        )
+        return int(self.db.scalar("SELECT last_event_seq FROM projection_state WHERE id = 1") or 0)
 
     def set_projection_seq(self, seq: int, *, rebuilt: bool = False) -> None:
         with self.db.tx() as conn:
@@ -507,9 +490,7 @@ class MemoryRepository:
                     (seq, _time.now()),
                 )
             else:
-                conn.execute(
-                    "UPDATE projection_state SET last_event_seq = ? WHERE id = 1", (seq,)
-                )
+                conn.execute("UPDATE projection_state SET last_event_seq = ? WHERE id = 1", (seq,))
 
 
 def _memory_to_row(memory: Memory) -> tuple[Any, ...]:

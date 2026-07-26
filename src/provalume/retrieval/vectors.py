@@ -108,10 +108,7 @@ class Model2VecEmbedder:
         try:
             from model2vec import StaticModel
         except ImportError as exc:
-            msg = (
-                "model2vec is not installed. "
-                "Install with: pip install 'provalume[model2vec]'"
-            )
+            msg = "model2vec is not installed. Install with: pip install 'provalume[model2vec]'"
             raise EmbedderUnavailable(msg) from exc
         self._model = StaticModel.from_pretrained(model_name)
         self.model_id = f"model2vec:{model_name}"
@@ -128,10 +125,7 @@ class FastEmbedEmbedder:
         try:
             from fastembed import TextEmbedding
         except ImportError as exc:
-            msg = (
-                "fastembed is not installed. "
-                "Install with: pip install 'provalume[fastembed]'"
-            )
+            msg = "fastembed is not installed. Install with: pip install 'provalume[fastembed]'"
             raise EmbedderUnavailable(msg) from exc
         self._model = TextEmbedding(model_name=model_name)
         self.model_id = f"fastembed:{model_name}"
@@ -268,9 +262,9 @@ class VectorIndex:
         numpy = self._numpy()
 
         if numpy is not None:
-            matrix = numpy.frombuffer(
-                b"".join(blob for _, blob in rows), dtype="<f4"
-            ).reshape(len(rows), self.embedder.dimensions)
+            matrix = numpy.frombuffer(b"".join(blob for _, blob in rows), dtype="<f4").reshape(
+                len(rows), self.embedder.dimensions
+            )
             vector = numpy.asarray(query_vector, dtype="<f4")
             norms = numpy.linalg.norm(matrix, axis=1)
             qnorm = float(numpy.linalg.norm(vector))
@@ -328,9 +322,7 @@ class VectorIndex:
         not comparable, so a mixed index produces meaningless rankings.
         """
         with self.db.tx() as conn:
-            conn.execute(
-                "DELETE FROM memory_vectors WHERE model_id = ?", (self.embedder.model_id,)
-            )
+            conn.execute("DELETE FROM memory_vectors WHERE model_id = ?", (self.embedder.model_id,))
 
 
 def sqlite_vec_available(db: Database) -> bool:

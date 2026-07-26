@@ -23,17 +23,26 @@ from provalume.store.repository import MemoryRepository
 @pytest.fixture
 def seeded(pv: Provalume) -> Provalume:
     pv.record_verification(
-        command="pytest -n auto tests/integration", passed=False,
-        excerpt="E TimeoutError: deadlock in db fixture", error_kind="test_failure",
-        purpose="the integration suite", task_id="t1", agent_profile="agent-A",
+        command="pytest -n auto tests/integration",
+        passed=False,
+        excerpt="E TimeoutError: deadlock in db fixture",
+        error_kind="test_failure",
+        purpose="the integration suite",
+        task_id="t1",
+        agent_profile="agent-A",
     )
     pv.record_verification(
-        command="pytest -p no:xdist tests/integration", passed=True,
-        purpose="the integration suite", task_id="t1", agent_profile="agent-A",
+        command="pytest -p no:xdist tests/integration",
+        passed=True,
+        purpose="the integration suite",
+        task_id="t1",
+        agent_profile="agent-A",
     )
     pv.record_decision(
-        selected="run integration serially", rejected=["pytest-xdist", "-n auto"],
-        rationale="the db fixture is not parallel-safe", authority="tech-lead",
+        selected="run integration serially",
+        rejected=["pytest-xdist", "-n auto"],
+        rationale="the db fixture is not parallel-safe",
+        authority="tech-lead",
     )
     pv.record_fact(subject="package manager", statement="The project uses uv.")
     return pv
@@ -76,8 +85,9 @@ def test_type_filter_is_a_nudge_not_an_exclusion(seeded: Provalume) -> None:
     What the filter guarantees is presence of the requested type and *survival*
     of the others, not a strict ordering between them.
     """
-    results = seeded.recall("integration serially parallel",
-                            memory_types=[MemoryType.GOTCHA], limit=20).results
+    results = seeded.recall(
+        "integration serially parallel", memory_types=[MemoryType.GOTCHA], limit=20
+    ).results
     kinds = {r.memory_type for r in results}
     assert MemoryType.GOTCHA in kinds, "the requested type was not returned"
     assert kinds - {MemoryType.GOTCHA}, (
@@ -96,8 +106,9 @@ def test_excluded_scopes_are_honoured(pv: Provalume) -> None:
     without = pv.recall("branch fact", limit=10).results
     engine = RetrievalEngine(pv.db, pv.memories)
     filtered = engine.recall(
-        RecallQuery(project_id=pv.project_id, query="branch fact",
-                    exclude_scopes=("feature/x",), limit=10)
+        RecallQuery(
+            project_id=pv.project_id, query="branch fact", exclude_scopes=("feature/x",), limit=10
+        )
     )
     assert len(filtered) < len(without) or not filtered
 
@@ -113,8 +124,9 @@ def test_results_are_ranked_and_numbered(seeded: Provalume) -> None:
 
 def test_a_custom_policy_changes_the_ordering(seeded: Provalume) -> None:
     """The policy is data, so tuning does not mean editing scoring code."""
-    engine = RetrievalEngine(seeded.db, seeded.memories,
-                             policy=RankingPolicy(w_lex=0.0, w_trust=5.0))
+    engine = RetrievalEngine(
+        seeded.db, seeded.memories, policy=RankingPolicy(w_lex=0.0, w_trust=5.0)
+    )
     query = RecallQuery(project_id=seeded.project_id, query="integration", limit=10)
     results = engine.recall(query)
     assert results
@@ -224,7 +236,8 @@ def test_exact_signature_match_is_full_confidence(seeded: Provalume) -> None:
 def test_same_command_different_error_still_warns(seeded: Provalume) -> None:
     result = seeded.preflight(
         command="pytest -n auto tests/integration",
-        error_kind="other", error_text="E AssertionError: different",
+        error_kind="other",
+        error_text="E AssertionError: different",
     )
     assert result.matched
     assert result.matches[0].confidence < 1.0
@@ -244,7 +257,8 @@ def test_unrelated_actions_do_not_warn(seeded: Provalume) -> None:
 
 def test_the_gate_warns_and_does_not_block_by_default(seeded: Provalume) -> None:
     result = seeded.preflight(
-        command="pytest -n auto tests/integration", error_kind="test_failure",
+        command="pytest -n auto tests/integration",
+        error_kind="test_failure",
         error_text="E TimeoutError: deadlock in db fixture",
     )
     assert not result.should_block
@@ -254,8 +268,9 @@ def test_the_gate_warns_and_does_not_block_by_default(seeded: Provalume) -> None
 def test_blocking_requires_an_explicit_policy_and_repetition(pv: Provalume) -> None:
     excerpt = "E TimeoutError: deadlock"
     for _ in range(2):
-        pv.record_verification(command="flaky-cmd", passed=False, excerpt=excerpt,
-                               error_kind="test_failure")
+        pv.record_verification(
+            command="flaky-cmd", passed=False, excerpt=excerpt, error_kind="test_failure"
+        )
 
     permissive = PreflightGate(pv.memories, allow_blocking=False)
     strict = PreflightGate(pv.memories, allow_blocking=True)
@@ -271,21 +286,29 @@ def test_blocking_requires_an_explicit_policy_and_repetition(pv: Provalume) -> N
 
 def test_the_summary_carries_every_documented_field(seeded: Provalume) -> None:
     summary = seeded.preflight(
-        command="pytest -n auto tests/integration", error_kind="test_failure",
+        command="pytest -n auto tests/integration",
+        error_kind="test_failure",
         error_text="E TimeoutError: deadlock in db fixture",
     ).summary
-    for label in ("Previous attempt", "Failure evidence", "What later worked",
-                  "Applicability", "Provenance", "Trust state"):
+    for label in (
+        "Previous attempt",
+        "Failure evidence",
+        "What later worked",
+        "Applicability",
+        "Provenance",
+        "Trust state",
+    ):
         assert label in summary, f"the warning is missing {label!r}"
 
 
 def test_multi_line_evidence_is_collapsed_for_the_layout(pv: Provalume) -> None:
     pv.record_verification(
-        command="build", passed=False, error_kind="e",
+        command="build",
+        passed=False,
+        error_kind="e",
         excerpt="Traceback:\n  File 'a.py'\nValueError: boom\n=== 1 failed ===",
     )
-    summary = pv.preflight(command="build", error_kind="e",
-                           error_text="ValueError: boom").summary
+    summary = pv.preflight(command="build", error_kind="e", error_text="ValueError: boom").summary
     evidence_lines = [ln for ln in summary.splitlines() if "Failure evidence" in ln]
     assert len(evidence_lines) == 1
     assert "\n" not in evidence_lines[0]
@@ -299,8 +322,9 @@ def test_an_unresolved_trap_says_so(pv: Provalume) -> None:
 
 
 def test_file_overlap_produces_a_weak_match(pv: Provalume) -> None:
-    pv.record_verification(command="pytest tests/test_db.py", passed=False,
-                           excerpt="E boom", error_kind="e")
+    pv.record_verification(
+        command="pytest tests/test_db.py", passed=False, excerpt="E boom", error_kind="e"
+    )
     result = pv.preflight(files=("src/test_db.py",), record=False)
     assert result.matched, "file overlap no longer matches"
     assert result.matches[0].confidence <= 0.5
@@ -309,8 +333,9 @@ def test_file_overlap_produces_a_weak_match(pv: Provalume) -> None:
 
 def test_subsystem_overlap_produces_a_weak_match(pv: Provalume) -> None:
     """The companion tier to file overlap, and the one most prone to noise."""
-    pv.record_verification(command="terraform apply", passed=False,
-                           excerpt="E lock timeout", error_kind="e")
+    pv.record_verification(
+        command="terraform apply", passed=False, excerpt="E lock timeout", error_kind="e"
+    )
     matched = pv.preflight(subsystem="terraform", record=False)
     assert matched.matched, "subsystem overlap no longer matches"
     assert "previously failed in terraform" in matched.matches[0].match_reasons
@@ -336,9 +361,7 @@ def test_vectors_cannot_return_an_unauthorised_record(seeded: Provalume) -> None
 
 def test_vector_index_round_trip(seeded: Provalume) -> None:
     index = VectorIndex(seeded.db, HashingEmbedder())
-    stored = index.upsert_many(
-        [(m.memory_id, m.text) for m in seeded.memory_records(limit=50)]
-    )
+    stored = index.upsert_many([(m.memory_id, m.text) for m in seeded.memory_records(limit=50)])
     assert stored > 0
     assert index.count() == stored
     assert index.search("integration", limit=5)

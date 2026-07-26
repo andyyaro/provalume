@@ -113,9 +113,7 @@ class RetrievalEngine:
 
     # -- filtering ---------------------------------------------------------
 
-    def _passes_filters(
-        self, memory: Memory, query: RecallQuery
-    ) -> tuple[bool, list[str], str]:
+    def _passes_filters(self, memory: Memory, query: RecallQuery) -> tuple[bool, list[str], str]:
         """Whether a candidate is authorised, which filters it passed, and why not.
 
         Returning the passed-filter list is not bookkeeping: it is what
@@ -282,8 +280,7 @@ class RetrievalEngine:
                 explanation=explanation,
                 provenance_summary=provenance_summary,
                 presentable_as_current_truth=(
-                    memory.presentable_as_current_truth
-                    and applicability is Applicability.CURRENT
+                    memory.presentable_as_current_truth and applicability is Applicability.CURRENT
                 ),
             )
             scored.append((ranking.sort_key(memory, breakdown), result))
@@ -368,8 +365,7 @@ class RetrievalEngine:
                     VerificationEvidence(
                         event_id=event.event_id,
                         command=str(event.payload.get("command", "")),
-                        passed=kind
-                        in {EventType.VERIFICATION_PASSED, EventType.COMMAND_SUCCEEDED},
+                        passed=kind in {EventType.VERIFICATION_PASSED, EventType.COMMAND_SUCCEEDED},
                         exit_code=event.payload.get("exit_code"),
                         failure_signature=memory.content.get("failure_signature"),
                         recorded_at=event.recorded_at,
@@ -399,9 +395,7 @@ class RetrievalEngine:
                         event_id=event.event_id,
                         reviewer=reviewer,
                         verdict=verdict,
-                        independent=is_independent(
-                            reviewer=reviewer, author=memory.author_agent
-                        ),
+                        independent=is_independent(reviewer=reviewer, author=memory.author_agent),
                         findings=findings,
                         recorded_at=event.recorded_at,
                         source=event.source,

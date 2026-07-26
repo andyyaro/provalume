@@ -37,16 +37,23 @@ def _gotcha(pv: Provalume) -> Memory:
 
 
 def _warn(pv: Provalume):
-    return pv.preflight(command=COMMAND, error_kind="test_failure",
-                        error_text=FAILURE, record=False)
+    return pv.preflight(
+        command=COMMAND, error_kind="test_failure", error_text=FAILURE, record=False
+    )
 
 
 def test_a_same_command_resolution_names_the_commit_not_the_command(pv: Provalume) -> None:
-    pv.record_verification(command=COMMAND, passed=False, excerpt=FAILURE,
-                           error_kind="test_failure", task_id="task-A")
+    pv.record_verification(
+        command=COMMAND, passed=False, excerpt=FAILURE, error_kind="test_failure", task_id="task-A"
+    )
     signature = _gotcha(pv).content["failure_signature"]
-    pv.record_verification(command=COMMAND, passed=True, task_id="task-B",
-                           commit_sha=FIX_COMMIT, resolves_signature=signature)
+    pv.record_verification(
+        command=COMMAND,
+        passed=True,
+        task_id="task-B",
+        commit_sha=FIX_COMMIT,
+        resolves_signature=signature,
+    )
 
     text = _gotcha(pv).text
     assert f"after commit {FIX_COMMIT[:12]}" in text, (
@@ -64,11 +71,17 @@ def test_a_same_command_resolution_names_the_commit_not_the_command(pv: Provalum
 
 
 def test_the_warning_renders_the_commit_on_its_own_line(pv: Provalume) -> None:
-    pv.record_verification(command=COMMAND, passed=False, excerpt=FAILURE,
-                           error_kind="test_failure", task_id="task-A")
+    pv.record_verification(
+        command=COMMAND, passed=False, excerpt=FAILURE, error_kind="test_failure", task_id="task-A"
+    )
     signature = _gotcha(pv).content["failure_signature"]
-    pv.record_verification(command=COMMAND, passed=True, task_id="task-B",
-                           commit_sha=FIX_COMMIT, resolves_signature=signature)
+    pv.record_verification(
+        command=COMMAND,
+        passed=True,
+        task_id="task-B",
+        commit_sha=FIX_COMMIT,
+        resolves_signature=signature,
+    )
 
     summary = _warn(pv).summary
     line = next(ln for ln in summary.splitlines() if "What later worked" in ln)
@@ -78,11 +91,21 @@ def test_the_warning_renders_the_commit_on_its_own_line(pv: Provalume) -> None:
 
 def test_a_genuinely_different_command_is_still_named(pv: Provalume) -> None:
     """Where the fix *was* a different command, that command is the answer."""
-    pv.record_verification(command=COMMAND, passed=False, excerpt=FAILURE,
-                           error_kind="test_failure", purpose="the suite",
-                           task_id="task-A")
-    pv.record_verification(command=ALTERNATIVE, passed=True, purpose="the suite",
-                           commit_sha=FIX_COMMIT, task_id="task-A")
+    pv.record_verification(
+        command=COMMAND,
+        passed=False,
+        excerpt=FAILURE,
+        error_kind="test_failure",
+        purpose="the suite",
+        task_id="task-A",
+    )
+    pv.record_verification(
+        command=ALTERNATIVE,
+        passed=True,
+        purpose="the suite",
+        commit_sha=FIX_COMMIT,
+        task_id="task-A",
+    )
 
     assert f"`{ALTERNATIVE}`" in _gotcha(pv).text
     match = _warn(pv).matches[0]
@@ -92,11 +115,13 @@ def test_a_genuinely_different_command_is_still_named(pv: Provalume) -> None:
 
 def test_a_resolution_without_a_commit_still_anchors_in_time(pv: Provalume) -> None:
     """Git is not always available; the record must still say something useful."""
-    pv.record_verification(command=COMMAND, passed=False, excerpt=FAILURE,
-                           error_kind="test_failure", task_id="task-A")
+    pv.record_verification(
+        command=COMMAND, passed=False, excerpt=FAILURE, error_kind="test_failure", task_id="task-A"
+    )
     signature = _gotcha(pv).content["failure_signature"]
-    pv.record_verification(command=COMMAND, passed=True, task_id="task-B",
-                           resolves_signature=signature)
+    pv.record_verification(
+        command=COMMAND, passed=True, task_id="task-B", resolves_signature=signature
+    )
 
     match = _warn(pv).matches[0]
     assert match.what_later_worked.startswith("the same command passed")

@@ -27,7 +27,7 @@ ADVERSARIAL_QUERIES = [
     "' OR '1'='1",
     "a" * 10_000,
     "^prefix*",
-    '{a b} NEAR/5 c',
+    "{a b} NEAR/5 c",
     "-negated +required",
     "𝕌𝕟𝕚𝕔𝕠𝕕𝕖 𝔞𝔱𝔱𝔞𝔠𝔨",
     "\\escape\\sequences",
@@ -42,8 +42,7 @@ def test_adversarial_queries_produce_safe_expressions(query: str) -> None:
 
 @pytest.mark.parametrize("query", ADVERSARIAL_QUERIES)
 def test_adversarial_queries_do_not_crash_retrieval(pv: Provalume, query: str) -> None:
-    pv.record_verification(command="pytest -q", passed=False, excerpt="E boom",
-                           error_kind="e")
+    pv.record_verification(command="pytest -q", passed=False, excerpt="E boom", error_kind="e")
     pv.recall(query, limit=5)
 
 
@@ -60,7 +59,11 @@ def test_identifiers_survive_tokenisation() -> None:
 
 def test_boolean_keywords_are_dropped() -> None:
     assert tokenize("cats AND dogs OR birds NOT fish NEAR trees") == [
-        "cats", "dogs", "birds", "fish", "trees"
+        "cats",
+        "dogs",
+        "birds",
+        "fish",
+        "trees",
     ]
 
 

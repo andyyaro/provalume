@@ -78,7 +78,9 @@ RULES: tuple[Rule, ...] = (
     Rule("azure", re.compile(r"(?i)([?&]sig=)[^&\s\"']+"), r"\1" + REDACTED),
     Rule(
         "gcp",
-        re.compile(r'(?i)(["\']?private_?[kK]ey_?[dD]ata["\']?\s*[=:]\s*)["\']?[A-Za-z0-9+/=_-]{8,}["\']?'),
+        re.compile(
+            r'(?i)(["\']?private_?[kK]ey_?[dD]ata["\']?\s*[=:]\s*)["\']?[A-Za-z0-9+/=_-]{8,}["\']?'
+        ),
         r"\1" + REDACTED,
     ),
     Rule("npm", re.compile(r"(?i)(_authToken\s*=\s*)\S+"), r"\1" + REDACTED),

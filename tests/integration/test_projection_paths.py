@@ -17,8 +17,9 @@ from provalume.store.projections import Projector, project_all
 
 
 def test_a_revert_invalidates_what_it_landed(pv: Provalume) -> None:
-    pv.record_verification(command="make release", passed=True, purpose="release",
-                           task_id="t1", branch="main")
+    pv.record_verification(
+        command="make release", passed=True, purpose="release", task_id="t1", branch="main"
+    )
     pv.record_integration(commit_sha="a" * 40, target="user", task_id="t1", branch="main")
     procedure = pv.memory_records(memory_types=[MemoryType.PROCEDURAL], limit=1)[0]
     assert procedure.integration_state is IntegrationState.ACCEPTED_USER
@@ -38,11 +39,14 @@ def test_a_revert_invalidates_what_it_landed(pv: Provalume) -> None:
 
 
 def test_a_reverted_record_is_not_current_truth(pv: Provalume) -> None:
-    pv.record_fact(statement="The build is reproducible.", subject="build",
-                   branch="main")
+    pv.record_fact(statement="The build is reproducible.", subject="build", branch="main")
     pv.record_integration(commit_sha="c" * 40, target="user", branch="main")
-    pv.record_event(EventType.INTEGRATION_REVERTED, source=Source.KERNEL,
-                    payload={"branch": "main"}, branch="main")
+    pv.record_event(
+        EventType.INTEGRATION_REVERTED,
+        source=Source.KERNEL,
+        payload={"branch": "main"},
+        branch="main",
+    )
 
     for record in pv.memory_records(include_terminal=True, current_only=False, limit=20):
         if record.memory_type is MemoryType.SEMANTIC:
@@ -57,7 +61,8 @@ def test_branch_rejection_without_a_branch_is_a_no_op(pv: Provalume) -> None:
     before = len(pv.memory_records(include_terminal=True, current_only=False, limit=50))
     pv.record_event(EventType.BRANCH_REJECTED, source=Source.HUMAN, payload={})
     rejected = [
-        m for m in pv.memory_records(include_terminal=True, current_only=False, limit=50)
+        m
+        for m in pv.memory_records(include_terminal=True, current_only=False, limit=50)
         if m.trust_state is TrustState.REJECTED
     ]
     assert not rejected
@@ -65,13 +70,23 @@ def test_branch_rejection_without_a_branch_is_a_no_op(pv: Provalume) -> None:
 
 
 def test_rejected_records_survive_as_negative_experience(pv: Provalume) -> None:
-    pv.record_verification(command="risky-approach", passed=False,
-                           excerpt="E it broke", error_kind="e", branch="feature/x")
-    pv.record_event(EventType.BRANCH_REJECTED, source=Source.HUMAN,
-                    payload={"branch": "feature/x"}, branch="feature/x")
+    pv.record_verification(
+        command="risky-approach",
+        passed=False,
+        excerpt="E it broke",
+        error_kind="e",
+        branch="feature/x",
+    )
+    pv.record_event(
+        EventType.BRANCH_REJECTED,
+        source=Source.HUMAN,
+        payload={"branch": "feature/x"},
+        branch="feature/x",
+    )
 
     rejected = [
-        m for m in pv.memory_records(include_terminal=True, current_only=False, limit=50)
+        m
+        for m in pv.memory_records(include_terminal=True, current_only=False, limit=50)
         if m.trust_state is TrustState.REJECTED
     ]
     assert rejected, "the branch rejection withdrew nothing"
@@ -133,10 +148,7 @@ def test_a_contradiction_penalises_the_score(pv: Provalume) -> None:
     contested_before = pv.recall("runtime node 20", limit=5).results[0].score
 
     pv.record_fact(subject="runtime", statement="The runtime is node 22.", branch="main")
-    after = next(
-        r for r in pv.recall("runtime node 20", limit=10).results
-        if "node 20" in r.text
-    )
+    after = next(r for r in pv.recall("runtime node 20", limit=10).results if "node 20" in r.text)
     assert after.explanation.breakdown.contradiction_penalty > 0
     assert after.score < contested_before
 
@@ -177,8 +189,12 @@ def test_catch_up_projects_only_new_events(pv: Provalume) -> None:
     before = pv.memories.projection_seq()
 
     # Append without projecting, as an import would.
-    event = pv.record_event(EventType.VERIFICATION_PASSED, source=Source.KERNEL,
-                            payload={"command": "cargo test"}, project=False)
+    event = pv.record_event(
+        EventType.VERIFICATION_PASSED,
+        source=Source.KERNEL,
+        payload={"command": "cargo test"},
+        project=False,
+    )
     assert event.seq is not None
 
     stats = pv.rebuild(check_only=True)
@@ -193,8 +209,7 @@ def test_rebuild_from_an_empty_journal_is_harmless(pv: Provalume) -> None:
 
 
 def test_project_all_helper_matches_the_projector(pv: Provalume) -> None:
-    pv.record_verification(command="pytest -q", passed=False, excerpt="E boom",
-                           error_kind="e")
+    pv.record_verification(command="pytest -q", passed=False, excerpt="E boom", error_kind="e")
     events = list(pv.journal.iter_all())
     pv.memories.delete_all_projections(project_id=pv.project_id)
 
@@ -204,8 +219,7 @@ def test_project_all_helper_matches_the_projector(pv: Provalume) -> None:
 
 
 def test_rebuild_is_stable_across_repeated_runs(pv: Provalume) -> None:
-    pv.record_verification(command="a", passed=False, excerpt="E x", error_kind="e",
-                           task_id="t")
+    pv.record_verification(command="a", passed=False, excerpt="E x", error_kind="e", task_id="t")
     pv.record_verification(command="b", passed=True, task_id="t")
     pv.record_decision(selected="s", rejected=["r"])
 
@@ -215,8 +229,7 @@ def test_rebuild_is_stable_across_repeated_runs(pv: Provalume) -> None:
         snapshots.append(
             sorted(
                 (m.memory_id, m.content_hash, m.trust_state.value)
-                for m in pv.memory_records(include_terminal=True, current_only=False,
-                                           limit=100)
+                for m in pv.memory_records(include_terminal=True, current_only=False, limit=100)
             )
         )
     assert snapshots[0] == snapshots[1] == snapshots[2]
@@ -240,8 +253,11 @@ def test_a_landing_with_no_matching_records_is_harmless(pv: Provalume) -> None:
 def test_a_review_naming_a_subject_reaches_a_gotcha(pv: Provalume) -> None:
     """A record type is stamped only when the reviewer names its subject."""
     pv.record_review(
-        reviewer="reviewer-2", approved=False, subject="error handling",
-        finding="bare except swallows the traceback", attempt_id="a1",
+        reviewer="reviewer-2",
+        approved=False,
+        subject="error handling",
+        finding="bare except swallows the traceback",
+        attempt_id="a1",
     )
     lessons = pv.memory_records(memory_types=[MemoryType.GOTCHA], limit=5)
     assert lessons
@@ -249,8 +265,14 @@ def test_a_review_naming_a_subject_reaches_a_gotcha(pv: Provalume) -> None:
 
 
 def test_review_changes_requested_produces_a_lesson(pv: Provalume) -> None:
-    pv.record_review(reviewer="reviewer-2", approved=False, changes_requested=True,
-                     subject="naming", finding="rename the flag", attempt_id="a1")
+    pv.record_review(
+        reviewer="reviewer-2",
+        approved=False,
+        changes_requested=True,
+        subject="naming",
+        finding="rename the flag",
+        attempt_id="a1",
+    )
     lessons = pv.memory_records(memory_types=[MemoryType.GOTCHA], limit=5)
     assert lessons
     assert "rename the flag" in lessons[0].text
@@ -260,8 +282,11 @@ def test_a_review_finding_becomes_its_own_record(pv: Provalume) -> None:
     pv.record_event(
         EventType.REVIEW_FINDING,
         source=Source.KERNEL,
-        payload={"finding": "missing input validation", "severity": "high",
-                 "reviewer": "reviewer-2"},
+        payload={
+            "finding": "missing input validation",
+            "severity": "high",
+            "reviewer": "reviewer-2",
+        },
         attempt_id="a1",
     )
     findings = pv.memory_records(memory_types=[MemoryType.GOTCHA], limit=5)
@@ -282,8 +307,10 @@ def test_a_fact_change_naming_its_predecessor_supersedes_it(pv: Provalume) -> No
     assert after.trust_state is TrustState.SUPERSEDED
 
     successor = next(
-        m for m in pv.memory_records(memory_types=[MemoryType.SEMANTIC],
-                                     include_terminal=True, current_only=False, limit=10)
+        m
+        for m in pv.memory_records(
+            memory_types=[MemoryType.SEMANTIC], include_terminal=True, current_only=False, limit=10
+        )
         if m.supersedes_id == old.memory_id
     )
     assert "uv" in successor.text

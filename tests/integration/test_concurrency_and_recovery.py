@@ -134,9 +134,7 @@ def test_rollback_leaves_no_partial_state(file_db: Database) -> None:
 
     def write_then_fail() -> None:
         with file_db.tx() as conn:
-            conn.execute(
-                "INSERT INTO projects (project_id, created_at) VALUES ('x', 'y')"
-            )
+            conn.execute("INSERT INTO projects (project_id, created_at) VALUES ('x', 'y')")
             msg = "simulated failure mid-transaction"
             raise RuntimeError(msg)
 
@@ -144,9 +142,7 @@ def test_rollback_leaves_no_partial_state(file_db: Database) -> None:
         write_then_fail()
 
     assert journal.head() == before
-    assert file_db.query_one(
-        "SELECT project_id FROM projects WHERE project_id = 'x'"
-    ) is None
+    assert file_db.query_one("SELECT project_id FROM projects WHERE project_id = 'x'") is None
 
 
 def test_nested_transactions_reuse_the_outer_one(file_db: Database) -> None:
@@ -284,8 +280,9 @@ def test_fts_index_stays_in_step_with_memories(file_db: Database) -> None:
     from provalume.sdk.client import Provalume
 
     pv = Provalume(file_db, project_id="p", git=None)
-    pv.record_verification(command="unique-token-xyz run", passed=False,
-                           excerpt="E boom", error_kind="e")
+    pv.record_verification(
+        command="unique-token-xyz run", passed=False, excerpt="E boom", error_kind="e"
+    )
     assert pv.recall("unique-token-xyz", limit=5).results
 
     pv.rebuild()
