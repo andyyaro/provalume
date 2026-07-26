@@ -260,8 +260,21 @@ stays `suspect` with no verdict, which is the cheap direction — a hook that
 spawns thousands of `git show` processes on a wide landing would be a
 correctness risk of its own (an operator who feels the latency uninstalls
 the hook, and §9d says what an uninstalled hook costs). A re-scan retries
-nothing for these records; a passing re-run (M4) or a fresh radius is what
-clears them.
+nothing for these records; a passing re-run (`provalume reverify`) or a
+fresh radius is what clears them.
+
+## 9g. Re-execution trusts the working tree it runs in
+
+`provalume reverify` re-runs the record's command in the current working
+tree with that tree's real caches and dependencies. `stale` therefore means
+"the command failed *here*, *now*" — the environment fingerprint (interpreter
+version + lockfile) recorded in the event is what lets a reader distinguish
+"the code broke this" from "the environment drifted", and it covers exactly
+those two inputs, nothing more. A cache keyed on something the command does
+not see (CPython's `__pycache__` validates by mtime-seconds and size, build
+systems by their own rules) can in principle make a re-run answer for an
+older tree. The feature is off by default and single-record per invocation
+(THREAT_MODEL T27); it never runs unattended.
 
 ## 10. Single writer, single machine
 

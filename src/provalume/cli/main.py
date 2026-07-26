@@ -946,6 +946,138 @@ def freshness(
 
 
 @app.command()
+def reverify(
+    record_id: Annotated[
+        str, typer.Argument(help="The record whose own verification command to re-run.")
+    ],
+    allow: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--allow",
+            help="Additional fnmatch pattern(s) allowed for this invocation only.",
+        ),
+    ] = None,
+    timeout: Annotated[
+        float,
+        typer.Option("--timeout", help="Hard timeout in seconds, recorded in the event."),
+    ] = 600.0,
+    trigger: Annotated[
+        str | None,
+        typer.Option(
+            "--trigger",
+            help="The landed commit this re-run answers. Defaults to an outstanding "
+            "trigger of the record, then to HEAD.",
+        ),
+    ] = None,
+    db: DbOption = None,
+    project: ProjectOption = None,
+    json: JsonOption = False,
+) -> None:
+    """Re-run one record's own verification command, under the T27 controls.
+
+    **Off by default.** Executes only when `.provalume/reverify-allowlist`
+    (one fnmatch pattern per line, `#` comments) or `--allow` permits the
+    record's command, and only for records at trust `verified` or above.
+    A passing run returns the record to `current`; a failing run marks it
+    `stale`; an engine error or timeout records `errored` and changes
+    nothing. One record per invocation, deliberately — there is no batch
+    sweep (ADR-0020, THREAT_MODEL T27).
+
+    Exit codes: 0 the re-run passed; 2 it genuinely failed (the record is
+    now stale); 1 refused, errored, or timed out.
+    """
+    from provalume.freshness.executor import reverify_record
+
+    pv = _open(db, project)
+    root = (
+        Path(pv.git.root)
+        if pv.git is not None and getattr(pv.git, "available", False)
+        else Path.cwd()
+    )
+    patterns: list[str] = []
+    allowlist_path = root / ".provalume" / "reverify-allowlist"
+    try:
+        lines = allowlist_path.read_text().splitlines()
+    except OSError:
+        lines = []
+    for line in lines:
+        entry = line.strip()
+        if entry and not entry.startswith("#"):
+            patterns.append(entry)
+    patterns.extend(allow or [])
+    if not patterns:
+        err_console.print(
+            "[pv.error]Re-execution is off.[/] The allowlist "
+            f"({allowlist_path}) is absent or empty and no --allow was given — "
+            "an empty allowlist disables the feature (THREAT_MODEL T27)."
+        )
+        raise typer.Exit(code=1)
+
+    trigger_commit = trigger
+    if trigger_commit is None:
+        outstanding = pv.memories.outstanding_triggers(
+            project_id=pv.project_id, record_id=record_id
+        )
+        trigger_commit = outstanding[-1] if outstanding else None
+    if trigger_commit is None and pv.git is not None and getattr(pv.git, "available", False):
+        trigger_commit = pv.git.current_commit()
+
+    event = reverify_record(
+        pv,
+        record_id=record_id,
+        trigger_commit=trigger_commit or "",
+        allowlist=tuple(patterns),
+        timeout_s=timeout,
+        root=root,
+    )
+    if event is None:
+        err_console.print(
+            "[pv.error]Refused or failed before execution[/] — the record is unchanged. "
+            "The log names the control that refused (missing record, trust below "
+            "verified, allowlist mismatch, or unparseable command)."
+        )
+        raise typer.Exit(code=1)
+
+    outcome = str(event.payload.get("outcome", ""))
+    memory = pv.memories.get(record_id)
+    freshness_now = memory.freshness.value if memory is not None else ""
+    payload = {
+        "record_id": record_id,
+        "outcome": outcome,
+        "exit_code": event.payload.get("exit_code"),
+        "duration_ms": event.payload.get("duration_ms"),
+        "timeout_ms": event.payload.get("timeout_ms"),
+        "trigger_commit": event.payload.get("trigger_commit"),
+        "environment_fingerprint": event.payload.get("environment_fingerprint"),
+        "freshness": freshness_now,
+    }
+    exit_code = {"passed": 0, "failed": 2}.get(outcome, 1)
+    if _emit(payload, as_json=json):
+        if exit_code:
+            raise typer.Exit(code=exit_code)
+        return
+    if outcome == "passed":
+        console.print(
+            f"[pv.success]Re-run passed[/] in {event.payload.get('duration_ms')}ms — "
+            f"record {record_id} is [pv.success]{freshness_now}[/]."
+        )
+    elif outcome == "failed":
+        console.print(
+            f"[pv.warning]Re-run failed[/] (exit {event.payload.get('exit_code')}) — "
+            f"record {record_id} is [pv.warning]{freshness_now}[/]. A failed re-run is "
+            "a machine observation, not an invalidation; the record stays readable."
+        )
+    else:
+        console.print(
+            f"[pv.muted]Engine error or timeout — no transition; record {record_id} "
+            f"stays {freshness_now}. The engine's failure is not evidence against "
+            "the record.[/]"
+        )
+    if exit_code:
+        raise typer.Exit(code=exit_code)
+
+
+@app.command()
 def audit(
     strict: Annotated[
         bool,

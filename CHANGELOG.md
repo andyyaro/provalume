@@ -23,8 +23,8 @@ to the files their evidence depends on, via a static import closure
 command under coverage.py for line-level precision. Recording a verification
 never executes the verification command or any project code (a guard test
 enforces it), everything fails open, and records without a radius stay
-honestly `unverifiable`. Nothing yet consumes the axis — suspect-marking,
-relevance filtering, and gated re-verification are the next milestones.
+honestly `unverifiable`. Suspect-marking, relevance filtering, and gated
+re-verification (below) are what consume the axis.
 See LIMITATIONS §9c for what extraction can and cannot see.
 
 **Suspect marking — the shippable core.** `provalume freshness <sha>`
@@ -61,6 +61,23 @@ and `differ_version` rides on every verdict so a future precision
 measurement can name what it measured. Not every trigger ends up assessed —
 §9f's bound and a failed-open scan both leave a trigger `suspect`
 unassessed, and the CLI says so rather than reporting a clean pass.
+
+**Gated re-execution.** `provalume reverify <record-id>` closes the loop:
+it re-runs the record's OWN stored verification command — never a
+caller-supplied one — and a pass returns the record to `current` while a
+genuine failure marks it `stale` (a machine observation, distinct from
+`invalidated`, which stays a judgement). This is the one component that
+executes anything, and it ships **off by default** behind the full T27
+control set: an empty or absent `.provalume/reverify-allowlist` disables
+the feature; only records at trust `verified` or above are eligible;
+commands run as `shlex` argument vectors, never a shell, under a hard
+timeout recorded in the event; an engine error or timeout journals
+`errored` and derives no transition, because the engine's failure is not
+evidence against the record. Every execution journals the command, exit
+code, duration, timeout bound, and an environment fingerprint (interpreter
+version + lockfile) so `stale` can be told apart from environment drift.
+One record per invocation — there is deliberately no batch sweep. See
+LIMITATIONS §9g for what a re-run's verdict does and does not mean.
 
 ## [0.1.4] — 2026-07-25
 

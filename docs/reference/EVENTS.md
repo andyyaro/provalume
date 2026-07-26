@@ -178,9 +178,15 @@ a record whose verification command reads comments or docstrings
 (LIMITATIONS §9e) — stays `suspect`. A trigger can end up booked but
 unassessed: the assessment failed open, or the intersection exceeded the
 per-record bound (LIMITATIONS §9f). The CLI reports both rather than
-claiming a clean pass, and a re-scan re-assesses a failed-open trigger. The
-one remaining writer, `reverification.executed`, arrives with M4; until
-then that event is stored and inert, which is the intended state.
+claiming a clean pass, and a re-scan re-assesses a failed-open trigger.
+
+The `reverification.executed` writer is `provalume reverify <record-id>` —
+**off by default** and T27-gated: it re-runs the RECORD's own stored
+command (never a caller-supplied one), only for records at trust `verified`
+or above, only when `.provalume/reverify-allowlist` or `--allow` matches
+the command, as an argument vector under a hard timeout, one record per
+invocation. A refusal appends nothing; an engine error or timeout appends
+`outcome: errored`, which derives no transition.
 
 ## Recording events
 
