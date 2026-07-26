@@ -262,7 +262,9 @@ def test_freshness_events_move_no_trust_state(pv: Provalume) -> None:
     this is the test that goes red."""
     pv.record_verification(command="pytest -q tests/", passed=True)
     pv.record_verification(command="pytest -q tests/", passed=False, excerpt="boom")
-    real = next(m.memory_id for m in pv.memory_records(limit=10))
+    real = next(
+        m.memory_id for m in pv.memory_records(limit=10) if m.memory_type is MemoryType.PROCEDURAL
+    )
     before = _trust_snapshot(pv)
     _freshness_events(pv, real)
     assert _trust_snapshot(pv) == before
@@ -347,7 +349,11 @@ def test_trigger_cycle_only_appends(tmp_path: Path) -> None:
             EventType.BLAST_RADIUS_RECORDED,
             source=Source.KERNEL,
             payload={
-                "record_id": next(m.memory_id for m in pv.memory_records(limit=10)),
+                "record_id": next(
+                    m.memory_id
+                    for m in pv.memory_records(limit=10)
+                    if m.memory_type is MemoryType.PROCEDURAL
+                ),
                 "method": "import_graph",
                 "paths": ["mod.py"],
                 "tool": "ast",
@@ -377,7 +383,9 @@ def test_rebuild_is_byte_identical_with_freshness_events_present(pv: Provalume) 
     declaring the event types broke nothing."""
     pv.record_verification(command="pytest -q tests/", passed=True)
     pv.record_verification(command="pytest -q tests/", passed=False, excerpt="boom")
-    real = next(m.memory_id for m in pv.memory_records(limit=10))
+    real = next(
+        m.memory_id for m in pv.memory_records(limit=10) if m.memory_type is MemoryType.PROCEDURAL
+    )
     _freshness_events(pv, real)
     pv.rebuild()
     first = _projection_snapshot(pv)
@@ -395,7 +403,11 @@ def test_rebuild_never_executes_a_command(pv: Provalume, monkeypatch: pytest.Mon
         raise AssertionError("rebuild attempted to execute a subprocess (I3)")
 
     pv.record_verification(command="pytest -q tests/", passed=False, excerpt="boom")
-    real = next(m.memory_id for m in pv.memory_records(limit=10))
+    # A failed verification produces no procedural record; the gotcha is
+    # the radius-bearing type here.
+    real = next(
+        m.memory_id for m in pv.memory_records(limit=10) if m.memory_type is MemoryType.GOTCHA
+    )
     _freshness_events(pv, real)
     monkeypatch.setattr(subprocess, "run", explode)
     monkeypatch.setattr(subprocess, "Popen", explode)
@@ -462,7 +474,9 @@ def test_extraction_fails_open(
     )
 
     pv.record_verification(command="pytest -q tests/", passed=True)
-    record_id = next(m.memory_id for m in pv.memory_records(limit=10))
+    record_id = next(
+        m.memory_id for m in pv.memory_records(limit=10) if m.memory_type is MemoryType.PROCEDURAL
+    )
 
     produced = record_blast_radius(
         pv,
@@ -514,7 +528,11 @@ def test_trigger_fails_open(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
             EventType.BLAST_RADIUS_RECORDED,
             source=Source.KERNEL,
             payload={
-                "record_id": next(m.memory_id for m in pv.memory_records(limit=10)),
+                "record_id": next(
+                    m.memory_id
+                    for m in pv.memory_records(limit=10)
+                    if m.memory_type is MemoryType.PROCEDURAL
+                ),
                 "method": "import_graph",
                 "paths": ["mod.py"],
                 "tool": "ast",
@@ -616,7 +634,7 @@ def test_relevance_fails_open(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
 
 
 def test_executor_fails_open_and_only_appends(
-    pv: Provalume, monkeypatch: pytest.MonkeyPatch
+    pv: Provalume, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     """I5, execution stage — and the execution half of I2. Positive control:
     with the allowlist permitting it, a genuinely failing command appends a
@@ -641,6 +659,7 @@ def test_executor_fails_open_and_only_appends(
         trigger_commit="b" * 40,
         allowlist=("*",),
         timeout_s=30.0,
+        root=tmp_path,
     )
     assert executed is not None
     assert executed.payload.get("outcome") == "failed"
@@ -658,6 +677,7 @@ def test_executor_fails_open_and_only_appends(
         trigger_commit="b" * 40,
         allowlist=("*",),
         timeout_s=30.0,
+        root=tmp_path,
     )
     assert errored is None or errored.payload.get("outcome") == "errored"
     failed_outcomes = [

@@ -69,6 +69,11 @@ def _command(case: Case) -> str:
 def _run_case(case: Case, workdir: Path) -> dict[str, object]:
     repo = workdir / case.case_id
     repo.mkdir()
+    # Scaffolding, not case content: .provalume/ is gitignored by Provalume
+    # convention, and without this the harness's own `git add -A` would
+    # track the database — whose journal writes would then read as a dirty
+    # worktree to the executor's gate and refuse every re-run.
+    (repo / ".gitignore").write_text(".provalume/\n__pycache__/\n")
     _materialize(repo, dict(case.files_before))
     _git(workdir, "init", "-q", "-b", "main", str(repo))
     _commit_all(repo, "seed")

@@ -100,6 +100,104 @@ def test_a_trivia_landing_reports_left_current_not_marked_suspect(
     assert repayload["skipped_already_seen"] == 1
 
 
+def test_left_current_comes_from_the_projection_not_this_scans_verdict(
+    cli: CliRunner, tmp_path: Path
+) -> None:
+    """An irrelevant verdict discharges only its own trigger. A record with
+    an OLDER trigger still outstanding must not be reported 'left current'
+    just because today's landing was trivia — the M3 fix-verification
+    caught the CLI inferring fate from the verdict instead of reading the
+    projection."""
+    repo = _repo(tmp_path)
+    db = str(repo / ".provalume" / "db.sqlite")
+    from provalume.sdk.client import Provalume
+
+    pv = Provalume.open(db, project_id="e2e", root=repo)
+    pv.record_verification(command=f"{sys.executable} -m pytest tests/", passed=True)
+    pv.close()
+
+    (repo / "mod.py").write_text("V = 2\n")
+    _git(repo, "add", "-A")
+    _git(repo, "-c", "user.email=a@b", "-c", "user.name=a", "commit", "-qm", "body change")
+    first = _git(repo, "rev-parse", "HEAD")
+    cli("freshness", first, "--db", db, "--project", "e2e", cwd=repo, expect=0)
+
+    (repo / "mod.py").write_text("V = 2  # annotated\n")
+    _git(repo, "add", "-A")
+    _git(repo, "-c", "user.email=a@b", "-c", "user.name=a", "commit", "-qm", "comment only")
+    second = _git(repo, "rev-parse", "HEAD")
+    result = cli("freshness", second, "--db", db, "--project", "e2e", "--json", cwd=repo)
+    payload = json.loads(result.stdout)
+    assert payload["assessed"] and payload["assessed"][0]["verdict"] == "irrelevant", (
+        "precondition: this landing really was trivia"
+    )
+    assert payload["left_current"] == [], "the older trigger is still outstanding"
+    assert payload["marked_suspect"] == payload["triggered"]
+
+    text = cli("freshness", second, "--db", db, "--project", "e2e", cwd=repo)
+    assert "left current" not in text.stdout + text.stderr
+
+
+def test_a_bounded_out_record_is_reported_on_every_scan(cli: CliRunner, tmp_path: Path) -> None:
+    """Over MAX_ASSESSED_PATHS the trigger books unassessed and the record
+    stays suspect. A re-scan must say so — the M3 fix-verification caught
+    it printing 'No recorded blast radius intersects … nothing to mark',
+    the exact phrase §9d teaches operators to read as a clean result."""
+    repo = _repo(tmp_path)
+    db = str(repo / ".provalume" / "db.sqlite")
+    paths = [f"pkg_{i}.py" for i in range(201)]
+    for p in paths:
+        (repo / p).write_text("X = 1\n")
+    _git(repo, "add", "-A")
+    _git(repo, "-c", "user.email=a@b", "-c", "user.name=a", "commit", "-qm", "wide seed")
+
+    from provalume.schemas.events import EventType
+    from provalume.schemas.memories import MemoryType
+    from provalume.schemas.trust import Source
+    from provalume.sdk.client import Provalume
+
+    pv = Provalume.open(db, project_id="e2e", root=repo)
+    pv.record_verification(command=f"{sys.executable} -m pytest tests/", passed=True)
+    record_id = next(
+        m.memory_id for m in pv.memory_records(limit=10) if m.memory_type is MemoryType.PROCEDURAL
+    )
+    pv.record_event(
+        EventType.BLAST_RADIUS_RECORDED,
+        source=Source.KERNEL,
+        payload={
+            "record_id": record_id,
+            "method": "import_graph",
+            "paths": paths,
+            "tool": "ast",
+            "tool_version": "1",
+        },
+    )
+    pv.close()
+
+    for p in paths:
+        (repo / p).write_text("X = 1  # touched\n")
+    _git(repo, "add", "-A")
+    _git(repo, "-c", "user.email=a@b", "-c", "user.name=a", "commit", "-qm", "wide landing")
+    sha = _git(repo, "rev-parse", "HEAD")
+
+    first = json.loads(
+        cli("freshness", sha, "--db", db, "--project", "e2e", "--json", cwd=repo).stdout
+    )
+    assert first["marked_suspect"] == [record_id]
+    assert first["bounded_unassessed"] == 1
+    assert first["assessed"] == []
+
+    rescan = json.loads(
+        cli("freshness", sha, "--db", db, "--project", "e2e", "--json", cwd=repo).stdout
+    )
+    assert rescan["bounded_unassessed"] == 1, "a re-scan retries and re-bounds, visibly"
+
+    text = cli("freshness", sha, "--db", db, "--project", "e2e", cwd=repo)
+    combined = text.stdout + text.stderr
+    assert "No recorded blast radius" not in combined
+    assert "unassessed" in combined
+
+
 def test_an_untouching_commit_marks_nothing(cli: CliRunner, tmp_path: Path) -> None:
     repo = _repo(tmp_path)
     db = str(repo / ".provalume" / "db.sqlite")

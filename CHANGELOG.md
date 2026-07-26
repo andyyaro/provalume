@@ -63,18 +63,28 @@ measurement can name what it measured. Not every trigger ends up assessed —
 unassessed, and the CLI says so rather than reporting a clean pass.
 
 **Gated re-execution.** `provalume reverify <record-id>` closes the loop:
-it re-runs the record's OWN stored verification command — never a
-caller-supplied one — and a pass returns the record to `current` while a
+it re-runs the record's OWN stored verification command — the **raw**
+string exactly as verified, never the normalized rewrite and never anything
+caller-supplied — and a pass returns the record to `current` while a
 genuine failure marks it `stale` (a machine observation, distinct from
 `invalidated`, which stays a judgement). This is the one component that
 executes anything, and it ships **off by default** behind the full T27
 control set: an empty or absent `.provalume/reverify-allowlist` disables
-the feature; only records at trust `verified` or above are eligible;
-commands run as `shlex` argument vectors, never a shell, under a hard
-timeout recorded in the event; an engine error or timeout journals
-`errored` and derives no transition, because the engine's failure is not
-evidence against the record. Every execution journals the command, exit
-code, duration, timeout bound, and an environment fingerprint (interpreter
+the feature, and the allowlist, execution root, and repository identity all
+anchor to the **database's** repository — a record refuses to run in a
+foreign tree, so standing in the wrong directory cannot borrow another
+repository's opt-in. Only verified-or-above procedural records whose
+verification passed are eligible (a gotcha's claim IS its failure; the
+outcome mapping would invert). Commands run as `shlex` argument vectors,
+never a shell, under a hard timeout recorded in the event, and only in a
+worktree clean of tracked modifications — uncommitted state can neither
+trigger freshness nor clear it, and a pass discharges only the triggers
+whose commits are ancestors of the HEAD it ran at. An engine error, a
+timeout, or a signal death (OOM kill, SIGTERM — a negative exit) journals
+`errored` and derives no transition, because the engine's or environment's
+failure is not evidence against the record. Every execution journals the
+command, exit code, duration, timeout bound, the HEAD and root it ran at,
+the triggers it answers, and a pre-run environment fingerprint (interpreter
 version + lockfile) so `stale` can be told apart from environment drift.
 One record per invocation — there is deliberately no batch sweep. See
 LIMITATIONS §9g for what a re-run's verdict does and does not mean.

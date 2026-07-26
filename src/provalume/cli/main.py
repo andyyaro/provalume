@@ -45,10 +45,13 @@ def _open(
     project: str | None = None,
     *,
     use_git: bool = True,
+    root: Path | None = None,
 ) -> Any:
     from provalume import Provalume
 
     try:
+        if root is not None:
+            return Provalume.open(db, project_id=project, use_git=use_git, root=root)
         return Provalume.open(db, project_id=project, use_git=use_git)
     except ProvalumeError as exc:
         err_console.print(f"[pv.error]error:[/] {exc}")
@@ -859,8 +862,11 @@ def freshness(
         raise typer.Exit(code=1)
     result = process_landed_commit(pv, commit_sha=sha)
     # One scan both triggers and assesses; the output must say which of the
-    # two actually decided each record's fate. Reporting a discharged trivia
-    # landing as "marked suspect" is the exact inversion of what happened.
+    # two actually decided each record's fate. The fate itself is read from
+    # the PROJECTION, never inferred from this scan's verdict: an
+    # `irrelevant` verdict discharges only its own trigger, and a record
+    # with an older trigger still outstanding stays suspect no matter what
+    # this landing turned out to be.
     verdicts: dict[str, tuple[str, str]] = {
         str(e.payload.get("record_id", "")): (
             str(e.payload.get("verdict", "")),
@@ -873,7 +879,12 @@ def freshness(
         for e in result.triggered
     }
     scanned = sorted(set(intersecting_by_record) | set(verdicts))
-    left_current = [rid for rid in scanned if verdicts.get(rid, ("", ""))[0] == "irrelevant"]
+
+    def _current_now(rid: str) -> bool:
+        memory = pv.memories.get(rid)
+        return memory is not None and memory.freshness.value == "current"
+
+    left_current = [rid for rid in scanned if _current_now(rid)]
     marked_suspect = [rid for rid in scanned if rid not in left_current]
     payload = {
         "commit": sha,
@@ -888,6 +899,7 @@ def freshness(
         "marked_suspect": marked_suspect,
         "left_current": left_current,
         "assessment_failed": result.assessment_failed,
+        "bounded_unassessed": result.bounded,
     }
     incomplete = not result.commit_readable or not result.completed or result.assessment_failed > 0
     if _emit(payload, as_json=json):
@@ -921,7 +933,13 @@ def freshness(
         )
         for rid in left_current:
             console.print(_describe(rid))
-    if not scanned:
+    if result.bounded:
+        console.print(
+            f"[pv.warning]{result.bounded} record(s) stay suspect with their trigger "
+            f"unassessed[/] — the intersection with {sha[:12]} exceeds the assessment "
+            "bound (LIMITATIONS §9f); a passing re-run or a fresh radius clears them."
+        )
+    if not scanned and not result.bounded and not result.assessment_failed:
         if result.skipped:
             console.print(
                 f"[pv.muted]{result.skipped} record(s) already scanned for {sha[:12]} — "
@@ -976,8 +994,13 @@ def reverify(
     """Re-run one record's own verification command, under the T27 controls.
 
     **Off by default.** Executes only when `.provalume/reverify-allowlist`
-    (one fnmatch pattern per line, `#` comments) or `--allow` permits the
-    record's command, and only for records at trust `verified` or above.
+    (one fnmatch pattern per line; full-line `#` comments) or `--allow`
+    permits the record's command, and only for verified-or-above procedural
+    records whose verification passed. Patterns are case-sensitive and match
+    the FULL command string; `*` spans spaces, so anchor patterns at the
+    start (`/usr/bin/pytest *`, or the exact command) — a leading `*` does
+    not constrain which program runs. `[` opens an fnmatch character class;
+    there is no escape, so avoid literal brackets in patterns.
     A passing run returns the record to `current`; a failing run marks it
     `stale`; an engine error or timeout records `errored` and changes
     nothing. One record per invocation, deliberately — there is no batch
@@ -988,39 +1011,58 @@ def reverify(
     """
     from provalume.freshness.executor import reverify_record
 
-    pv = _open(db, project)
-    root = (
-        Path(pv.git.root)
-        if pv.git is not None and getattr(pv.git, "available", False)
-        else Path.cwd()
-    )
+    if timeout <= 0:
+        err_console.print(f"[pv.error]error:[/] --timeout must be positive, got {timeout}")
+        raise typer.Exit(code=2)
+
+    # The root — and therefore the allowlist, the repository identity, and
+    # the execution cwd — anchors to the DATABASE's repository, never to
+    # whatever directory the operator happens to be standing in. T27's
+    # opt-in is per-repository; the enabling artifact must live in the
+    # repository whose records execute (M4 review, B2).
+    root_hint: Path | None = None
+    if db is not None:
+        resolved_db = Path(db).resolve()
+        if resolved_db.parent.name == ".provalume":
+            root_hint = resolved_db.parent.parent
+    pv = _open(db, project, root=root_hint)
+    root = root_hint
+    if root is None:
+        root = (
+            Path(pv.git.root)
+            if pv.git is not None and getattr(pv.git, "available", False)
+            else Path.cwd()
+        )
     patterns: list[str] = []
     allowlist_path = root / ".provalume" / "reverify-allowlist"
     try:
-        lines = allowlist_path.read_text().splitlines()
-    except OSError:
+        # utf-8-sig: an editor's BOM must not silently disable the first
+        # pattern. Only full-line comments are supported.
+        lines = allowlist_path.read_text(encoding="utf-8-sig").splitlines()
+    except (OSError, ValueError):
         lines = []
     for line in lines:
         entry = line.strip()
         if entry and not entry.startswith("#"):
             patterns.append(entry)
+    file_count = len(patterns)
     patterns.extend(allow or [])
     if not patterns:
         err_console.print(
             "[pv.error]Re-execution is off.[/] The allowlist "
-            f"({allowlist_path}) is absent or empty and no --allow was given — "
-            "an empty allowlist disables the feature (THREAT_MODEL T27)."
+            f"({allowlist_path}) is absent, unreadable, or empty and no --allow was "
+            "given — an empty allowlist disables the feature (THREAT_MODEL T27)."
         )
         raise typer.Exit(code=1)
 
     trigger_commit = trigger
+    if trigger_commit is None and pv.git is not None and getattr(pv.git, "available", False):
+        trigger_commit = pv.git.current_commit()
     if trigger_commit is None:
         outstanding = pv.memories.outstanding_triggers(
             project_id=pv.project_id, record_id=record_id
         )
         trigger_commit = outstanding[-1] if outstanding else None
-    if trigger_commit is None and pv.git is not None and getattr(pv.git, "available", False):
-        trigger_commit = pv.git.current_commit()
 
     event = reverify_record(
         pv,
@@ -1032,9 +1074,11 @@ def reverify(
     )
     if event is None:
         err_console.print(
-            "[pv.error]Refused or failed before execution[/] — the record is unchanged. "
-            "The log names the control that refused (missing record, trust below "
-            "verified, allowlist mismatch, or unparseable command)."
+            "[pv.error]Refused or failed[/] — the record is unchanged. The log names "
+            f"what happened (a T27 control refusing — {file_count} pattern(s) were "
+            f"loaded from the allowlist file, {len(allow or [])} from --allow — an "
+            "engine error before the run, or, loudly, a journaling failure after the "
+            "command had already run)."
         )
         raise typer.Exit(code=1)
 

@@ -99,6 +99,9 @@ _COMMENT_SENSITIVE: Final[tuple[str, ...]] = (
     "black",
     "isort",
     "lint",
+    "coverage",
+    "--cov",
+    "interrogate",
 )
 
 

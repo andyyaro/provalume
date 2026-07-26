@@ -39,19 +39,21 @@ file does not end in a newline. Without that, adding a trailing newline (which
 turns the final ``NEWLINE`` token's text from ``""`` into ``"\\n"``) would read
 as a semantic change. ``INDENT`` text is *not* canonicalised: it is the literal
 indentation, so a re-indentation from four spaces to two returns ``None`` here
-and reaches the pipeline's AST backstop, which lands it irrelevant under the
-broader ``COMMENT_ONLY`` name. A conservative label, not a false ``current``.
+and reaches the pipeline's AST backstop, which lands it irrelevant as
+``WHITESPACE_ONLY`` (or ``COMMENT_ONLY`` when the comment tokens also
+differ). A conservative path, never a false ``current``.
 
 *Every trivia answer is confirmed against raw AST equality.* Whitespace and
 comment edits cannot change the tree, so requiring ``ast.dump`` equality costs
-no legitimate classification — and it closes token-level blind spots that
-would otherwise be catastrophic. A real one: for a file with old-Mac ``\\r``
-line endings, ``ast.parse`` treats each ``\\r`` as a line break while
-``tokenize`` does not, collapsing the file into one logical line whose
-indentation is invisible in the token text. Two such files differing only in
-how deeply one statement is indented — one statement genuinely moving between
-blocks — produce byte-identical token streams. The AST cross-check is what
-turns that from a false ``WHITESPACE_ONLY`` into an escalation.
+no legitimate classification — and it is defence in depth against token-level
+blind spots. The sharpest known one is a lone-``\\r`` divergence:
+``ast.parse`` treats each ``\\r`` as a line break while ``tokenize`` does not,
+so two files differing only in how deeply one statement is indented — one
+statement genuinely moving between blocks — produce byte-identical token
+streams. That input cannot currently arrive through the watcher (``git``
+plumbing decodes in text mode, which normalises ``\\r``), so the cross-check
+is a guard on this function's own contract for any direct caller, not a hole
+reachable in production.
 """
 
 from __future__ import annotations

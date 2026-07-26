@@ -69,7 +69,12 @@ class WatchResult:
     commit was already seen *and* assessed — re-scanning a commit is
     idempotent. ``assessment_failed`` counts triggers left ``suspect``
     because their assessment failed open (safe direction, but incomplete —
-    callers must surface it).
+    callers must surface it). ``bounded`` counts triggers deliberately left
+    unassessed because the intersection exceeds ``MAX_ASSESSED_PATHS``
+    (LIMITATIONS §9f) — counted on every re-scan too, which retries and
+    re-bounds; without it a re-scan would report such a record as nothing
+    at all, which reads as "the axis found nothing" while the record sits
+    ``suspect``.
     """
 
     commit_readable: bool = True
@@ -78,6 +83,7 @@ class WatchResult:
     assessed: list[Event] = field(default_factory=list)
     skipped: int = 0
     assessment_failed: int = 0
+    bounded: int = 0
 
 
 def process_landed_commit(pv: Provalume, *, commit_sha: str) -> WatchResult:
@@ -165,6 +171,7 @@ def _record_assessment(
             MAX_ASSESSED_PATHS,
             record_id,
         )
+        result.bounded += 1
         return
     assessment = _assess(pv, git, commit_sha, record_id, intersecting)
     if assessment is None:

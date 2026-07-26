@@ -240,17 +240,21 @@ premise that comments cannot change a command's outcome. For linters
 watcher suppresses the short-circuit when the record's verification command
 contains a marker from a closed, case-insensitive list (`doctest`, `ruff`,
 `flake8`, `pylint`, `pycodestyle`, `pydocstyle`, `mypy`, `pyright`,
-`bandit`, `black`, `isort`, `lint`) — those records escalate on every
-textual change, trading false suspects for zero false currents.
+`bandit`, `black`, `isort`, `lint`, `coverage`, `--cov`, `interrogate`) —
+those records escalate on every textual change, trading false suspects for
+zero false currents.
 
-The list is deliberately dumb and cannot see through a wrapper: a record
-verified by `make check` that runs a linter inside still gets the trivia
-short-circuit, and a comment-only landing can leave it `current` while the
-linter's verdict changed. If your verification commands hide
-comment-sensitive tools behind neutral names, the trivia classes are not
-safe for you; name the tool in the command, or treat `current` accordingly.
-Type comments (`# type: ignore` under a plain `mypy`-less pytest run that
-imports typed code) are covered only when the command names the checker.
+The list is deliberately dumb and cannot see through a wrapper **or a
+config file**: a record verified by `make check` that runs a linter
+inside, or by a plain `pytest` whose `pyproject.toml` `addopts` adds
+`--doctest-modules` or `--cov-fail-under`, still gets the trivia
+short-circuit — a comment-only landing can leave it `current` while the
+hidden tool's verdict changed. If your verification commands hide
+comment-sensitive behaviour behind neutral names or configuration, the
+trivia classes are not safe for you; name the tool in the command, or
+treat `current` accordingly. Type comments (`# type: ignore` under a plain
+`mypy`-less pytest run that imports typed code) are covered only when the
+command names the checker.
 
 ## 9f. Relevance assessment is bounded per record
 
@@ -265,16 +269,28 @@ fresh radius is what clears them.
 
 ## 9g. Re-execution trusts the working tree it runs in
 
-`provalume reverify` re-runs the record's command in the current working
-tree with that tree's real caches and dependencies. `stale` therefore means
-"the command failed *here*, *now*" — the environment fingerprint (interpreter
-version + lockfile) recorded in the event is what lets a reader distinguish
-"the code broke this" from "the environment drifted", and it covers exactly
-those two inputs, nothing more. A cache keyed on something the command does
-not see (CPython's `__pycache__` validates by mtime-seconds and size, build
-systems by their own rules) can in principle make a re-run answer for an
-older tree. The feature is off by default and single-record per invocation
-(THREAT_MODEL T27); it never runs unattended.
+`provalume reverify` re-runs the record's command in the database's
+repository with that tree's real caches and dependencies. `stale` therefore
+means "the command failed *here*, *now*" — the environment fingerprint
+(interpreter version + lockfile, hashed *before* the run) recorded in the
+event is what lets a reader distinguish "the code broke this" from "the
+environment drifted", and it covers exactly those two inputs, nothing more.
+The executor refuses a tree with uncommitted **tracked** changes and
+discharges only triggers that are ancestors of the HEAD it ran at — but
+untracked files are deliberately not part of the dirtiness check (the
+`.provalume` directory itself is untracked), so an untracked module that
+shadows an import can still color a re-run's verdict. A cache keyed on
+something the command does not see (CPython's `__pycache__` validates by
+mtime-seconds and size, build systems by their own rules) can likewise make
+a re-run answer for an older tree.
+
+Only procedural records whose verification passed are re-runnable. A
+gotcha's claim is the failure itself — a failing re-run *confirms* it, so
+the pass/fail outcome mapping would be inverted — and an episodic record is
+a claim about the past no re-run today can falsify. Their freshness moves
+only through radii, triggers, and relevance verdicts. The feature is off by
+default and single-record per invocation (THREAT_MODEL T27); it never runs
+unattended.
 
 ## 10. Single writer, single machine
 
