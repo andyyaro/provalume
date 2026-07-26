@@ -27,3 +27,4 @@ with an accepted ADR, that is a bug in one of them — say which in the issue.
 | [0017](ADR-0017-compatibility-and-versioning.md) | Compatibility and versioning | Accepted |
 | [0018](ADR-0018-visual-identity-and-design-tokens.md) | Visual identity and design tokens | Accepted |
 | [0019](ADR-0019-trajectory-benchmark.md) | Trajectory benchmark | Accepted |
+| [0020](ADR-0020-freshness-axis.md) | Freshness axis and code-grounded invalidation | Accepted |
