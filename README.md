@@ -135,6 +135,34 @@ Three rules do most of the work:
 
 Full specification: [`docs/security/TRUST_MODEL.md`](docs/security/TRUST_MODEL.md).
 
+## How freshness works
+
+Trust answers *how well was this proven*. Freshness answers *does the code
+still support it* — a second, independent axis, because a fact proven
+against one commit is not a claim about the repository in perpetuity:
+
+```
+current ──▶ suspect ──▶ stale        (unverifiable: no radius to watch)
+  radius     a landed     a re-run of the
+  intact     commit hit   record's own
+             the radius   command failed
+```
+
+Every verification records the files its evidence depends on (its **blast
+radius**). `provalume freshness <sha>` — from a post-merge hook or by hand
+— intersects a landed commit against those radii and marks touched records
+`suspect`, unless a deterministic AST diff rules the change trivia
+(whitespace, comments, docstrings). No model call anywhere, no daemon, no
+execution on that path. `provalume reverify <record-id>` can then re-run
+the record's *own* command to settle the question — **off by default**,
+allowlist-gated, and journaled like everything else. A `stale` record
+stays readable at its trust rung, labelled; staleness is a machine
+observation, never an invalidation. Both axes render everywhere a record
+does: `[VERIFIED+LANDED · SUSPECT]`.
+
+Honest limits: [`docs/reference/LIMITATIONS.md`](docs/reference/LIMITATIONS.md)
+§9c–§9g; design: [`docs/adr/ADR-0020-freshness-axis.md`](docs/adr/ADR-0020-freshness-axis.md).
+
 ## What it remembers
 
 | Category | Example |
