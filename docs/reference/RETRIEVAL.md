@@ -205,6 +205,13 @@ digest = pv.recall("integration tests").digest(char_budget=2000)
 
 - **The banner is always first and always present.** Fixed wording — it is the
   control for instruction replay.
+- **Every item's bracket carries both axes** (ADR-0020): trust, then
+  freshness when it is a signal — `[VERIFIED+LANDED · SUSPECT]`,
+  `[INTEGRATED · STALE]`, `[VERIFIED · UNVERIFIABLE]`. `current` is the
+  unmarked state, so the word never appears and cannot be confused with the
+  applicability line's vocabulary. A record whose covering code changed says
+  so in the same bracket that vouches for it; the full state also rides in
+  `DigestItem.freshness` and `RecallResult.freshness`.
 - **The budget is a hard ceiling enforced by construction.** Items are measured
   before inclusion — against the footer that will actually be rendered, not a
   fixed guess at its size — so the digest is never assembled and then trimmed. A

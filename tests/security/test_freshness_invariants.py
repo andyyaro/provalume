@@ -303,10 +303,6 @@ def test_freshness_vocabulary_is_pinned() -> None:
 # --- I2: append-only ----------------------------------------------------------
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="red until M2: the commit watcher does not exist yet",
-)
 def test_trigger_cycle_only_appends(tmp_path: Path) -> None:
     """I2, trigger half. Positive control: a landed commit that touches a
     recorded blast radius MUST append a `freshness.triggered` event naming
@@ -474,10 +470,6 @@ def test_extraction_fails_open(
     assert len(radii) == 1, "a failed extraction must not append a radius event"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="red until M2: the commit watcher does not exist yet",
-)
 def test_trigger_fails_open(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """I5, trigger stage. Positive control: fault-free processing of a
     touching commit appends a trigger. Then with git unavailable, processing

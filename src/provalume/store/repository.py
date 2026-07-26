@@ -14,6 +14,7 @@ from collections.abc import Iterator
 from typing import Any
 
 from provalume import _ids, _time
+from provalume.schemas.freshness import FreshnessState
 from provalume.schemas.memories import Memory, MemoryFilter, MemoryType, Transition
 from provalume.schemas.scope import Scope, ScopeLevel
 from provalume.schemas.trust import (
@@ -55,6 +56,7 @@ _MEMORY_COLUMNS = (
     "verification_state",
     "review_state",
     "integration_state",
+    "freshness",
     "access_count",
     "last_accessed_at",
     "content_hash",
@@ -161,11 +163,13 @@ class MemoryRepository:
                 conn.execute("DELETE FROM failure_signatures")
                 conn.execute("DELETE FROM memory_vectors")
                 conn.execute("DELETE FROM memory_transitions")
+                conn.execute("DELETE FROM blast_radii")
                 conn.execute("DELETE FROM memories")
             else:
                 conn.execute("DELETE FROM memory_links WHERE project_id = ?", (project_id,))
                 conn.execute("DELETE FROM contradictions WHERE project_id = ?", (project_id,))
                 conn.execute("DELETE FROM failure_signatures WHERE project_id = ?", (project_id,))
+                conn.execute("DELETE FROM blast_radii WHERE project_id = ?", (project_id,))
                 conn.execute(
                     "DELETE FROM memory_vectors WHERE memory_id IN "
                     "(SELECT memory_id FROM memories WHERE project_id = ?)",
@@ -209,6 +213,43 @@ class MemoryRepository:
             (project_id, f'%"{event_id}"%'),
         )
         return [_row_to_memory(r) for r in rows]
+
+    # -- blast radii (ADR-0020) --------------------------------------------
+
+    def replace_blast_radius(
+        self, *, record_id: str, project_id: str, method: str, paths: tuple[str, ...]
+    ) -> None:
+        """Store the latest radius for a record, replacing any earlier one.
+
+        Latest-wins is the ADR-0020 rule: a repeated failure re-anchors its
+        gotcha, and derivation reads the newest radius. One row per path so
+        the watcher's intersection is an indexed lookup.
+        """
+        with self.db.tx() as conn:
+            conn.execute("DELETE FROM blast_radii WHERE record_id = ?", (record_id,))
+            conn.executemany(
+                "INSERT INTO blast_radii (record_id, project_id, method, path) VALUES (?, ?, ?, ?)",
+                [(record_id, project_id, method, path) for path in paths],
+            )
+
+    def records_touching(
+        self, project_id: str, paths: tuple[str, ...]
+    ) -> dict[str, tuple[str, ...]]:
+        """Record ids whose blast radius intersects ``paths``, with the
+        intersecting paths per record. Chunked so a large landing cannot
+        exceed the bound-parameter limit."""
+        touched: dict[str, set[str]] = {}
+        for start in range(0, len(paths), 500):
+            chunk = paths[start : start + 500]
+            placeholders = ", ".join("?" for _ in chunk)
+            rows = self.db.query(
+                "SELECT record_id, path FROM blast_radii "  # noqa: S608 - placeholders only  # nosec B608
+                f"WHERE project_id = ? AND path IN ({placeholders})",
+                (project_id, *chunk),
+            )
+            for row in rows:
+                touched.setdefault(row["record_id"], set()).add(row["path"])
+        return {record_id: tuple(sorted(paths_)) for record_id, paths_ in sorted(touched.items())}
 
     def find(self, spec: MemoryFilter) -> list[Memory]:
         clauses, params = self._build_filter(spec)
@@ -538,6 +579,7 @@ def _memory_to_row(memory: Memory) -> tuple[Any, ...]:
         memory.verification_state.value,
         memory.review_state.value,
         memory.integration_state.value,
+        memory.freshness.value,
         memory.access_count,
         memory.last_accessed_at,
         memory.content_hash,
@@ -583,6 +625,7 @@ def _row_to_memory(row: sqlite3.Row) -> Memory:
         verification_state=VerificationState(row["verification_state"]),
         review_state=ReviewState(row["review_state"]),
         integration_state=IntegrationState(row["integration_state"]),
+        freshness=FreshnessState(row["freshness"]),
         access_count=int(row["access_count"]),
         last_accessed_at=row["last_accessed_at"],
         content_hash=row["content_hash"],

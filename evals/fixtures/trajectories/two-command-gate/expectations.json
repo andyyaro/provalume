@@ -21,7 +21,7 @@
     {"call": 26, "expect": {"items": 0}},
     {"call": 27, "expect": {"matched": false}},
     {"call": 28, "expect": {"matched": true, "occurrences": 2, "resolution_names_commit_of_call": 25}},
-    {"call": 36, "expect": {"items": 4, "contains": ["Prior failures and lessons", "Verified procedures", "failed (verify_failed)", "[VERIFIED+LANDED]"]}},
+    {"call": 36, "expect": {"items": 4, "contains": ["Prior failures and lessons", "Verified procedures", "failed (verify_failed)", "[VERIFIED+LANDED · UNVERIFIABLE]"]}},
     {"call": 37, "expect": {"matched": false}},
     {"call": 38, "expect": {"matched": true, "occurrences": 2, "resolution_names_commit_of_call": 25}}
   ],

@@ -15,7 +15,7 @@
     {"call": 7, "expect": {"matched": true, "occurrences": 1, "resolved": false, "min_confidence": 0.85}},
     {"call": 12, "expect": {"items": 2, "contains": ["Agent performance", "alpha on implement: 1/1 succeeded (100%).", "beta on implement: 1/1 succeeded (100%), 1 required fallback."]}},
     {"call": 13, "expect": {"matched": true, "occurrences": 2, "resolved": false, "min_confidence": 0.85}},
-    {"call": 19, "expect": {"items": 4, "contains": ["Prior failures and lessons", "Verified procedures", "failed (verify_failed)", "[VERIFIED+LANDED]"]}},
+    {"call": 19, "expect": {"items": 4, "contains": ["Prior failures and lessons", "Verified procedures", "failed (verify_failed)", "[VERIFIED+LANDED · UNVERIFIABLE]"]}},
     {"call": 20, "expect": {"matched": true, "occurrences": 2, "resolution_names_commit_of_call": 18}},
     {"call": 26, "expect": {"items": 0}},
     {"call": 27, "expect": {"matched": true, "occurrences": 2, "resolution_names_commit_of_call": 18}}

@@ -27,6 +27,20 @@ honestly `unverifiable`. Nothing yet consumes the axis — suspect-marking,
 relevance filtering, and gated re-verification are the next milestones.
 See LIMITATIONS §9c for what extraction can and cannot see.
 
+**Suspect marking — the shippable core.** `provalume freshness <sha>`
+intersects a landed commit's changed files against the recorded blast radii
+and flips the touched records to `suspect` — pure git plumbing, no
+execution anywhere in the path. Freshness is derived by projection (rebuild
+reproduces it), only kernel-sourced events derive it (an imported or
+agent-sourced freshness event is stored and moves nothing), and it can
+never touch trust. Both axes now surface everywhere a record does: the
+digest bracket reads `[VERIFIED+LANDED · SUSPECT]` when the axis has
+something to say (`current` is the unmarked state), and
+`RecallResult.freshness`, `DigestItem.freshness`, `PreflightMatch.freshness`,
+the MCP recall payload, `recall`/`explain`/`memories` in the CLI all carry
+the state. There is no daemon: scanning is explicit, and LIMITATIONS §9d
+says what that means for the word `current`.
+
 ## [0.1.4] — 2026-07-25
 
 Found by an independent reviewer running the Orkestra integration, then by

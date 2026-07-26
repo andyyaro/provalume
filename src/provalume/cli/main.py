@@ -369,6 +369,8 @@ def recall(
             console.print(f"   [pv.provenance]{result.provenance_summary}[/]")
         if not result.presentable_as_current_truth:
             console.print("   [pv.warning]not established current truth[/]")
+        if result.freshness.value != "current":
+            console.print(f"   [pv.warning]freshness: {result.freshness.value}[/]")
         if explain:
             for reason in result.explanation.reasons:
                 console.print(f"   [pv.muted]why: {reason}[/]")
@@ -406,6 +408,7 @@ def explain_command(
     console.print(f"  verification   {provenance.verification_state}")
     console.print(f"  review         {provenance.review_state}")
     console.print(f"  integration    {provenance.integration_state}")
+    console.print(f"  freshness      {memory.freshness.value}")
     console.print(
         f"  provenance     [pv.provenance]{provenance.resolution}[/] "
         f"— {provenance.resolution_detail}"
@@ -546,6 +549,8 @@ def memories(
             f"[{type_style(memory.memory_type.value)}]{memory.memory_type:<12}[/] "
             f"{memory.text[:70]}"
         )
+        if memory.freshness.value != "current":
+            console.print(f"    [pv.warning]freshness: {memory.freshness.value}[/]")
         if explain:
             console.print(f"    [pv.muted]{memory.memory_id}  {memory.scope.describe()}[/]")
 
@@ -813,6 +818,53 @@ def rebuild(
     if stats.notes:
         for note in stats.notes[:10]:
             console.print(f"  [pv.muted]{note}[/]")
+
+
+@app.command()
+def freshness(
+    commit: Annotated[
+        str | None,
+        typer.Argument(
+            help="The landed commit to scan (full or abbreviated hex sha). "
+            "Defaults to the repository's current HEAD."
+        ),
+    ] = None,
+    db: DbOption = None,
+    project: ProjectOption = None,
+    json: JsonOption = False,
+) -> None:
+    """Mark records suspect whose blast radius a landed commit touched.
+
+    Run this for commits that have **landed** on the integration branch — from
+    a post-merge hook or by hand after a merge. It is pure computation over
+    git plumbing: nothing is executed, and a record is relabelled, never
+    withdrawn (ADR-0020).
+    """
+    from provalume.freshness.watcher import process_landed_commit
+
+    pv = _open(db, project)
+    sha = commit
+    if sha is None and pv.git is not None and pv.git.available:
+        sha = pv.git.current_commit()
+    if not sha:
+        console.print("[pv.error]No commit to scan: not in a repository and none given.[/]")
+        raise typer.Exit(code=1)
+    events = process_landed_commit(pv, commit_sha=sha)
+    payload = {
+        "commit": sha,
+        "triggered": sorted(str(e.payload.get("record_id", "")) for e in events),
+    }
+    if _emit(payload, as_json=json):
+        return
+    if not events:
+        console.print(
+            f"[pv.muted]No recorded blast radius intersects {sha[:12]} — nothing to mark.[/]"
+        )
+        return
+    console.print(f"[pv.warning]{len(events)} record(s) marked suspect[/] by commit {sha[:12]}:")
+    for event in events:
+        intersecting = ", ".join(event.payload.get("intersecting_paths", [])[:5])
+        console.print(f"  {event.payload.get('record_id', '')}  [pv.muted]{intersecting}[/]")
 
 
 @app.command()

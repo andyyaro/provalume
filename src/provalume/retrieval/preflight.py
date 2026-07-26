@@ -307,6 +307,7 @@ class PreflightGate:
             applicability=applicability,
             provenance="; ".join(provenance_bits) or applicability_reason,
             trust_state=memory.trust_state,
+            freshness=memory.freshness,
             occurrences=occurrences,
             match_reasons=reasons,
             confidence=round(min(1.0, adjusted), 4),

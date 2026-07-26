@@ -17,6 +17,7 @@ from __future__ import annotations
 import logging
 
 from provalume.freshness.blast_radius import BlastRadius, record_blast_radius
+from provalume.freshness.watcher import process_landed_commit
 
 #: The spec requires fail-open paths to log. The library is otherwise silent,
 #: so the logger ships with a NullHandler — operators opt in by configuring
@@ -25,5 +26,6 @@ logging.getLogger("provalume.freshness").addHandler(logging.NullHandler())
 
 __all__ = [
     "BlastRadius",
+    "process_landed_commit",
     "record_blast_radius",
 ]

@@ -24,6 +24,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from provalume.errors import BudgetExceeded
+from provalume.schemas.freshness import FreshnessState
 from provalume.schemas.memories import MemoryType
 from provalume.schemas.retrieval import (
     CHARS_PER_TOKEN_ESTIMATE,
@@ -129,6 +130,22 @@ def trust_label(result: RecallResult) -> str:
     return state.value.upper()
 
 
+def rendered_label(result: RecallResult) -> str:
+    """Both axes in one bracket: trust, then freshness when it is a signal.
+
+    ``current`` is the unmarked state — the axis speaks up only when it has
+    something to say (`SUSPECT`, `STALE`, `UNVERIFIABLE`), which also keeps
+    the word "current" out of the rendered output entirely, where it would
+    collide with the applicability line's vocabulary (ADR-0020). A digest
+    line reading ``[VERIFIED]`` for a record whose covering code changed this
+    morning is the exact failure the freshness axis exists to eliminate.
+    """
+    label = trust_label(result)
+    if result.freshness is not FreshnessState.CURRENT:
+        label += f" · {result.freshness.value.upper()}"
+    return label
+
+
 def render_item(result: RecallResult, *, include_reasons: bool) -> str:
     """Render one digest entry.
 
@@ -137,7 +154,7 @@ def render_item(result: RecallResult, *, include_reasons: bool) -> str:
     able to see its standing without scrolling back, because that is precisely
     the moment a poisoned record would otherwise pass as fact.
     """
-    lines = [f"- [{trust_label(result)}] {result.text}"]
+    lines = [f"- [{rendered_label(result)}] {result.text}"]
 
     if result.provenance_summary:
         lines.append(f"  evidence: {result.provenance_summary}")
@@ -264,6 +281,7 @@ def compose(
                     memory_type=result.memory_type,
                     text=result.text,
                     trust_label=trust_label(result),
+                    freshness=result.freshness.value,
                     provenance=result.provenance_summary,
                     reasons=result.explanation.reasons,
                     warnings=result.explanation.warnings,

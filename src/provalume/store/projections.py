@@ -26,6 +26,7 @@ from typing import Any
 
 from provalume.policy import invalidation, promotion
 from provalume.schemas.events import Event, EventType
+from provalume.schemas.freshness import FreshnessState, RelevanceVerdict, ReverificationOutcome
 from provalume.schemas.memories import CLAIM_TYPES, Memory, MemoryType, Transition
 from provalume.schemas.trust import (
     IntegrationState,
@@ -204,6 +205,10 @@ class Projector:
             EventType.AGENT_PROPOSAL: self._on_proposal,
             EventType.AGENT_FAILURE_REPORT: self._on_failure,
             EventType.AGENT_OBSERVATION: self._on_fact,
+            EventType.BLAST_RADIUS_RECORDED: self._on_blast_radius,
+            EventType.FRESHNESS_TRIGGERED: self._on_freshness_trigger,
+            EventType.RELEVANCE_ASSESSED: self._on_relevance,
+            EventType.REVERIFICATION_EXECUTED: self._on_reverification,
         }.get(event.event_type)
 
         if handler is not None:
@@ -254,6 +259,79 @@ class Projector:
     def _poisoning(self, event: Event) -> tuple[float, tuple[str, ...]]:
         info = event.integrity.get("poisoning", {})
         return float(info.get("risk", 0.0)), tuple(info.get("matches", []))
+
+    # -- freshness (ADR-0020) ----------------------------------------------
+    #
+    # Every freshness handler is gated on `source == kernel`: an imported or
+    # agent-sourced freshness event is stored append-only, like every event,
+    # and derives nothing — an imported `freshness.triggered` must not be
+    # able to relabel a local record any more than an imported claim can
+    # raise its trust (threats T17, T28). None of these handlers can touch
+    # trust: they set the freshness column and nothing else.
+
+    def _freshness_target(self, event: Event) -> Memory | None:
+        if event.source is not Source.KERNEL:
+            return None
+        record_id = str(event.payload.get("record_id", ""))
+        if not record_id:
+            return None
+        memory = self.repository.get(record_id)
+        if memory is None or memory.scope.project_id != event.project_id:
+            # A record from another project must be unreachable even by a
+            # crafted record_id (threat T9).
+            return None
+        return memory
+
+    def _set_freshness(self, memory: Memory, state: FreshnessState, stats: ProjectionStats) -> None:
+        if memory.freshness is state:
+            return
+        self._write(memory.model_copy(update={"freshness": state}), stats, update=True)
+
+    def _on_blast_radius(self, event: Event, landing: TrustState, stats: ProjectionStats) -> None:
+        memory = self._freshness_target(event)
+        if memory is None:
+            return
+        paths = tuple(str(p) for p in event.payload.get("paths", []) if p)
+        if not paths:
+            return
+        self.repository.replace_blast_radius(
+            record_id=memory.memory_id,
+            project_id=memory.scope.project_id,
+            method=str(event.payload.get("method", "")),
+            paths=paths,
+        )
+        self._set_freshness(memory, FreshnessState.CURRENT, stats)
+
+    def _on_freshness_trigger(
+        self, event: Event, landing: TrustState, stats: ProjectionStats
+    ) -> None:
+        memory = self._freshness_target(event)
+        if memory is None:
+            return
+        self._set_freshness(memory, FreshnessState.SUSPECT, stats)
+
+    def _on_relevance(self, event: Event, landing: TrustState, stats: ProjectionStats) -> None:
+        memory = self._freshness_target(event)
+        if memory is None:
+            return
+        verdict = str(event.payload.get("verdict", ""))
+        if verdict == RelevanceVerdict.IRRELEVANT.value:
+            self._set_freshness(memory, FreshnessState.CURRENT, stats)
+        elif verdict == RelevanceVerdict.RELEVANT.value:
+            self._set_freshness(memory, FreshnessState.SUSPECT, stats)
+        # Any other verdict is a malformed event: stored, derives nothing.
+
+    def _on_reverification(self, event: Event, landing: TrustState, stats: ProjectionStats) -> None:
+        memory = self._freshness_target(event)
+        if memory is None:
+            return
+        outcome = str(event.payload.get("outcome", ""))
+        if outcome == ReverificationOutcome.PASSED.value:
+            self._set_freshness(memory, FreshnessState.CURRENT, stats)
+        elif outcome == ReverificationOutcome.FAILED.value:
+            self._set_freshness(memory, FreshnessState.STALE, stats)
+        # `errored` is the engine failing, not the record failing: no
+        # transition at all (fail-open, I5).
 
     # -- handlers ----------------------------------------------------------
 

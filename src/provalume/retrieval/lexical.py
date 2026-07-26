@@ -271,6 +271,7 @@ class RetrievalEngine:
                 text=memory.text,
                 content=memory.content,
                 trust_state=memory.trust_state,
+                freshness=memory.freshness,
                 scope=memory.scope.describe(),
                 commit_sha=memory.commit_sha,
                 recorded_at=memory.recorded_at,
