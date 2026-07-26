@@ -615,10 +615,6 @@ def test_relevance_fails_open(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
         pv.close()
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="red until M4: the re-verification executor does not exist yet",
-)
 def test_executor_fails_open_and_only_appends(
     pv: Provalume, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -631,7 +627,12 @@ def test_executor_fails_open_and_only_appends(
     from provalume.freshness.executor import reverify_record
 
     pv.record_verification(command=f"{sys.executable} -c 'raise SystemExit(1)'", passed=True)
-    record_id = next(m.memory_id for m in pv.memory_records(limit=10))
+    # The procedural record specifically: the ULID tie-break can put the
+    # episodic sibling first, and the executor must see the record that
+    # carries the command at verified trust.
+    record_id = next(
+        m.memory_id for m in pv.memory_records(limit=10) if m.memory_type is MemoryType.PROCEDURAL
+    )
     before_hashes = [e.event_hash for e in pv.events()]
 
     executed = reverify_record(
