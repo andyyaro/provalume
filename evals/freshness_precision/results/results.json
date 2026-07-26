@@ -1,0 +1,335 @@
+[
+  {
+    "case_id": "fmt_blank_lines",
+    "category": "formatting",
+    "initial_freshness": "current",
+    "freshness_after_scan": "current",
+    "reason_code": "whitespace_only",
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  },
+  {
+    "case_id": "fmt_reindent_two_spaces",
+    "category": "formatting",
+    "initial_freshness": "current",
+    "freshness_after_scan": "current",
+    "reason_code": "whitespace_only",
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  },
+  {
+    "case_id": "fmt_trailing_whitespace",
+    "category": "formatting",
+    "initial_freshness": "current",
+    "freshness_after_scan": "current",
+    "reason_code": "whitespace_only",
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  },
+  {
+    "case_id": "fmt_statement_split",
+    "category": "formatting",
+    "initial_freshness": "current",
+    "freshness_after_scan": "suspect",
+    "reason_code": "body_changed",
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  },
+  {
+    "case_id": "cmt_reworded",
+    "category": "comments",
+    "initial_freshness": "current",
+    "freshness_after_scan": "current",
+    "reason_code": "comment_only",
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  },
+  {
+    "case_id": "cmt_removed",
+    "category": "comments",
+    "initial_freshness": "current",
+    "freshness_after_scan": "current",
+    "reason_code": "comment_only",
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  },
+  {
+    "case_id": "cmt_todo_added",
+    "category": "comments",
+    "initial_freshness": "current",
+    "freshness_after_scan": "current",
+    "reason_code": "comment_only",
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  },
+  {
+    "case_id": "doc_reworded",
+    "category": "docstrings",
+    "initial_freshness": "current",
+    "freshness_after_scan": "current",
+    "reason_code": "docstring_only",
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  },
+  {
+    "case_id": "doc_removed",
+    "category": "docstrings",
+    "initial_freshness": "current",
+    "freshness_after_scan": "current",
+    "reason_code": "docstring_only",
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  },
+  {
+    "case_id": "doc_doctest_broken",
+    "category": "docstrings",
+    "initial_freshness": "current",
+    "freshness_after_scan": "suspect",
+    "reason_code": "docstring_only",
+    "rerun_outcome": "failed",
+    "freshness_final": "stale"
+  },
+  {
+    "case_id": "logic_breaks_claim",
+    "category": "logic",
+    "initial_freshness": "current",
+    "freshness_after_scan": "suspect",
+    "reason_code": "body_changed",
+    "rerun_outcome": "failed",
+    "freshness_final": "stale"
+  },
+  {
+    "case_id": "logic_equivalent_rewrite",
+    "category": "logic",
+    "initial_freshness": "current",
+    "freshness_after_scan": "suspect",
+    "reason_code": "body_changed",
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  },
+  {
+    "case_id": "logic_unrelated_function",
+    "category": "logic",
+    "initial_freshness": "current",
+    "freshness_after_scan": "suspect",
+    "reason_code": "signature_changed",
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  },
+  {
+    "case_id": "logic_constant_bumped",
+    "category": "logic",
+    "initial_freshness": "current",
+    "freshness_after_scan": "suspect",
+    "reason_code": "body_changed",
+    "rerun_outcome": "failed",
+    "freshness_final": "stale"
+  },
+  {
+    "case_id": "logic_dead_branch_added",
+    "category": "logic",
+    "initial_freshness": "current",
+    "freshness_after_scan": "suspect",
+    "reason_code": "body_changed",
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  },
+  {
+    "case_id": "logic_error_message_changed",
+    "category": "logic",
+    "initial_freshness": "current",
+    "freshness_after_scan": "suspect",
+    "reason_code": "body_changed",
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  },
+  {
+    "case_id": "sig_param_added_with_default",
+    "category": "signature",
+    "initial_freshness": "current",
+    "freshness_after_scan": "suspect",
+    "reason_code": "signature_changed",
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  },
+  {
+    "case_id": "sig_param_added_breaking",
+    "category": "signature",
+    "initial_freshness": "current",
+    "freshness_after_scan": "suspect",
+    "reason_code": "signature_changed",
+    "rerun_outcome": "failed",
+    "freshness_final": "stale"
+  },
+  {
+    "case_id": "sig_renamed_function",
+    "category": "signature",
+    "initial_freshness": "current",
+    "freshness_after_scan": "suspect",
+    "reason_code": "signature_changed",
+    "rerun_outcome": "failed",
+    "freshness_final": "stale"
+  },
+  {
+    "case_id": "imp_unused_added",
+    "category": "imports",
+    "initial_freshness": "current",
+    "freshness_after_scan": "suspect",
+    "reason_code": "import_changed",
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  },
+  {
+    "case_id": "imp_stdlib_now_used",
+    "category": "imports",
+    "initial_freshness": "current",
+    "freshness_after_scan": "suspect",
+    "reason_code": "import_changed",
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  },
+  {
+    "case_id": "imp_helper_moved_out",
+    "category": "imports",
+    "initial_freshness": "current",
+    "freshness_after_scan": "suspect",
+    "reason_code": "signature_changed",
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  },
+  {
+    "case_id": "struct_module_deleted",
+    "category": "structure",
+    "initial_freshness": "current",
+    "freshness_after_scan": "suspect",
+    "reason_code": "body_changed",
+    "rerun_outcome": "failed",
+    "freshness_final": "stale"
+  },
+  {
+    "case_id": "struct_renamed_import_fixed",
+    "category": "structure",
+    "initial_freshness": "current",
+    "freshness_after_scan": "suspect",
+    "reason_code": "body_changed",
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  },
+  {
+    "case_id": "struct_check_tightened",
+    "category": "structure",
+    "initial_freshness": "current",
+    "freshness_after_scan": "suspect",
+    "reason_code": "body_changed",
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  },
+  {
+    "case_id": "struct_check_now_fails",
+    "category": "structure",
+    "initial_freshness": "current",
+    "freshness_after_scan": "suspect",
+    "reason_code": "body_changed",
+    "rerun_outcome": "failed",
+    "freshness_final": "stale"
+  },
+  {
+    "case_id": "str_asserted_value_changed",
+    "category": "strings",
+    "initial_freshness": "current",
+    "freshness_after_scan": "suspect",
+    "reason_code": "body_changed",
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  },
+  {
+    "case_id": "str_whitespace_inside_string",
+    "category": "strings",
+    "initial_freshness": "current",
+    "freshness_after_scan": "suspect",
+    "reason_code": "body_changed",
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  },
+  {
+    "case_id": "str_quote_style_only",
+    "category": "strings",
+    "initial_freshness": "current",
+    "freshness_after_scan": "current",
+    "reason_code": "whitespace_only",
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  },
+  {
+    "case_id": "oor_readme_only",
+    "category": "out-of-radius",
+    "initial_freshness": "current",
+    "freshness_after_scan": "current",
+    "reason_code": null,
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  },
+  {
+    "case_id": "oor_unimported_module",
+    "category": "out-of-radius",
+    "initial_freshness": "current",
+    "freshness_after_scan": "current",
+    "reason_code": null,
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  },
+  {
+    "case_id": "mix_comment_and_break",
+    "category": "mixed",
+    "initial_freshness": "current",
+    "freshness_after_scan": "suspect",
+    "reason_code": "body_changed",
+    "rerun_outcome": "failed",
+    "freshness_final": "stale"
+  },
+  {
+    "case_id": "mix_docstring_and_harmless",
+    "category": "mixed",
+    "initial_freshness": "current",
+    "freshness_after_scan": "suspect",
+    "reason_code": "signature_changed",
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  },
+  {
+    "case_id": "mix_format_two_files_one_break",
+    "category": "mixed",
+    "initial_freshness": "current",
+    "freshness_after_scan": "suspect",
+    "reason_code": "body_changed",
+    "rerun_outcome": "failed",
+    "freshness_final": "stale"
+  },
+  {
+    "case_id": "broken_syntax_error_landed",
+    "category": "broken-state",
+    "initial_freshness": "current",
+    "freshness_after_scan": "suspect",
+    "reason_code": "unparseable",
+    "rerun_outcome": "failed",
+    "freshness_final": "stale"
+  },
+  {
+    "case_id": "broken_type_comment_removed",
+    "category": "broken-state",
+    "initial_freshness": "current",
+    "freshness_after_scan": "current",
+    "reason_code": "comment_only",
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  },
+  {
+    "case_id": "broken_encoding_cookie",
+    "category": "broken-state",
+    "initial_freshness": "current",
+    "freshness_after_scan": "current",
+    "reason_code": "comment_only",
+    "rerun_outcome": "passed",
+    "freshness_final": "current"
+  }
+]
