@@ -358,14 +358,16 @@ def test_recording_a_verification_attaches_a_commit_touch_radius(
         assert event.payload["record_id"] in claim_ids
 
 
-def test_the_orchestrator_falls_back_to_commit_touch(db: Database, tmp_path: Path) -> None:
-    """With no method named, ``import_graph`` gets first refusal; it is still a
-    stub, so the recorded radius must be this method's. When M1's import-graph
-    unit lands, this test's expectation changes deliberately — that is the
-    fallback order becoming observable, not a regression."""
+def test_the_fallback_order_is_import_graph_then_commit_touch(db: Database, tmp_path: Path) -> None:
+    """With no method named and both methods able to answer, the more precise
+    one must win — the order is the contract, not a coincidence."""
     repo = new_repo(tmp_path)
-    commit(repo, "root", {"pkg/mod.py": "x = 1\n"})
-    commit(repo, "edit", {"pkg/mod.py": "x = 2\n"})
+    commit(
+        repo,
+        "root",
+        {"tests/test_mod.py": "import mod\n", "mod.py": "x = 1\n"},
+    )
+    commit(repo, "edit", {"mod.py": "x = 2\n"})
     pv = client(db, repo)
     pv.record_verification(command="pytest -q tests/", passed=True)
     record_id = next(m.memory_id for m in pv.memory_records(limit=10))
@@ -373,5 +375,24 @@ def test_the_orchestrator_falls_back_to_commit_touch(db: Database, tmp_path: Pat
     produced = record_blast_radius(pv, record_id=record_id, command="pytest -q tests/")
 
     assert produced is not None
-    assert produced.payload["method"] in {"import_graph", "commit_touch"}
-    assert produced.payload["paths"], "some non-executing method must produce a radius"
+    assert produced.payload["method"] == "import_graph", (
+        "commit_touch answering while import_graph could is the fallback order broken"
+    )
+    assert set(produced.payload["paths"]) >= {"tests/test_mod.py", "mod.py"}
+
+
+def test_commit_touch_alone_answers_when_the_command_names_no_paths(
+    db: Database, tmp_path: Path
+) -> None:
+    repo = new_repo(tmp_path)
+    commit(repo, "root", {"pkg/mod.py": "x = 1\n"})
+    commit(repo, "edit", {"pkg/mod.py": "x = 2\n"})
+    pv = client(db, repo)
+    pv.record_verification(command="make lint", passed=True)
+    record_id = next(m.memory_id for m in pv.memory_records(limit=10))
+
+    produced = record_blast_radius(pv, record_id=record_id, command="make lint")
+
+    assert produced is not None
+    assert produced.payload["method"] == "commit_touch"
+    assert produced.payload["paths"] == ["pkg/mod.py"]

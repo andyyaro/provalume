@@ -8,9 +8,11 @@ them.
 
 Extraction posture:
 
-- On every recorded verification, a radius is extracted via the
-  **non-executing** methods only — ``import_graph`` first, ``commit_touch``
-  as fallback. Recording a verification never runs anything.
+- On every recorded verification, a radius is extracted via ``import_graph``
+  first, ``commit_touch`` as fallback. Recording a verification never
+  executes the verification command or any project code — read-only git
+  plumbing is the only subprocess this path may reach, and a guard test
+  enforces exactly that.
 - The ``coverage`` method executes the verification command as a subprocess
   under coverage.py, so it runs only when an operator asks for it explicitly
   (``method=BlastRadiusMethod.COVERAGE``), under a timeout — the same
@@ -85,37 +87,48 @@ def record_blast_radius(
         radius = _extract(pv, command=command, method=method, timeout_s=timeout_s, root=root)
         if radius is None:
             return None
-        payload: dict[str, Any] = {
-            "record_id": record_id,
-            "method": radius.method.value,
-            "paths": list(radius.paths),
-            "tool": radius.tool,
-            "tool_version": radius.tool_version,
-        }
-        if radius.line_ranges is not None:
-            payload["line_ranges"] = {
-                path: [list(r) for r in ranges] for path, ranges in radius.line_ranges.items()
-            }
-        fields: dict[str, Any] = {}
-        if commit_sha:
-            fields["commit_sha"] = commit_sha
-        return pv.record_event(
-            EventType.BLAST_RADIUS_RECORDED,
-            source=Source.KERNEL,
-            payload=payload,
-            **fields,
-        )
+        return _emit(pv, record_id=record_id, radius=radius, commit_sha=commit_sha)
     except Exception:
         log.warning("blast-radius extraction failed open", exc_info=True)
         return None
+
+
+def _emit(
+    pv: Provalume, *, record_id: str, radius: BlastRadius, commit_sha: str | None
+) -> Event | None:
+    payload: dict[str, Any] = {
+        "record_id": record_id,
+        "method": radius.method.value,
+        "paths": list(radius.paths),
+        "tool": radius.tool,
+        "tool_version": radius.tool_version,
+    }
+    if radius.line_ranges is not None:
+        payload["line_ranges"] = {
+            path: [list(r) for r in ranges] for path, ranges in radius.line_ranges.items()
+        }
+    fields: dict[str, Any] = {}
+    if commit_sha:
+        fields["commit_sha"] = commit_sha
+    return pv.record_event(
+        EventType.BLAST_RADIUS_RECORDED,
+        source=Source.KERNEL,
+        payload=payload,
+        **fields,
+    )
 
 
 def record_radii_for_verification(pv: Provalume, event: Event) -> list[Event]:
     """Attach a blast radius to each claim record a verification produced.
 
     Called by ``record_verification`` after projection. Radii attach to the
-    claim types (procedural, gotcha) the event spawned — not to episodic
-    context. Fail-open: any failure returns what was recorded so far.
+    claim types (procedural, gotcha) whose provenance names this event —
+    selected by ``source_event_ids``, never by a newest-N page, because a
+    repeated failure folds into a gotcha that may be arbitrarily old.
+    Extraction runs once; the result is recorded per record. The envelope
+    commit is the HEAD extraction actually read, not whatever the caller
+    stamped on the verification event. Fail-open: any failure returns what
+    was recorded so far.
     """
     recorded: list[Event] = []
     try:
@@ -123,17 +136,22 @@ def record_radii_for_verification(pv: Provalume, event: Event) -> list[Event]:
         if not command:
             return recorded
         claim_types = (MemoryType.PROCEDURAL, MemoryType.GOTCHA)
-        for memory in pv.memory_records(limit=50):
-            if event.event_id not in memory.source_event_ids:
-                continue
-            if memory.memory_type not in claim_types:
-                continue
-            produced = record_blast_radius(
-                pv,
-                record_id=memory.memory_id,
-                command=command,
-                commit_sha=event.commit_sha,
-            )
+        targets = [
+            memory
+            for memory in pv.memories.for_source_event(pv.project_id, event.event_id)
+            if memory.memory_type in claim_types
+        ]
+        if not targets:
+            return recorded
+        radius = _extract(pv, command=command, method=None, timeout_s=300.0)
+        if radius is None:
+            return recorded
+        measured_at = None
+        git = getattr(pv, "git", None)
+        if git is not None and getattr(git, "available", False):
+            measured_at = git.current_commit()
+        for memory in targets:
+            produced = _emit(pv, record_id=memory.memory_id, radius=radius, commit_sha=measured_at)
             if produced is not None:
                 recorded.append(produced)
     except Exception:

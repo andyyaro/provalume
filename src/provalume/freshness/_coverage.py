@@ -139,9 +139,26 @@ def _extract(command: str, root: Path, *, timeout_s: float) -> BlastRadius | Non
         # Belt and braces: the flag governs this run, the variable governs any
         # subprocess the command spawns. Neither is the project's own file.
         environ["COVERAGE_FILE"] = str(data_file)
+        # A neutral rcfile, so the project's own coverage configuration
+        # ([run] source / omit in pyproject or .coveragerc) cannot shrink the
+        # radius: a radius describes what ran, not what the project chose to
+        # report on — omitting the very test file a claim was proven by would
+        # understate in exactly the direction this axis must never err.
+        rcfile = workspace / "coveragerc"
+        rcfile.write_text("[run]\n")
 
         run = _run(
-            [interpreter, "-m", "coverage", "run", "--data-file", str(data_file), *program],
+            [
+                interpreter,
+                "-m",
+                "coverage",
+                "run",
+                f"--rcfile={rcfile}",
+                f"--source={root}",
+                "--data-file",
+                str(data_file),
+                *program,
+            ],
             root=root,
             deadline=deadline,
             env=environ,
@@ -157,6 +174,7 @@ def _extract(command: str, root: Path, *, timeout_s: float) -> BlastRadius | Non
                 "-m",
                 "coverage",
                 "json",
+                f"--rcfile={rcfile}",
                 "--data-file",
                 str(data_file),
                 "-o",
@@ -197,12 +215,46 @@ def _entry_point(command: str, root: Path) -> tuple[str, tuple[str, ...]] | None
 
     head, rest = argv[0], argv[1:]
     if _is_python_binary(head):
-        return _python_entry(head, rest, root)
+        interpreter = _safe_interpreter(head, root)
+        if interpreter is None:
+            log.debug("coverage extraction: %r is not an interpreter this may run", head)
+            return None
+        return _python_entry(interpreter, rest, root)
     name = _basename(head)
     if name in _CONSOLE_MODULES:
         # A bare console entry names no interpreter, so this one stands in.
         return sys.executable, ("-m", name, *rest)
     return None
+
+
+def _safe_interpreter(head: str, root: Path) -> str | None:
+    """The interpreter this extraction may execute, or ``None``.
+
+    The command string is *stored data* (threat T27), so the interpreter it
+    names is honoured only when it cannot have been planted: a bare name
+    (``python3``) maps to ``sys.executable`` — never a PATH or cwd lookup —
+    and a pathed name must be absolute, existing, and **outside** the
+    repository. A repo-relative ``./python3`` is exactly the binary an
+    attacker can commit.
+    """
+    if not _is_python_binary(head):
+        return None
+    candidate = Path(head)
+    if candidate.name == head:
+        return sys.executable
+    if not candidate.is_absolute():
+        return None
+    resolved = _resolved(candidate)
+    if resolved is None or not resolved.is_file():
+        return None
+    # Containment is checked on both the literal and the resolved form: a
+    # path under the repository is rejected either way (a committed symlink
+    # pointing out does not launder it, and a symlink pointing in does not
+    # hide it). Execution then uses the path *as given* — resolving a venv's
+    # `python` symlink would silently escape the venv it names.
+    if _under(candidate, root) or _under(resolved, root):
+        return None
+    return str(candidate)
 
 
 def _python_entry(

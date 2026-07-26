@@ -26,9 +26,14 @@ import contextlib
 import re
 import shutil
 import subprocess  # nosec B404 - read-only git invocations, never shell=True
+from collections.abc import Iterable
 from pathlib import Path
+from typing import Final
 
 from provalume.schemas.scope import Applicability
+
+#: Distinguishes "cached None" from "not cached" in the changed-files cache.
+_UNSET: Final = object()
 
 #: Every subprocess call is bounded. A pathological repository must slow a query,
 #: never hang one.
@@ -38,6 +43,12 @@ _TIMEOUT_S = 10.0
 #: every repetition of the group must consume a literal ``.``, so no input can be
 #: split two ways (the ReDoS shape guarded in tests/security/test_redos.py).
 _VERSION = re.compile(r"\d+(?:\.\d+)*")
+
+#: The only shape a revision handed to plumbing may take. `rev-list`'s
+#: trailing `--` ends the pathspec, not option parsing, so a revision that
+#: begins with `-` would be read as a flag; a hex-only gate closes that
+#: before git ever sees it (M2 feeds this from a hook).
+_HEX_SHA = re.compile(r"^[0-9a-fA-F]{4,64}$")
 
 
 class GitUnavailable(Exception):
@@ -58,6 +69,8 @@ class GitInfo:
         self._available: bool | None = None
         self._ancestor_cache: dict[tuple[str, str], bool | None] = {}
         self._exists_cache: dict[str, bool] = {}
+        self._changed_cache: dict[str, tuple[str, ...] | None] = {}
+        self._version_cache: str | None = None
 
     # -- availability ------------------------------------------------------
 
@@ -226,14 +239,25 @@ class GitInfo:
         its old and its new path, and a deletion's path still counts as touched
         — code that referred to a file is very much affected by its removal.
 
+        Paths are re-anchored to this instance's ``root``: git reports them
+        relative to the repository *toplevel*, and when the client's root is a
+        subdirectory the two differ. Changes outside the root are dropped —
+        they cannot be expressed in the root's coordinate system, and nothing
+        anchored there can refer to them.
+
         Returns ``None`` when the question could not be answered — no
-        repository, unknown or unreadable commit, git failure — and ``()`` for a
-        commit that genuinely changed nothing (``git commit --allow-empty``).
-        The two are kept apart because a caller deciding between "nothing to do"
-        and "degrade" needs to tell them apart.
+        repository, a revision that is not plain hex, unknown or unreadable
+        commit, git failure — and ``()`` for a commit that genuinely changed
+        nothing in this root's world (``git commit --allow-empty``, or a
+        commit touching only paths outside a subdirectory root). The two are
+        kept apart because a caller deciding between "nothing to do" and
+        "degrade" needs to tell them apart.
         """
-        if not self.available or not sha:
+        if not self.available or not sha or not _HEX_SHA.match(sha):
             return None
+        cached = self._changed_cache.get(sha, _UNSET)
+        if cached is not _UNSET:
+            return cached  # type: ignore[return-value]
         try:
             # One call that both resolves the revision and names its parents:
             # `rev-list --parents -n 1` prints "<commit> <parent>...". The
@@ -241,8 +265,10 @@ class GitInfo:
             # names a file cannot be read as a pathspec.
             described = self._run(["rev-list", "--parents", "-n", "1", sha, "--"]).split()
         except GitUnavailable:
+            self._changed_cache[sha] = None
             return None
         if not described:
+            self._changed_cache[sha] = None
             return None
 
         commit, parents = described[0], described[1:]
@@ -254,18 +280,39 @@ class GitInfo:
         try:
             output = self._run(args)
         except GitUnavailable:
+            self._changed_cache[sha] = None
             return None
-        return tuple(sorted({path for path in output.split("\0") if path}))
+        result = self._anchored(path for path in output.split("\0") if path)
+        self._changed_cache[sha] = result
+        return result
+
+    def _anchored(self, paths: Iterable[str]) -> tuple[str, ...] | None:
+        """Toplevel-relative git paths, re-anchored to this instance's root."""
+        try:
+            toplevel = Path(self._run(["rev-parse", "--show-toplevel"]).strip()).resolve()
+        except GitUnavailable:
+            return None
+        base = Path(self.root).resolve()
+        if toplevel == base:
+            return tuple(sorted(set(paths)))
+        anchored: set[str] = set()
+        for path in paths:
+            absolute = toplevel / path
+            if absolute.is_relative_to(base):
+                anchored.add(absolute.relative_to(base).as_posix())
+        return tuple(sorted(anchored))
 
     def git_version(self) -> str | None:
         """The numeric version of the git executable, e.g. ``"2.39.2"``.
 
         Recorded alongside anything git extracted, so a result produced by one
         git can be told from a result produced by another. ``None`` when git
-        cannot be run or prints something with no version in it; not cached,
-        because it is asked for once per extraction and a cache that outlives an
-        upgrade would answer with the old version.
+        cannot be run or prints something with no version in it. Cached per
+        instance, like every other query here: an instance does not outlive
+        the pass it serves, and the record path asks on every verification.
         """
+        if self._version_cache is not None:
+            return self._version_cache
         if not self.available:
             return None
         try:
@@ -273,7 +320,8 @@ class GitInfo:
         except GitUnavailable:
             return None
         match = _VERSION.search(reported)
-        return match.group(0) if match else None
+        self._version_cache = match.group(0) if match else None
+        return self._version_cache
 
 
 def applicability_at(

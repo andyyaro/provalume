@@ -90,7 +90,7 @@ rebuild derives it. The transition sources:
 
 | Event (wire name) | Effect on freshness |
 |---|---|
-| `blast_radius.recorded` | record becomes `current` (it is now watchable) |
+| `blast_radius.recorded` | record becomes `current` (it is now watchable); when a record accrues several radii — a repeated failure re-anchors its gotcha — the latest by journal order is the one derivation and intersection read |
 | `freshness.triggered` | record becomes `suspect`, unless a relevance verdict for the same trigger says otherwise |
 | `relevance.assessed` (verdict `irrelevant`) | the trigger is discharged; record returns to `current` |
 | `relevance.assessed` (verdict `relevant`) | record stays `suspect` |

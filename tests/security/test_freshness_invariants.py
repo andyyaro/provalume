@@ -575,3 +575,47 @@ def test_executor_fails_open_and_only_appends(
     assert len(failed_outcomes) == 1, (
         "the injected engine failure must never be recorded as the record failing"
     )
+
+
+def test_the_record_path_spawns_nothing_but_git(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Recording a verification may reach read-only git plumbing and nothing
+    else — never the verification command, never project code, never the
+    coverage tooling. This is what keeps automatic radius extraction off the
+    T27 execution surface, and it must hold even if a future edit puts an
+    executing method on the default path."""
+    repo = tmp_path / "repo"
+    (repo / "tests").mkdir(parents=True)
+    (repo / "mod.py").write_text("V = 1\n")
+    (repo / "tests" / "test_mod.py").write_text("import mod\n")
+    subprocess.run(  # noqa: S603 - fixed argv, throwaway directory
+        ["git", "-C", str(repo), "init", "-q", "-b", "main"], check=True
+    )
+    _land_commit(repo, "mod.py", "V = 1\n")
+
+    original_run = subprocess.run
+    original_popen = subprocess.Popen
+
+    def guarded_run(argv, *args, **kwargs):  # type: ignore[no-untyped-def]
+        head = Path(argv[0]).name if isinstance(argv, (list, tuple)) else str(argv)
+        assert head == "git", f"record path spawned {head!r} (only git is allowed)"
+        return original_run(argv, *args, **kwargs)
+
+    def guarded_popen(argv, *args, **kwargs):  # type: ignore[no-untyped-def]
+        # run() delegates to Popen, so this guard sees every spawn either way.
+        head = Path(argv[0]).name if isinstance(argv, (list, tuple)) else str(argv)
+        assert head == "git", f"record path spawned {head!r} (only git is allowed)"
+        return original_popen(argv, *args, **kwargs)
+
+    monkeypatch.setattr(subprocess, "run", guarded_run)
+    monkeypatch.setattr(subprocess, "Popen", guarded_popen)
+
+    pv = Provalume.open(repo / ".provalume" / "guard.db", project_id="guard", root=repo)
+    try:
+        pv.record_verification(command="pytest -q tests/", passed=True)
+        pv.record_verification(command="make lint", passed=False, excerpt="boom")
+        radii = [e for e in pv.events() if e.event_type == EventType.BLAST_RADIUS_RECORDED]
+        assert radii, "positive control: radii must have been recorded"
+    finally:
+        pv.close()

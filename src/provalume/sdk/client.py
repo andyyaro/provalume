@@ -15,7 +15,7 @@ than merely discouraged:
 
 from __future__ import annotations
 
-import contextlib
+import logging
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
@@ -262,16 +262,22 @@ class Provalume:
             },
             **fields,
         )
-        with contextlib.suppress(Exception):
+        try:
             # Freshness (ADR-0020): anchor the claim records this verification
-            # produced to the code they depend on, via the non-executing
-            # extraction methods only. Fail-open (I5): a missing repository or
+            # produced to the code they depend on, via extraction that never
+            # executes the verification command or any project code — only
+            # read-only git plumbing. Fail-open (I5): a missing repository or
             # a failed extraction leaves the verification exactly as recorded.
-            # The engine logs its own failures; this suppression is the belt
-            # over that, so recording can never break on freshness account.
             from provalume.freshness.blast_radius import record_radii_for_verification
 
             record_radii_for_verification(self, event)
+        except Exception:
+            # The engine logs its own failures; this belt covers a failure of
+            # the import or of the engine's own guard, which would otherwise
+            # vanish silently (I5 requires the log).
+            logging.getLogger("provalume.freshness").warning(
+                "radius attachment failed open", exc_info=True
+            )
         return event
 
     def record_review(

@@ -387,3 +387,70 @@ def test_a_command_that_touches_nothing_under_the_root_has_no_radius(tmp_path: P
     root.mkdir()
     radius = _coverage.extract(f"{sys.executable} -m this", root, timeout_s=BUDGET)
     assert radius is None
+
+
+# --- M1 review fixes: interpreter hardening and config neutrality -------------
+
+
+def test_a_repo_relative_interpreter_is_never_executed(tmp_path: Path) -> None:
+    """`./python3` is exactly the binary an attacker can commit (T27;
+    M1 review finding 5)."""
+    sentinel = tmp_path / "executed"
+    fake = tmp_path / "python3"
+    fake.write_text(f"#!/bin/sh\ntouch {sentinel}\n")
+    fake.chmod(0o755)
+    radius = _coverage.extract("./python3 -m pytest tests/", tmp_path, timeout_s=30)
+    assert radius is None
+    assert not sentinel.exists(), "the repo-local interpreter must never run"
+
+
+def test_an_absolute_interpreter_under_root_is_never_executed(tmp_path: Path) -> None:
+    sentinel = tmp_path / "executed"
+    fake = tmp_path / "python3"
+    fake.write_text(f"#!/bin/sh\ntouch {sentinel}\n")
+    fake.chmod(0o755)
+    radius = _coverage.extract(f"{fake} -m pytest tests/", tmp_path, timeout_s=30)
+    assert radius is None
+    assert not sentinel.exists()
+
+
+def test_a_bare_python_name_maps_to_sys_executable_not_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A bare `python3` must resolve to sys.executable, never to PATH — a
+    PATH lookup is one attacker-controlled variable away from finding 5."""
+    trap_dir = tmp_path / "bin"
+    trap_dir.mkdir()
+    sentinel = tmp_path / "executed"
+    trap = trap_dir / "python3"
+    trap.write_text(f"#!/bin/sh\ntouch {sentinel}\n")
+    trap.chmod(0o755)
+    monkeypatch.setenv("PATH", str(trap_dir))
+    project = tmp_path / "proj"
+    (project / "tests").mkdir(parents=True)
+    (project / "mod.py").write_text("V = 1\n")
+    (project / "conftest.py").write_text("")
+    (project / "tests" / "test_mod.py").write_text(
+        "import mod\n\n\ndef test_v():\n    assert mod.V == 1\n"
+    )
+    radius = _coverage.extract("python3 -m pytest -q tests/", project, timeout_s=120)
+    assert not sentinel.exists(), "PATH must never choose the interpreter"
+    assert radius is not None
+    assert "tests/test_mod.py" in radius.paths
+
+
+def test_the_projects_coverage_config_cannot_shrink_the_radius(tmp_path: Path) -> None:
+    """[run] source/omit in the project's own config must not drop files that
+    ran (M1 review finding 4) — a radius describes what executed, not what
+    the project chose to report on."""
+    (tmp_path / "tests").mkdir()
+    (tmp_path / "mod.py").write_text("V = 1\n")
+    (tmp_path / "conftest.py").write_text("")
+    (tmp_path / "tests" / "test_mod.py").write_text(
+        "import mod\n\n\ndef test_v():\n    assert mod.V == 1\n"
+    )
+    (tmp_path / ".coveragerc").write_text("[run]\nsource = mod\nomit = tests/*\n")
+    radius = _coverage.extract(f"{sys.executable} -m pytest -q tests/", tmp_path, timeout_s=120)
+    assert radius is not None
+    assert "tests/test_mod.py" in radius.paths, "omit must not shrink the radius"
+    assert "mod.py" in radius.paths

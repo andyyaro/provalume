@@ -20,8 +20,9 @@ import time
 import pytest
 
 from provalume import redact
+from provalume.freshness import _coverage
 from provalume.policy import poisoning
-from provalume.store import fts
+from provalume.store import fts, gitinfo
 from provalume.writers import failures
 
 #: A pattern is linear enough if a 20k-character adversarial string matches in
@@ -295,6 +296,10 @@ def test_no_pattern_nests_an_unbounded_quantifier_ambiguously() -> None:
     sources.append(("failures/_STRONG_ERROR", failures._STRONG_ERROR.pattern))
     sources.append(("failures/_WEAK_ERROR", failures._WEAK_ERROR.pattern))
     sources.append(("fts/_TERM", fts._TERM.pattern))
+    sources.append(("gitinfo/_VERSION", gitinfo._VERSION.pattern))
+    sources.append(("gitinfo/_HEX_SHA", gitinfo._HEX_SHA.pattern))
+    sources.append(("coverage/_VERSION", _coverage._VERSION.pattern))
+    sources.append(("coverage/_PYTHON_BINARY", _coverage._PYTHON_BINARY.pattern))
 
     flagged: list[str] = []
     for name, pattern in sources:

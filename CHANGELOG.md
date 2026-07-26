@@ -4,6 +4,29 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versioning: [semantic versioning](https://semver.org/spec/v2.0.0.html), with the
 pre-1.0 caveat that `0.x` minor bumps may break the SDK.
 
+## [Unreleased]
+
+### Added
+
+**The freshness axis (ADR-0020), through milestone M1.** A verified record is
+a claim about the code it was proven against, not about the repository in
+perpetuity; this release series makes Provalume notice when the code moves.
+So far: a second per-record axis (`current | suspect | stale |
+unverifiable`), orthogonal to trust and deliberately not a trust rung; four
+journal event types that can never promote anything; threats T27–T29 written
+before the executor they describe; invariant guards I1–I5, the not-yet-built
+ones strict-xfail; and **blast-radius extraction** — on every verification
+recorded in a git-backed project, the claim records it produces are anchored
+to the files their evidence depends on, via a static import closure
+(`import_graph`), falling back to the landing's changed files
+(`commit_touch`), with an operator-invoked `coverage` method that runs the
+command under coverage.py for line-level precision. Recording a verification
+never executes the verification command or any project code (a guard test
+enforces it), everything fails open, and records without a radius stay
+honestly `unverifiable`. Nothing yet consumes the axis — suspect-marking,
+relevance filtering, and gated re-verification are the next milestones.
+See LIMITATIONS §9c for what extraction can and cannot see.
+
 ## [0.1.4] — 2026-07-25
 
 Found by an independent reviewer running the Orkestra integration, then by
