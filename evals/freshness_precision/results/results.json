@@ -6,7 +6,11 @@
     "freshness_after_scan": "current",
     "reason_code": "whitespace_only",
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "fmt_reindent_two_spaces",
@@ -15,7 +19,11 @@
     "freshness_after_scan": "current",
     "reason_code": "whitespace_only",
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "fmt_trailing_whitespace",
@@ -24,7 +32,11 @@
     "freshness_after_scan": "current",
     "reason_code": "whitespace_only",
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "fmt_statement_split",
@@ -33,7 +45,11 @@
     "freshness_after_scan": "suspect",
     "reason_code": "body_changed",
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "cmt_reworded",
@@ -42,7 +58,11 @@
     "freshness_after_scan": "current",
     "reason_code": "comment_only",
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "cmt_removed",
@@ -51,7 +71,11 @@
     "freshness_after_scan": "current",
     "reason_code": "comment_only",
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "cmt_todo_added",
@@ -60,7 +84,11 @@
     "freshness_after_scan": "current",
     "reason_code": "comment_only",
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "doc_reworded",
@@ -69,7 +97,11 @@
     "freshness_after_scan": "current",
     "reason_code": "docstring_only",
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "doc_removed",
@@ -78,7 +110,11 @@
     "freshness_after_scan": "current",
     "reason_code": "docstring_only",
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "doc_doctest_broken",
@@ -87,7 +123,11 @@
     "freshness_after_scan": "suspect",
     "reason_code": "docstring_only",
     "rerun_outcome": "failed",
-    "freshness_final": "stale"
+    "freshness_final": "stale",
+    "radius_method": "import_graph",
+    "radius_path_count": 1,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "logic_breaks_claim",
@@ -96,7 +136,11 @@
     "freshness_after_scan": "suspect",
     "reason_code": "body_changed",
     "rerun_outcome": "failed",
-    "freshness_final": "stale"
+    "freshness_final": "stale",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "logic_equivalent_rewrite",
@@ -105,7 +149,11 @@
     "freshness_after_scan": "suspect",
     "reason_code": "body_changed",
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "logic_unrelated_function",
@@ -114,7 +162,11 @@
     "freshness_after_scan": "suspect",
     "reason_code": "signature_changed",
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "logic_constant_bumped",
@@ -123,7 +175,11 @@
     "freshness_after_scan": "suspect",
     "reason_code": "body_changed",
     "rerun_outcome": "failed",
-    "freshness_final": "stale"
+    "freshness_final": "stale",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "logic_dead_branch_added",
@@ -132,7 +188,11 @@
     "freshness_after_scan": "suspect",
     "reason_code": "body_changed",
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "logic_error_message_changed",
@@ -141,7 +201,11 @@
     "freshness_after_scan": "suspect",
     "reason_code": "body_changed",
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "sig_param_added_with_default",
@@ -150,7 +214,11 @@
     "freshness_after_scan": "suspect",
     "reason_code": "signature_changed",
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "sig_param_added_breaking",
@@ -159,7 +227,11 @@
     "freshness_after_scan": "suspect",
     "reason_code": "signature_changed",
     "rerun_outcome": "failed",
-    "freshness_final": "stale"
+    "freshness_final": "stale",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "sig_renamed_function",
@@ -168,7 +240,11 @@
     "freshness_after_scan": "suspect",
     "reason_code": "signature_changed",
     "rerun_outcome": "failed",
-    "freshness_final": "stale"
+    "freshness_final": "stale",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "imp_unused_added",
@@ -177,7 +253,11 @@
     "freshness_after_scan": "suspect",
     "reason_code": "import_changed",
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "imp_stdlib_now_used",
@@ -186,7 +266,11 @@
     "freshness_after_scan": "suspect",
     "reason_code": "import_changed",
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "imp_helper_moved_out",
@@ -195,7 +279,11 @@
     "freshness_after_scan": "suspect",
     "reason_code": "signature_changed",
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "struct_module_deleted",
@@ -204,7 +292,11 @@
     "freshness_after_scan": "suspect",
     "reason_code": "body_changed",
     "rerun_outcome": "failed",
-    "freshness_final": "stale"
+    "freshness_final": "stale",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "struct_renamed_import_fixed",
@@ -213,7 +305,11 @@
     "freshness_after_scan": "suspect",
     "reason_code": "body_changed",
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 2,
+    "record_type": "procedural"
   },
   {
     "case_id": "struct_check_tightened",
@@ -222,7 +318,11 @@
     "freshness_after_scan": "suspect",
     "reason_code": "body_changed",
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "struct_check_now_fails",
@@ -231,7 +331,11 @@
     "freshness_after_scan": "suspect",
     "reason_code": "body_changed",
     "rerun_outcome": "failed",
-    "freshness_final": "stale"
+    "freshness_final": "stale",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "str_asserted_value_changed",
@@ -240,7 +344,11 @@
     "freshness_after_scan": "suspect",
     "reason_code": "body_changed",
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 2,
+    "record_type": "procedural"
   },
   {
     "case_id": "str_whitespace_inside_string",
@@ -249,7 +357,11 @@
     "freshness_after_scan": "suspect",
     "reason_code": "body_changed",
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "str_quote_style_only",
@@ -258,7 +370,11 @@
     "freshness_after_scan": "current",
     "reason_code": "whitespace_only",
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "oor_readme_only",
@@ -267,7 +383,11 @@
     "freshness_after_scan": "current",
     "reason_code": null,
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 0,
+    "record_type": "procedural"
   },
   {
     "case_id": "oor_unimported_module",
@@ -276,7 +396,11 @@
     "freshness_after_scan": "current",
     "reason_code": null,
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 0,
+    "record_type": "procedural"
   },
   {
     "case_id": "mix_comment_and_break",
@@ -285,7 +409,11 @@
     "freshness_after_scan": "suspect",
     "reason_code": "body_changed",
     "rerun_outcome": "failed",
-    "freshness_final": "stale"
+    "freshness_final": "stale",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "mix_docstring_and_harmless",
@@ -294,7 +422,11 @@
     "freshness_after_scan": "suspect",
     "reason_code": "signature_changed",
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "mix_format_two_files_one_break",
@@ -303,7 +435,11 @@
     "freshness_after_scan": "suspect",
     "reason_code": "body_changed",
     "rerun_outcome": "failed",
-    "freshness_final": "stale"
+    "freshness_final": "stale",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 2,
+    "record_type": "procedural"
   },
   {
     "case_id": "broken_syntax_error_landed",
@@ -312,7 +448,11 @@
     "freshness_after_scan": "suspect",
     "reason_code": "unparseable",
     "rerun_outcome": "failed",
-    "freshness_final": "stale"
+    "freshness_final": "stale",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "broken_type_comment_removed",
@@ -321,7 +461,11 @@
     "freshness_after_scan": "current",
     "reason_code": "comment_only",
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   },
   {
     "case_id": "broken_encoding_cookie",
@@ -330,6 +474,10 @@
     "freshness_after_scan": "current",
     "reason_code": "comment_only",
     "rerun_outcome": "passed",
-    "freshness_final": "current"
+    "freshness_final": "current",
+    "radius_method": "import_graph",
+    "radius_path_count": 2,
+    "intersecting_path_count": 1,
+    "record_type": "procedural"
   }
 ]
