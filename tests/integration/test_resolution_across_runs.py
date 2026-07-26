@@ -173,3 +173,44 @@ def test_a_pass_that_never_landed_does_not_resolve_anything(tmp_path: Path) -> N
         "a landing that named the signature still did not resolve it"
     )
     pv.close()
+
+
+def test_each_landing_anchors_only_the_records_it_carried(tmp_path: Path) -> None:
+    """A landing promotes branch-wide, but it did not carry the whole branch.
+
+    `_memories_for_landing` matches on task *or* branch, so successive landings
+    on one integration branch used to re-stamp every record on it — leaving them
+    all wearing the last commit to land, whichever task produced it. Promotion is
+    branch-wide because a landing does make the branch's claims promotable;
+    re-anchoring is not, because `commit_sha` says which commit a record is true
+    of, and only one task's work rode in any given commit.
+    """
+    from provalume.schemas.memories import MemoryFilter, MemoryType
+
+    pv = Provalume.open(tmp_path / "m.db", project_id="p", use_git=False)
+    branch = "ork/run-1/integration"
+    first, second = "a" * 40, "b" * 40
+
+    for task, command in (("task-A", "pytest -q tests/a"), ("task-B", "pytest -q tests/b")):
+        pv.record_verification(command=command, passed=True, task_id=task, branch=branch)
+    pv.record_integration(commit_sha=first, task_id="task-A", branch=branch)
+    pv.record_integration(commit_sha=second, task_id="task-B", branch=branch)
+
+    anchors = {
+        m.task_id: m.commit_sha
+        for m in pv.memory_records(
+            MemoryFilter(
+                project_id="p",
+                memory_types=(MemoryType.PROCEDURAL,),
+                include_terminal=True,
+                current_only=False,
+                limit=20,
+            )
+        )
+    }
+    pv.close()
+
+    assert anchors.get("task-A") == first, (
+        f"task-A's record was re-anchored by a landing it was not part of: {anchors}"
+    )
+    assert anchors.get("task-B") == second, f"task-B's record lost its own landing: {anchors}"

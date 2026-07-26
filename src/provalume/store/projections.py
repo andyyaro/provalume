@@ -521,22 +521,28 @@ class Projector:
             IntegrationState.ACCEPTED_USER if target == "user" else IntegrationState.INTEGRATED_RUN
         )
         for memory in self._memories_for_landing(event):
-            updated = memory.model_copy(
-                update={
-                    "integration_state": state,
-                    # The landed commit wins. `commit_sha` is what currency is
-                    # judged against ("still true at this commit?"), and a
-                    # record that has landed is true of what landed — not of
-                    # the base its worktree branched from, which is where the
-                    # verification that observed it happened to run. The
-                    # observation itself is still recoverable through
-                    # `source_event_ids`.
-                    "commit_sha": event.commit_sha or memory.commit_sha,
-                    "source_event_ids": tuple(
-                        dict.fromkeys([*memory.source_event_ids, event.event_id])
-                    ),
-                }
-            )
+            # Promotion is branch-wide; re-anchoring is not. A landing makes
+            # every claim on that branch promotable, but only the records of
+            # *this* task were carried by *this* commit — and matching on task
+            # or branch means each successive landing would otherwise re-stamp
+            # them all, leaving every record wearing the last commit to land.
+            # A record with no commit at all still takes one: it is on the
+            # branch, and an unanchored record is worse than a coarse one.
+            landed_here = bool(event.task_id) and memory.task_id == event.task_id
+            update: dict[str, Any] = {
+                "integration_state": state,
+                "source_event_ids": tuple(
+                    dict.fromkeys([*memory.source_event_ids, event.event_id])
+                ),
+            }
+            if landed_here or not memory.commit_sha:
+                # `commit_sha` is what currency is judged against ("still true
+                # at this commit?"), and a record that has landed is true of
+                # what landed — not of the base its worktree branched from,
+                # which is only where the verification that observed it ran.
+                # The observation stays recoverable through `source_event_ids`.
+                update["commit_sha"] = event.commit_sha or memory.commit_sha
+            updated = memory.model_copy(update=update)
             self._write(updated, stats, update=True)
             self._climb(updated, TrustState.INTEGRATED, event, stats)
 
