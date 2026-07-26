@@ -302,6 +302,40 @@ class GitInfo:
                 anchored.add(absolute.relative_to(base).as_posix())
         return tuple(sorted(anchored))
 
+    def parents(self, sha: str) -> tuple[str, ...] | None:
+        """The commit's parent shas, first parent first. ``None`` when the
+        revision is not plain hex or cannot be read; ``()`` for a root
+        commit."""
+        if not self.available or not sha or not _HEX_SHA.match(sha):
+            return None
+        try:
+            described = self._run(["rev-list", "--parents", "-n", "1", sha, "--"]).split()
+        except GitUnavailable:
+            return None
+        if not described:
+            return None
+        return tuple(described[1:])
+
+    def file_at(self, sha: str, path: str) -> str | None:
+        """The file's text at a commit, or ``None``.
+
+        ``None`` covers every shape of "cannot answer": bad revision, a path
+        absent at that commit (added or deleted files), an unreadable or
+        undecodable blob. The sha is hex-gated and the path rides inside the
+        fused ``sha:path`` revision argument after ``--``-free plumbing, so
+        neither can be read as an option.
+        """
+        if not self.available or not sha or not _HEX_SHA.match(sha):
+            return None
+        try:
+            return self._run(["show", f"{sha}:{path}"])
+        except GitUnavailable:
+            return None
+        except Exception:
+            # An undecodable (binary) blob raises out of text-mode capture;
+            # a file the differ cannot read is a file it cannot clear.
+            return None
+
     def git_version(self) -> str | None:
         """The numeric version of the git executable, e.g. ``"2.39.2"``.
 

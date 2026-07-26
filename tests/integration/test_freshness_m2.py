@@ -360,13 +360,16 @@ def test_a_mid_scan_failure_reports_what_it_did(
         sha = git("rev-parse", "HEAD")
 
         original = type(pv).record_event
-        calls = {"n": 0}
+        calls = {"triggers": 0}
 
-        def failing_second(self, *args, **kwargs):  # type: ignore[no-untyped-def]
-            calls["n"] += 1
-            if calls["n"] == 2:
-                raise RuntimeError("injected journal failure")
-            return original(self, *args, **kwargs)
+        def failing_second(self, event_type, *args, **kwargs):  # type: ignore[no-untyped-def]
+            # Target the second TRIGGER write specifically: a failed relevance
+            # assessment fails open by design and must not trip this test.
+            if event_type == EventType.FRESHNESS_TRIGGERED:
+                calls["triggers"] += 1
+                if calls["triggers"] == 2:
+                    raise RuntimeError("injected journal failure")
+            return original(self, event_type, *args, **kwargs)
 
         monkeypatch.setattr(type(pv), "record_event", failing_second)
         result = process_landed_commit(pv, commit_sha=sha)

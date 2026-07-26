@@ -265,8 +265,9 @@ class MemoryRepository:
     def add_outstanding_trigger(
         self, *, project_id: str, record_id: str, trigger_commit: str
     ) -> bool:
-        """Register a not-yet-discharged trigger. ``False`` when it already
-        exists — which is also how the watcher stays idempotent."""
+        """Register a not-yet-discharged trigger. ``False`` when the commit
+        was already seen for this record — discharged or not — which is what
+        keeps a re-scan idempotent even after a verdict answered it."""
         with self.db.tx() as conn:
             cursor = conn.execute(
                 "INSERT OR IGNORE INTO freshness_triggers "
@@ -275,10 +276,18 @@ class MemoryRepository:
             )
             return bool(cursor.rowcount)
 
+    def trigger_seen(self, *, project_id: str, record_id: str, trigger_commit: str) -> bool:
+        row = self.db.query_one(
+            "SELECT 1 FROM freshness_triggers "
+            "WHERE project_id = ? AND record_id = ? AND trigger_commit = ?",
+            (project_id, record_id, trigger_commit),
+        )
+        return row is not None
+
     def discharge_trigger(self, *, project_id: str, record_id: str, trigger_commit: str) -> None:
         with self.db.tx() as conn:
             conn.execute(
-                "DELETE FROM freshness_triggers "
+                "UPDATE freshness_triggers SET discharged = 1 "
                 "WHERE project_id = ? AND record_id = ? AND trigger_commit = ?",
                 (project_id, record_id, trigger_commit),
             )
@@ -286,17 +295,19 @@ class MemoryRepository:
     def clear_triggers(self, *, project_id: str, record_id: str) -> None:
         """Discharge everything outstanding — a fresh radius measurement or a
         passing re-run answered for the tree that contains every landed
-        commit."""
+        commit. Rows stay (idempotency memory); the demand goes."""
         with self.db.tx() as conn:
             conn.execute(
-                "DELETE FROM freshness_triggers WHERE project_id = ? AND record_id = ?",
+                "UPDATE freshness_triggers SET discharged = 1 "
+                "WHERE project_id = ? AND record_id = ?",
                 (project_id, record_id),
             )
 
     def outstanding_triggers(self, *, project_id: str, record_id: str) -> tuple[str, ...]:
         rows = self.db.query(
             "SELECT trigger_commit FROM freshness_triggers "
-            "WHERE project_id = ? AND record_id = ? ORDER BY trigger_commit",
+            "WHERE project_id = ? AND record_id = ? AND discharged = 0 "
+            "ORDER BY trigger_commit",
             (project_id, record_id),
         )
         return tuple(row["trigger_commit"] for row in rows)
