@@ -88,6 +88,12 @@ the triggers it answers, and a pre-run environment fingerprint (interpreter
 version + lockfile) so `stale` can be told apart from environment drift.
 One record per invocation — there is deliberately no batch sweep. See
 LIMITATIONS §9g for what a re-run's verdict does and does not mean.
+Opening a database now writes a `*` ignore file inside `.provalume/`, and
+blast radii exclude `.provalume/` paths — a tracked database would
+otherwise read as a dirty worktree to the executor's gate and could
+self-trigger a `commit_touch` radius on its own journal writes. The
+freshness scan's report distinguishes `stale` from `suspect` per record
+and names bounded-out records on every scan.
 
 ## [0.1.4] — 2026-07-25
 

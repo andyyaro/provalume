@@ -278,8 +278,11 @@ environment drifted", and it covers exactly those two inputs, nothing more.
 The executor refuses a tree with uncommitted **tracked** changes and
 discharges only triggers that are ancestors of the HEAD it ran at — but
 untracked files are deliberately not part of the dirtiness check (the
-`.provalume` directory itself is untracked), so an untracked module that
-shadows an import can still color a re-run's verdict. A cache keyed on
+`.provalume` directory keeps itself untracked: opening a database writes a
+`*` ignore file inside it, though that cannot untrack a database someone
+already `git add`ed — blast radii additionally exclude `.provalume/` so a
+tracked database cannot self-trigger on its own journal writes), so an
+untracked module that shadows an import can still color a re-run's verdict. A cache keyed on
 something the command does not see (CPython's `__pycache__` validates by
 mtime-seconds and size, build systems by their own rules) can likewise make
 a re-run answer for an older tree.
