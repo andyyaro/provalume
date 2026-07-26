@@ -171,6 +171,18 @@ The residual: a still-blocked task can find its shared signature already
 resolved by a sibling's landing, and the gate will describe that landing rather
 than warn afresh.
 
+## 9b. Rebuild regenerates transition identifiers and timestamps
+
+Memory rows rebuild byte-identically from the journal. Transition rows do
+not: each rebuild mints fresh `transition_id`s and stamps `recorded_at` with
+the rebuild's own wall clock. The semantic audit trail — which states, under
+which rule, on which evidence, by which actor — is journal-derived and
+survives exactly; *when the transition originally happened* does not survive
+a rebuild. If original transition times matter to you, they are recoverable
+from the evidence events' timestamps in the journal, not from the transitions
+table of a rebuilt database. (Found while pinning rebuild determinism for the
+freshness axis; the freshness events did not cause it.)
+
 ## 10. Single writer, single machine
 
 Provalume assumes one writing process. Concurrent writers serialise on SQLite's

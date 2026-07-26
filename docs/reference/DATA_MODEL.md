@@ -206,3 +206,23 @@ Reported per result, never guessed:
 `uncertain` is used freely and is not a failure. Git ancestry answers "could this
 have been true here?", not "is this true here?" — and a labelled uncertainty beats
 a confident wrong answer.
+
+## Freshness
+
+A second per-record axis, orthogonal to trust
+([ADR-0020](../adr/ADR-0020-freshness-axis.md)): trust answers *how well was
+this proven*, freshness answers *does the code still support it*. Derived
+from journal events, never stored authoritatively; the behaviour that moves
+it arrives milestone by milestone with the code-grounded invalidation work.
+
+| Value | Meaning |
+|---|---|
+| `current` | A blast radius is recorded and no landed commit has touched it since the evidence was produced |
+| `suspect` | A landed commit touched the blast radius; not yet ruled irrelevant or survived a re-run. An invitation to check, not an assertion of falsehood |
+| `stale` | A gated re-execution of the record's own command failed, with the environment fingerprint recorded |
+| `unverifiable` | The machine cannot make a freshness claim: no re-runnable command, an unresolvable environment, or no recorded blast radius (every record predating the axis) |
+
+Note the naming collision with applicability: both axes have a `current`.
+They answer different questions — applicability is query-relative ancestry,
+freshness is record-relative code change — and rendered labels are
+axis-qualified so the two can never be mistaken for each other.

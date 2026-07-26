@@ -173,8 +173,12 @@ def test_subprocess_use_is_limited_to_git_and_is_argv_based() -> None:
         if not uses_subprocess:
             continue
 
-        # Only these modules may shell out, and only to read from Git.
-        if relative.parts[0] != "store" and relative.name != "scenario.py":
+        # Only these modules may shell out: `store` reads from Git, the demo
+        # scenario drives the CLI, and the freshness engine (ADR-0020) runs
+        # coverage extraction and gated re-verification — the latter under the
+        # T27 control set, with its own stdlib-purity guard in
+        # test_freshness_invariants.py.
+        if relative.parts[0] not in ("store", "freshness") and relative.name != "scenario.py":
             offenders.append(f"unexpected subprocess use in {relative}")
 
         for node in ast.walk(tree):

@@ -104,8 +104,10 @@ class EventType(StrEnum):
     IMPORT_REJECTED = "import.rejected"
 
     # --- Freshness (ADR-0020): code-grounded invalidation ----------------
-    # Deliberately absent from EVIDENCE_EVENT_TYPES: freshness events move
-    # the freshness axis only and can never raise a memory's trust state.
+    # These move the freshness axis only. They are absent from
+    # EVIDENCE_EVENT_TYPES, no promotion rule matches them, and a guard test
+    # asserts that recording them leaves every trust state and transition
+    # untouched (tests/security/test_freshness_invariants.py).
     BLAST_RADIUS_RECORDED = "blast_radius.recorded"
     FRESHNESS_TRIGGERED = "freshness.triggered"
     RELEVANCE_ASSESSED = "relevance.assessed"
