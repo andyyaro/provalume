@@ -1,6 +1,6 @@
 [project]
 name = "provalume"
-version = "0.1.2"
+version = "0.1.3"
 description = "Verified, git-aware memory for autonomous software agents—tracking what worked, what failed, what is currently true, and the evidence that proved it."
 readme = "README.md"
 requires-python = ">=3.12"

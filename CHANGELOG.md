@@ -4,6 +4,35 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versioning: [semantic versioning](https://semver.org/spec/v2.0.0.html), with the
 pre-1.0 caveat that `0.x` minor bumps may break the SDK.
 
+## [0.1.3] — 2026-07-25
+
+Found by an independent reviewer who ran the Orkestra integration rather than
+reading it. Both fixes here are boundaries the code claimed and did not enforce.
+
+### Fixed
+
+**A pre-action warning replayed captured command output with no untrusted-data
+label.** The warning quotes stderr verbatim in its "Failure evidence" row and
+serves it to an agent that never ran the command — the most
+attacker-influenceable text Provalume handles, since any test, linter or build
+tool writes it freely. The digest has carried a banner for exactly this threat
+(T4) since 0.1.0; this channel is the same threat through a different door.
+`PREFLIGHT_BANNER` now leads every warning, ahead of any quoted evidence, so a
+reader that stops early has still seen the label. Fixed here rather than in the
+caller so every consumer of the gate gets the boundary.
+
+Mitigation, not prevention — Provalume cannot force a model to honour a label,
+as LIMITATIONS §2 has always said.
+
+### Added
+
+- `PREFLIGHT_BANNER`, alongside the existing `DIGEST_BANNER`.
+
+### Notes
+
+The README's preflight sample is regenerated from a live run; the test that
+pins that sample to real output caught the drift.
+
 ## [0.1.2] — 2026-07-25
 
 A five-lens adversarial review fleet ran twice over this codebase; 27 of its
