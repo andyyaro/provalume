@@ -1,0 +1,15 @@
+{
+  "cases": 37,
+  "uncertain_labels_excluded": [],
+  "stale_precision": 1.0,
+  "stale_count": 10,
+  "false_stale_cases": [],
+  "suspect_precision_informational": 0.4166666666666667,
+  "suspect_count_after_scan": 24,
+  "recall_flagged_over_should": 1.0,
+  "should_invalidate_count": 10,
+  "false_pass_cases": [],
+  "false_current_cases": [],
+  "kill_floor_stale_precision": 0.8,
+  "kill_criterion_tripped": false
+}

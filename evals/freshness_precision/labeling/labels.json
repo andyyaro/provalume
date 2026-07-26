@@ -1,0 +1,112 @@
+[
+  {"case_id": "fmt_blank_lines", "label": "no",
+   "rationale": "Only a blank line between two top-level defs was removed; the reconstructed post-commit tree still runs `python check.py` to exit 0 and compute() still returns 3."},
+
+  {"case_id": "fmt_reindent_two_spaces", "label": "no",
+   "rationale": "Reindenting the bodies from four to two spaces is uniform and syntactically valid, so the command still exits 0 and the claim is unchanged in meaning."},
+
+  {"case_id": "fmt_trailing_whitespace", "label": "no",
+   "rationale": "Trailing spaces after `return x * 2` are ignored by the tokenizer; executed the after-tree and `python check.py` still exits 0."},
+
+  {"case_id": "fmt_statement_split", "label": "no",
+   "rationale": "`value = helper(1) + 1;  return value` is a legal semicolon-joined pair of simple statements with identical behavior; the command still exits 0."},
+
+  {"case_id": "cmt_reworded", "label": "no",
+   "rationale": "Only a comment's wording changed ('doubles' -> 'multiplies by two'); no executable content changed and the command still exits 0."},
+
+  {"case_id": "cmt_removed", "label": "no",
+   "rationale": "Deleting the `# doubles the input` comment does not affect execution; the after-tree still exits 0 and the claim still holds."},
+
+  {"case_id": "cmt_todo_added", "label": "no",
+   "rationale": "An appended `# TODO: rename` trailing comment is inert; verified the command still exits 0."},
+
+  {"case_id": "doc_reworded", "label": "no",
+   "rationale": "compute()'s docstring was reworded only; the asserted value is still 3 and the command still exits 0."},
+
+  {"case_id": "doc_removed", "label": "no",
+   "rationale": "Removing compute()'s docstring leaves a valid function with identical behavior; the command still exits 0. The claim is about the command's exit status, which the docstring never carried."},
+
+  {"case_id": "doc_doctest_broken", "label": "yes",
+   "rationale": "The command is `python -m doctest mod.py`, and changing the expected output from 4 to 5 makes the doctest fail; execution confirmed exit 1 after the commit (exit 0 before)."},
+
+  {"case_id": "logic_breaks_claim", "label": "yes",
+   "rationale": "helper now returns x * 3, so compute() returns 4 and the assertion fails; the command exits 1 in the reconstructed after-tree."},
+
+  {"case_id": "logic_equivalent_rewrite", "label": "no",
+   "rationale": "`x + x` is behaviorally identical to `x * 2` for the integer input used, compute() still returns 3, and the command still exits 0."},
+
+  {"case_id": "logic_unrelated_function", "label": "no",
+   "rationale": "A new, never-called `unrelated()` was appended; nothing the command exercises changed and it still exits 0."},
+
+  {"case_id": "logic_constant_bumped", "label": "yes",
+   "rationale": "compute() now returns helper(1) + 2 == 4, so `assert mod.compute() == 3` raises AssertionError; verified exit 1."},
+
+  {"case_id": "logic_dead_branch_added", "label": "no",
+   "rationale": "The added `if False:` branch is unreachable, compute() still returns 3, and the command still exits 0."},
+
+  {"case_id": "logic_error_message_changed", "label": "no",
+   "rationale": "The reworded ValueError text sits inside an unreachable `if 1 > 2` branch; compute() still returns 3 and the command still exits 0."},
+
+  {"case_id": "sig_param_added_with_default", "label": "no",
+   "rationale": "`scale=2` preserves the single-argument call site's behavior, so helper(1) is still 2 and the command still exits 0."},
+
+  {"case_id": "sig_param_added_breaking", "label": "yes",
+   "rationale": "`helper(x, scale)` has no default, so the existing `helper(1)` call raises TypeError: missing 1 required positional argument; verified exit 1."},
+
+  {"case_id": "sig_renamed_function", "label": "yes",
+   "rationale": "compute() was renamed to calculate() without updating check.py, so the command fails with AttributeError: module 'mod' has no attribute 'compute'; verified exit 1."},
+
+  {"case_id": "imp_unused_added", "label": "no",
+   "rationale": "An unused `import os` is harmless; the after-tree command still exits 0 and the claim is unchanged."},
+
+  {"case_id": "imp_stdlib_now_used", "label": "no",
+   "rationale": "int(math.floor(2 + 1.2)) == 3, so the assertion still passes; verified the command still exits 0."},
+
+  {"case_id": "imp_helper_moved_out", "label": "no",
+   "rationale": "helper moved to a new helpers.py and mod.py imports it, so mod.compute() still returns 3 and the command still exits 0; the claim's subject (the command succeeding from the repo root) is intact."},
+
+  {"case_id": "struct_module_deleted", "label": "yes",
+   "rationale": "mod.py was deleted with nothing equivalent in its place, so `import mod` raises ModuleNotFoundError; verified exit 1 and the claim's subject no longer exists."},
+
+  {"case_id": "struct_renamed_import_fixed", "label": "no",
+   "rationale": "mod.py was renamed to core.py with byte-identical content and check.py was updated in the same commit to `import core as mod`, so the command still exits 0 and an equivalent module answers for the deleted one."},
+
+  {"case_id": "struct_check_tightened", "label": "no",
+   "rationale": "The extra `assert mod.helper(0) == 0` also passes, so the command still exits 0; the check only became stricter, which cannot make the exit-0 claim false or weaker."},
+
+  {"case_id": "struct_check_now_fails", "label": "yes",
+   "rationale": "check.py now asserts compute() == 4 while compute() returns 3, so the command exits 1 in the reconstructed after-tree."},
+
+  {"case_id": "str_asserted_value_changed", "label": "no",
+   "rationale": "greet() and its assertion were changed together to 'hi there', so the command still exits 0; the record's claim is about the command succeeding, and it still does."},
+
+  {"case_id": "str_whitespace_inside_string", "label": "no",
+   "rationale": "The check only asserts `startswith('hi')`, which the doubled inner space does not affect; verified the command still exits 0."},
+
+  {"case_id": "str_quote_style_only", "label": "no",
+   "rationale": "LABEL's quote style changed from single to double with the same value; nothing observable changed and the command still exits 0."},
+
+  {"case_id": "oor_readme_only", "label": "no",
+   "rationale": "Only README.md was touched; no file the command reads changed and it still exits 0."},
+
+  {"case_id": "oor_unimported_module", "label": "no",
+   "rationale": "A new other.py is never imported by check.py or mod.py; the command still exits 0."},
+
+  {"case_id": "mix_comment_and_break", "label": "yes",
+   "rationale": "Alongside the comment rewording, helper now returns x * 3, so compute() returns 4 and the assertion fails; verified exit 1."},
+
+  {"case_id": "mix_docstring_and_harmless", "label": "no",
+   "rationale": "A reworded docstring plus a new uncalled `extra()`; compute() still returns 3 and the command still exits 0."},
+
+  {"case_id": "mix_format_two_files_one_break", "label": "yes",
+   "rationale": "The mod.py blank-line change is harmless, but check.py now asserts compute() == 30 while it returns 3, so the command exits 1."},
+
+  {"case_id": "broken_syntax_error_landed", "label": "yes",
+   "rationale": "mod.py is truncated to `def helper(x:` and no longer parses, so `import mod` raises SyntaxError: '(' was never closed; verified exit 1."},
+
+  {"case_id": "broken_type_comment_removed", "label": "no",
+   "rationale": "The commit adds an inert `# type: ignore` comment on the def line; runtime behavior is unchanged and the command still exits 0."},
+
+  {"case_id": "broken_encoding_cookie", "label": "no",
+   "rationale": "The added `# -*- coding: latin-1 -*-` cookie is valid and the file's bytes are pure ASCII, so it decodes identically; verified the command still exits 0."}
+]

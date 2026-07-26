@@ -1,0 +1,451 @@
+[
+  {
+    "case_id": "fmt_blank_lines",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n"
+    }
+  },
+  {
+    "case_id": "fmt_reindent_two_spaces",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "def helper(x):\n  # doubles the input\n  return x * 2\n\n\ndef compute():\n  \"\"\"Return the answer used by the pipeline.\"\"\"\n  return helper(1) + 1\n"
+    }
+  },
+  {
+    "case_id": "fmt_trailing_whitespace",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2   \n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n"
+    }
+  },
+  {
+    "case_id": "fmt_statement_split",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    value = helper(1) + 1;  return value\n"
+    }
+  },
+  {
+    "case_id": "cmt_reworded",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "def helper(x):\n    # multiplies the input by two\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n"
+    }
+  },
+  {
+    "case_id": "cmt_removed",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "def helper(x):\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n"
+    }
+  },
+  {
+    "case_id": "cmt_todo_added",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2  # TODO: rename\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n"
+    }
+  },
+  {
+    "case_id": "doc_reworded",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Compute the pipeline's answer.\"\"\"\n    return helper(1) + 1\n"
+    }
+  },
+  {
+    "case_id": "doc_removed",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    return helper(1) + 1\n"
+    }
+  },
+  {
+    "case_id": "doc_doctest_broken",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} -m doctest mod.py",
+    "files_before": {
+      "mod.py": "def double(x):\n    \"\"\"Double x.\n\n    >>> double(2)\n    4\n    \"\"\"\n    return x * 2\n",
+      "check.py": ""
+    },
+    "files_after": {
+      "mod.py": "def double(x):\n    \"\"\"Double x.\n\n    >>> double(2)\n    5\n    \"\"\"\n    return x * 2\n"
+    }
+  },
+  {
+    "case_id": "logic_breaks_claim",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 3\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n"
+    }
+  },
+  {
+    "case_id": "logic_equivalent_rewrite",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x + x\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n"
+    }
+  },
+  {
+    "case_id": "logic_unrelated_function",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n\n\ndef unrelated():\n    return 99\n"
+    }
+  },
+  {
+    "case_id": "logic_constant_bumped",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 2\n"
+    }
+  },
+  {
+    "case_id": "logic_dead_branch_added",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    if False:\n        return -1\n    return helper(1) + 1\n"
+    }
+  },
+  {
+    "case_id": "logic_error_message_changed",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def compute():\n    if 1 > 2:\n        raise ValueError('cannot happen')\n    return 3\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "def compute():\n    if 1 > 2:\n        raise ValueError('cannot happen anymore')\n    return 3\n"
+    }
+  },
+  {
+    "case_id": "sig_param_added_with_default",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "def helper(x, scale=2):\n    # doubles the input\n    return x * scale\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n"
+    }
+  },
+  {
+    "case_id": "sig_param_added_breaking",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "def helper(x, scale):\n    # doubles the input\n    return x * scale\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n"
+    }
+  },
+  {
+    "case_id": "sig_renamed_function",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef calculate():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n"
+    }
+  },
+  {
+    "case_id": "imp_unused_added",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "import os\n\ndef helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n"
+    }
+  },
+  {
+    "case_id": "imp_stdlib_now_used",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "import math\n\ndef helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return int(math.floor(helper(1) + 1.2))\n"
+    }
+  },
+  {
+    "case_id": "imp_helper_moved_out",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "from helpers import helper\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "helpers.py": "def helper(x):\n    # doubles the input\n    return x * 2\n"
+    }
+  },
+  {
+    "case_id": "struct_module_deleted",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": null
+    }
+  },
+  {
+    "case_id": "struct_renamed_import_fixed",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": null,
+      "core.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import core as mod\nassert mod.compute() == 3\n"
+    }
+  },
+  {
+    "case_id": "struct_check_tightened",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "check.py": "import mod\nassert mod.compute() == 3\nassert mod.helper(0) == 0\n"
+    }
+  },
+  {
+    "case_id": "struct_check_now_fails",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "check.py": "import mod\nassert mod.compute() == 4\n"
+    }
+  },
+  {
+    "case_id": "str_asserted_value_changed",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def greet():\n    return 'hi'\n",
+      "check.py": "import mod\nassert mod.greet() == 'hi'\n"
+    },
+    "files_after": {
+      "mod.py": "def greet():\n    return 'hi there'\n",
+      "check.py": "import mod\nassert mod.greet() == 'hi there'\n"
+    }
+  },
+  {
+    "case_id": "str_whitespace_inside_string",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def greet():\n    return 'hi there'\n",
+      "check.py": "import mod\nassert mod.greet().startswith('hi')\n"
+    },
+    "files_after": {
+      "mod.py": "def greet():\n    return 'hi  there'\n"
+    }
+  },
+  {
+    "case_id": "str_quote_style_only",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n\nLABEL = 'x'\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n\nLABEL = \"x\"\n"
+    }
+  },
+  {
+    "case_id": "oor_readme_only",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "README.md": "docs changed\n"
+    }
+  },
+  {
+    "case_id": "oor_unimported_module",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "other.py": "def nothing():\n    return None\n"
+    }
+  },
+  {
+    "case_id": "mix_comment_and_break",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "def helper(x):\n    # triples the input\n    return x * 3\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n"
+    }
+  },
+  {
+    "case_id": "mix_docstring_and_harmless",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"The pipeline's answer.\"\"\"\n    return helper(1) + 1\n\n\ndef extra():\n    return 0\n"
+    }
+  },
+  {
+    "case_id": "mix_format_two_files_one_break",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 30\n"
+    }
+  },
+  {
+    "case_id": "broken_syntax_error_landed",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "def helper(x:\n    return x * 2\n"
+    }
+  },
+  {
+    "case_id": "broken_type_comment_removed",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "def helper(x):  # type: ignore\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n"
+    }
+  },
+  {
+    "case_id": "broken_encoding_cookie",
+    "claim": "A verified record claims: running the command below from the repository root succeeds (exit code 0).",
+    "command": "{python} check.py",
+    "files_before": {
+      "mod.py": "def helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n",
+      "check.py": "import mod\nassert mod.compute() == 3\n"
+    },
+    "files_after": {
+      "mod.py": "# -*- coding: latin-1 -*-\ndef helper(x):\n    # doubles the input\n    return x * 2\n\n\ndef compute():\n    \"\"\"Return the answer used by the pipeline.\"\"\"\n    return helper(1) + 1\n"
+    }
+  }
+]
