@@ -156,12 +156,17 @@ Only **kernel-sourced** freshness events participate in freshness derivation:
 an agent-sourced or imported freshness event is stored append-only and
 derives nothing (threats T17, T28).
 
-These four types are declared ahead of their writers, deliberately: the
+These four types were declared ahead of their writers, deliberately: the
 schema was locked at design time (ADR-0020) and the writers arrive milestone
-by milestone (blast radius at M1, triggering at M2, relevance at M3,
-re-execution at M4). Until then the events are exactly what the closed-set
-rationale predicts — stored and inert — which here is the intended state,
-not an accident.
+by milestone. **`blast_radius.recorded`'s writer is live**:
+`record_verification` now attaches a radius to each claim record (procedural,
+gotcha) it produces, extracted without executing the verification command or
+any project code — read-only git plumbing only, fail-open, nothing recorded
+for a git-less client. When the same record accrues several radius events (a
+repeated failure re-anchors its gotcha), **the latest by journal order wins**
+for freshness derivation. The remaining three writers arrive with M2
+(triggering), M3 (relevance), M4 (re-execution); until then those events are
+stored and inert, which is the intended state.
 
 ## Recording events
 

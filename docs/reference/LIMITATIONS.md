@@ -183,6 +183,32 @@ from the evidence events' timestamps in the journal, not from the transitions
 table of a rebuilt database. (Found while pinning rebuild determinism for the
 freshness axis; the freshness events did not cause it.)
 
+## 9c. Blast-radius extraction is bounded, and honest about it
+
+A blast radius (ADR-0020) can only ever bound what its method can see:
+
+- **`import_graph` is static.** Dynamic imports (`importlib`,
+  `__import__`, plugin registries, entry points) are invisible to an AST
+  walk. Source roots are the repository root and `src/`; a bespoke layout
+  configured through build tooling is not probed. A bare `pytest` with no
+  path arguments names no entry, so it falls through to `commit_touch`.
+- **`coverage` measures the parent process.** A verification whose real work
+  happens in spawned subprocesses may yield a radius covering only the
+  parent (measuring children needs `COVERAGE_PROCESS_START` cooperation the
+  extractor does not impose). The project's own coverage configuration is
+  deliberately neutralised — a radius describes what ran, not what the
+  project chose to report on.
+- **`commit_touch` is proximity, not causality** — the files that changed
+  alongside the evidence. It is recorded as the weakest method for a reason.
+- **A git-less client records no radius at all** and its records stay
+  `unverifiable` on the freshness axis; the in-memory, git-free clients this
+  project's own test suite mostly uses are the designed example.
+
+In every case the failure direction is chosen deliberately: a radius that
+cannot be computed honestly is not recorded (the record stays
+`unverifiable`), and a radius is never truncated to fit — over the cap, the
+method fails and a weaker one gets its turn.
+
 ## 10. Single writer, single machine
 
 Provalume assumes one writing process. Concurrent writers serialise on SQLite's

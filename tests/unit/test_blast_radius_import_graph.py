@@ -372,3 +372,96 @@ def test_extraction_never_executes_anything(
     root = project(tmp_path, {"mod.py": "import os\n", "tests/test_mod.py": "import mod\n"})
     radius = _import_graph.extract(f"{sys.executable} -m pytest tests/", root)
     assert paths(radius) == {"mod.py", "tests/test_mod.py"}
+
+
+# --- M1 review fixes: understatement semantics --------------------------------
+
+
+def test_src_layout_packages_resolve(tmp_path: Path) -> None:
+    """A src-layout repository must not yield a radius with zero source files
+    (M1 review finding 1)."""
+    root = tmp_path
+    (root / "tests").mkdir()
+    (root / "src" / "pkg").mkdir(parents=True)
+    (root / "src" / "pkg" / "__init__.py").write_text("")
+    (root / "src" / "pkg" / "core.py").write_text("def go():\n    return 1\n")
+    (root / "tests" / "test_a.py").write_text(
+        "from pkg.core import go\n\n\ndef test_go():\n    assert go() == 1\n"
+    )
+    radius = _import_graph.extract("pytest tests/", root)
+    assert radius is not None
+    assert "src/pkg/core.py" in radius.paths
+    assert "src/pkg/__init__.py" in radius.paths
+    assert "tests/test_a.py" in radius.paths
+
+
+def test_dash_m_package_reaches_dunder_main(tmp_path: Path) -> None:
+    """`python -m pkg` executes pkg/__main__.py (M1 review finding 6)."""
+    (tmp_path / "pkg").mkdir()
+    (tmp_path / "pkg" / "__init__.py").write_text("")
+    (tmp_path / "pkg" / "__main__.py").write_text("import inner\n")
+    (tmp_path / "inner.py").write_text("V = 1\n")
+    radius = _import_graph.extract("python -m pkg", tmp_path)
+    assert radius is not None
+    assert set(radius.paths) >= {"pkg/__init__.py", "pkg/__main__.py", "inner.py"}
+
+
+def test_unresolvable_leaf_keeps_the_traversed_init_chain(tmp_path: Path) -> None:
+    """`import a.b.missing` still executes a/__init__.py and a/b/__init__.py
+    (M1 review finding 7)."""
+    (tmp_path / "a" / "b").mkdir(parents=True)
+    (tmp_path / "a" / "__init__.py").write_text("")
+    (tmp_path / "a" / "b" / "__init__.py").write_text("")
+    (tmp_path / "e.py").write_text("import a.b.missing\n")
+    radius = _import_graph.extract("python e.py", tmp_path)
+    assert radius is not None
+    assert set(radius.paths) >= {"e.py", "a/__init__.py", "a/b/__init__.py"}
+
+
+def test_pytest_node_id_counts_as_its_file(tmp_path: Path) -> None:
+    """A stored `pytest tests/test_a.py::test_x` must not abort extraction
+    (M1 review finding 12)."""
+    (tmp_path / "tests").mkdir()
+    (tmp_path / "mod.py").write_text("V = 1\n")
+    (tmp_path / "tests" / "test_a.py").write_text("import mod\n")
+    radius = _import_graph.extract("pytest tests/test_a.py::test_x", tmp_path)
+    assert radius is not None
+    assert set(radius.paths) >= {"tests/test_a.py", "mod.py"}
+
+
+def test_vendored_and_dot_directories_are_not_walked(tmp_path: Path) -> None:
+    """A directory entry skips vendored trees (M1 review finding 13)."""
+    (tmp_path / "pkg").mkdir()
+    (tmp_path / "pkg" / "real.py").write_text("V = 1\n")
+    (tmp_path / "pkg" / ".venv" / "lib").mkdir(parents=True)
+    (tmp_path / "pkg" / ".venv" / "lib" / "vendored.py").write_text("V = 2\n")
+    (tmp_path / "pkg" / "node_modules").mkdir()
+    (tmp_path / "pkg" / "node_modules" / "shim.py").write_text("V = 3\n")
+    radius = _import_graph.extract("python -m pytest pkg/", tmp_path)
+    assert radius is not None
+    assert radius.paths == ("pkg/real.py",)
+
+
+def test_pytest_shaped_commands_pull_the_conftest_chain(tmp_path: Path) -> None:
+    """pytest executes conftest.py from the root down to each entry; the
+    radius must include them (M1 review finding 14)."""
+    (tmp_path / "tests" / "sub").mkdir(parents=True)
+    (tmp_path / "conftest.py").write_text("import helper\n")
+    (tmp_path / "helper.py").write_text("V = 1\n")
+    (tmp_path / "tests" / "conftest.py").write_text("")
+    (tmp_path / "tests" / "sub" / "test_a.py").write_text("def test_a():\n    pass\n")
+    radius = _import_graph.extract("pytest tests/sub/", tmp_path)
+    assert radius is not None
+    assert set(radius.paths) >= {
+        "conftest.py",
+        "helper.py",
+        "tests/conftest.py",
+        "tests/sub/test_a.py",
+    }
+
+
+def test_a_bare_pytest_with_no_entries_still_fails_over(tmp_path: Path) -> None:
+    """No path arguments means no entries: a conftest-only radius would
+    massively understate a full-rootdir run."""
+    (tmp_path / "conftest.py").write_text("")
+    assert _import_graph.extract("pytest", tmp_path) is None

@@ -194,6 +194,22 @@ class MemoryRepository:
         )
         return [_row_to_memory(r) for r in rows]
 
+    def for_source_event(self, project_id: str, event_id: str) -> list[Memory]:
+        """Every memory whose provenance names ``event_id``.
+
+        Selection by provenance rather than recency: a repeated failure folds
+        into a gotcha that may be arbitrarily old, and any newest-N page
+        silently misses it. ``source_event_ids`` is stored as a JSON array of
+        ULIDs, so a bound LIKE over the serialized column cannot false-match —
+        a ULID never substring-matches a different ULID of the same length
+        inside a quoted JSON element.
+        """
+        rows = self.db.query(
+            f"{_SELECT_MEMORY} WHERE project_id = ? AND source_event_ids LIKE ? ORDER BY memory_id",
+            (project_id, f'%"{event_id}"%'),
+        )
+        return [_row_to_memory(r) for r in rows]
+
     def find(self, spec: MemoryFilter) -> list[Memory]:
         clauses, params = self._build_filter(spec)
         where = f" WHERE {' AND '.join(clauses)}" if clauses else ""

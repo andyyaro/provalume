@@ -16,6 +16,14 @@ has not been measured.
 | Retrieval (FTS + scoring + explanations) | ~1.7 ms | ~1.7 ms |
 | Write (admission + journal + projection) | ~3.8 ms | ~3.8 ms |
 | Rebuild (small corpus) | ~2.4 ms | — |
+| `record_verification` with a git repository (write + radius extraction) | ~50 ms | — |
+
+The last row is the freshness axis's cost (ADR-0020): in a git-backed
+project, recording a verification also extracts a blast radius and appends a
+radius event per claim record. The overhead is git subprocesses (read-only
+plumbing; the verification command is never executed), extraction runs once
+per verification, and per-instance caches cover the repeated questions.
+Git-less clients skip all of it and pay the bare write cost.
 
 Latency is long-tailed in principle, so the harness reports median and p95 rather
 than a mean — a mean hides exactly the slow queries a user would notice.

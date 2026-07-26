@@ -224,3 +224,79 @@ def test_the_existing_queries_still_work_alongside_the_new_ones(tmp_path: Path) 
     assert info.commit_exists(first)
     assert info.is_ancestor(first, second) is True
     assert info.changed_files(first) == ("a.txt",)
+
+
+# --- M1 review fixes ----------------------------------------------------------
+
+
+def _run_git(repo: Path, *args: str) -> str:
+    result = subprocess.run(  # noqa: S603 - fixed argv, throwaway directory
+        ["git", "-C", str(repo), *args],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip()
+
+
+def test_paths_are_reanchored_for_a_subdirectory_root(tmp_path: Path) -> None:
+    """git reports toplevel-relative paths; a client rooted at a
+    subdirectory must get paths in its own coordinate system, with changes
+    outside its world dropped (M1 review finding 9)."""
+    repo = tmp_path / "repo"
+    (repo / "sub" / "pkg").mkdir(parents=True)
+    _run_git(tmp_path, "init", "-q", "-b", "main", str(repo))
+    (repo / "sub" / "pkg" / "mod.py").write_text("x = 1\n")
+    (repo / "outside.py").write_text("y = 1\n")
+    _run_git(repo, "add", "-A")
+    _run_git(repo, "-c", "user.email=a@b", "-c", "user.name=a", "commit", "-qm", "seed")
+    sha = _run_git(repo, "rev-parse", "HEAD")
+
+    subroot = GitInfo(repo / "sub")
+    assert subroot.changed_files(sha) == ("pkg/mod.py",)
+    toplevel = GitInfo(repo)
+    assert toplevel.changed_files(sha) == ("outside.py", "sub/pkg/mod.py")
+
+
+def test_a_revision_that_is_not_plain_hex_is_refused(tmp_path: Path) -> None:
+    """M2 feeds this from a hook; a revision shaped like a flag must never
+    reach git argv (M1 review finding 21)."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _run_git(tmp_path, "init", "-q", "-b", "main", str(repo))
+    (repo / "a.py").write_text("x = 1\n")
+    _run_git(repo, "add", "-A")
+    _run_git(repo, "-c", "user.email=a@b", "-c", "user.name=a", "commit", "-qm", "seed")
+    info = GitInfo(repo)
+    assert info.changed_files("--help") is None
+    assert info.changed_files("HEAD") is None, "symbolic revisions are not plain hex"
+    assert info.changed_files("main") is None
+    sha = _run_git(repo, "rev-parse", "HEAD")
+    assert info.changed_files(sha) == ("a.py",)
+
+
+def test_changed_files_and_git_version_are_cached_per_instance(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _run_git(tmp_path, "init", "-q", "-b", "main", str(repo))
+    (repo / "a.py").write_text("x = 1\n")
+    _run_git(repo, "add", "-A")
+    _run_git(repo, "-c", "user.email=a@b", "-c", "user.name=a", "commit", "-qm", "seed")
+    sha = _run_git(repo, "rev-parse", "HEAD")
+    info = GitInfo(repo)
+    first = info.changed_files(sha)
+    version = info.git_version()
+    calls: list[list[str]] = []
+    original = subprocess.run
+
+    def counting(argv, *args, **kwargs):  # type: ignore[no-untyped-def]
+        calls.append(list(argv))
+        return original(argv, *args, **kwargs)
+
+    subprocess.run = counting  # type: ignore[assignment]
+    try:
+        assert info.changed_files(sha) == first
+        assert info.git_version() == version
+    finally:
+        subprocess.run = original  # type: ignore[assignment]
+    assert calls == [], "a second ask must be answered from the instance cache"
