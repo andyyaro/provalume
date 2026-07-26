@@ -19,6 +19,7 @@ from typing import Any, Final
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from provalume import _ids, _time
+from provalume.schemas.freshness import DEFAULT_FRESHNESS, FreshnessState
 from provalume.schemas.scope import Scope
 from provalume.schemas.trust import (
     CURRENT_TRUTH_STATE,
@@ -143,6 +144,12 @@ class Memory(BaseModel):
     verification_state: VerificationState = VerificationState.UNKNOWN
     review_state: ReviewState = ReviewState.NONE
     integration_state: IntegrationState = IntegrationState.NONE
+
+    # --- Freshness (ADR-0020) --------------------------------------------
+    # Orthogonal to trust: does landed code still support this record's
+    # evidence? `unverifiable` until a blast radius earns `current`; a
+    # machine observation, never a judgement, and never able to move trust.
+    freshness: FreshnessState = DEFAULT_FRESHNESS
 
     # --- Usage -----------------------------------------------------------
     access_count: int = Field(default=0, ge=0)

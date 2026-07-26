@@ -306,8 +306,36 @@ CREATE TABLE projects (
 );
 """
 
+_002_FRESHNESS = """
+-- ----------------------------------------------------------------------------
+-- The freshness axis (ADR-0020). Both additions are projections: derived from
+-- journal events, mutable, fully rebuilt by `provalume rebuild`.
+-- ----------------------------------------------------------------------------
+
+-- Orthogonal to trust_state, deliberately a separate column: a record can be
+-- integrated and stale at once, and that combination must be expressible.
+-- 'unverifiable' is the default because current must be earned by a recorded
+-- blast radius — records predating the axis are not grandfathered.
+ALTER TABLE memories ADD COLUMN freshness TEXT NOT NULL DEFAULT 'unverifiable';
+
+CREATE INDEX idx_memories_freshness ON memories(project_id, freshness);
+
+-- The latest blast radius per record, one row per path, so the commit
+-- watcher's intersection is an indexed lookup rather than a journal scan.
+-- Replaced wholesale when a record accrues a newer radius (latest wins).
+CREATE TABLE blast_radii (
+    record_id   TEXT NOT NULL,
+    project_id  TEXT NOT NULL,
+    method      TEXT NOT NULL,
+    path        TEXT NOT NULL,
+    PRIMARY KEY (record_id, path)
+);
+
+CREATE INDEX idx_blast_radii_path ON blast_radii(project_id, path);
+"""
+
 #: Every migration, in order. Index + 1 is the resulting schema version.
-MIGRATIONS: Final[tuple[str, ...]] = (_001_INITIAL,)
+MIGRATIONS: Final[tuple[str, ...]] = (_001_INITIAL, _002_FRESHNESS)
 
 #: The schema version this build writes and expects.
 SCHEMA_VERSION: Final = len(MIGRATIONS)

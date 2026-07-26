@@ -429,7 +429,10 @@ class McpServer:
         lines = [DIGEST_BANNER, "", f"{heading} ({len(results)} record(s)):", ""]
         payload: list[dict[str, Any]] = []
         for result in results:
-            lines.append(f"- [{result.trust_state.value.upper()}] {result.text}")
+            label = result.trust_state.value.upper()
+            if result.freshness.value != "current":
+                label += f" · {result.freshness.value.upper()}"
+            lines.append(f"- [{label}] {result.text}")
             if result.provenance_summary:
                 lines.append(f"  evidence: {result.provenance_summary}")
             if not result.presentable_as_current_truth:
@@ -440,6 +443,7 @@ class McpServer:
                     "memory_type": result.memory_type.value,
                     "text": result.text,
                     "trust_state": result.trust_state.value,
+                    "freshness": result.freshness.value,
                     "score": result.score,
                     "provenance": result.provenance_summary,
                     "current_truth": result.presentable_as_current_truth,

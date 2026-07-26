@@ -13,6 +13,7 @@ from typing import Any, Final
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from provalume.schemas.freshness import DEFAULT_FRESHNESS, FreshnessState
 from provalume.schemas.memories import MemoryType
 from provalume.schemas.scope import Applicability
 from provalume.schemas.trust import TrustState
@@ -258,6 +259,7 @@ class RecallResult(BaseModel):
     text: str
     content: dict[str, Any] = Field(default_factory=dict)
     trust_state: TrustState
+    freshness: FreshnessState = DEFAULT_FRESHNESS
     scope: str = ""
     commit_sha: str | None = None
     recorded_at: str = ""
@@ -279,6 +281,7 @@ class DigestItem(BaseModel):
     memory_type: MemoryType
     text: str
     trust_label: str
+    freshness: str = DEFAULT_FRESHNESS.value
     provenance: str
     reasons: tuple[str, ...] = ()
     warnings: tuple[str, ...] = ()
@@ -348,6 +351,7 @@ class PreflightMatch(BaseModel):
     applicability: Applicability = Applicability.UNCERTAIN
     provenance: str = ""
     trust_state: TrustState = TrustState.OBSERVED
+    freshness: FreshnessState = DEFAULT_FRESHNESS
     occurrences: int = 1
     """How many times this signature has been seen. Repetition is what elevates a
     warning from "this once failed" to "this keeps failing"."""

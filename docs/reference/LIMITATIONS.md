@@ -209,6 +209,17 @@ cannot be computed honestly is not recorded (the record stays
 `unverifiable`), and a radius is never truncated to fit — over the cap, the
 method fails and a weaker one gets its turn.
 
+## 9d. Freshness scanning is explicit, and `current` means "no scanned landing"
+
+There is no daemon and no background watcher, deliberately (ADR-0020, T29).
+Freshness triggers fire only when `provalume freshness <sha>` runs — from a
+post-merge hook or by hand — for a commit the operator asserts has landed.
+A landing nobody scanned is invisible: a record can read `current` while an
+unscanned commit rewrote everything underneath it. `current` is therefore a
+claim about the landings Provalume was shown, never about the repository in
+general. If the hook is not installed, the axis degrades to exactly what
+existed before it: nothing, honestly labelled.
+
 ## 10. Single writer, single machine
 
 Provalume assumes one writing process. Concurrent writers serialise on SQLite's

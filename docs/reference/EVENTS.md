@@ -142,7 +142,7 @@ gains no trust authority.
 | Type | Moves freshness | Payload |
 |---|---|---|
 | `blast_radius.recorded` | → `current` (the record becomes watchable) | `record_id`, `method` (`coverage` \| `import_graph` \| `commit_touch`), `paths`, `line_ranges` (optional), `tool`, `tool_version`; envelope `commit_sha` names the commit the radius was measured at |
-| `freshness.triggered` | → `suspect`, unless a relevance verdict for the same trigger discharges it | `record_id`, `trigger_commit`, `changed_paths`, `intersecting_paths` |
+| `freshness.triggered` | → `suspect`, unless a relevance verdict for the same trigger discharges it | `record_id`, `trigger_commit`, `changed_paths`, `changed_paths_total`, `intersecting_paths` — for a landing touching more than 2 000 paths, `changed_paths` records only the intersecting ones and `changed_paths_total` keeps the true count, so a monster commit cannot blow the admission cap and silently drop its own triggers |
 | `relevance.assessed` | verdict `irrelevant` → back to `current`; `relevant` → stays `suspect` | `record_id`, `trigger_commit`, `verdict` (`relevant` \| `irrelevant`), `differ_version`, `reason_code` (closed enum: `whitespace_only`, `comment_only`, `docstring_only`, `signature_changed`, `body_changed`, `import_changed`, `unparseable`) |
 | `reverification.executed` | outcome `passed` → `current`; `failed` → `stale`; `errored` → **no transition** (fail-open) | `record_id`, `trigger_commit`, `command`, `exit_code`, `duration_ms`, `timeout_ms` (the configured bound — a timeout kill must be distinguishable from an ordinary failure), `environment_fingerprint`, `outcome` (`passed` \| `failed` \| `errored`) |
 
