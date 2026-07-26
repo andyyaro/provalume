@@ -1,0 +1,37 @@
+{
+  "trajectory": "repeat-blocked",
+  "competencies": ["premise-awareness", "dynamic-state-tracking"],
+  "description": "The same gate fails four times across two runs with no fix; occurrences accumulate, nothing is ever presented as resolved, and the abort decision is remembered",
+  "captured": {
+    "date": "2026-07-26",
+    "provalume": "0.1.4 (installed from PyPI)",
+    "orkestra": "orkestra-runtime 0.5.2, provalume-memory-integration branch @ 18457c2",
+    "scenario": "Dogfood fixture, two runs with no fix in between; the second run's blocked-task decision gate is resolved with 'Fail the run' by the capture script driving `orkestra approve` (Orkestra records it with human authority; no human chose it). The aborted run records the decision but no run.completed — captured as observed."
+  },
+  "checkpoints": [
+    {"call": 2, "expect": {"items": 0}},
+    {"call": 3, "expect": {"matched": false}},
+    {"call": 6, "expect": {"items": 1, "contains": ["Agent performance", "alpha on implement: 1/1 succeeded (100%)."]}},
+    {"call": 7, "expect": {"matched": true, "occurrences": 1, "resolved": false, "min_confidence": 0.85}},
+    {"call": 12, "expect": {"items": 2, "contains": ["Agent performance", "alpha on implement: 1/1 succeeded (100%).", "beta on implement: 1/1 succeeded (100%), 1 required fallback."]}},
+    {"call": 13, "expect": {"matched": true, "occurrences": 2, "resolved": false, "min_confidence": 0.85}},
+    {"call": 16, "expect": {"items": 2, "contains": ["Agent performance", "alpha on implement: 2/2 succeeded (100%).", "beta on implement: 1/1 succeeded (100%), 1 required fallback."]}},
+    {"call": 17, "expect": {"matched": true, "occurrences": 3, "resolved": false, "min_confidence": 0.85}}
+  ],
+  "probes": [
+    {"kind": "preflight", "command_of_call": 7,
+     "expect": {"matched": true, "occurrences": 4, "resolved": false}},
+    {"kind": "digest", "query": "transient upstream reset", "char_budget": 2000,
+     "expect": {"min_items": 1, "contains": ["Prior failures", "ConnectionError"]}},
+    {"kind": "recall", "query": "How should Orkestra proceed",
+     "expect": {"min_total": 1, "top_type": "decision", "top_trust": "integrated"}},
+    {"kind": "recall", "query": "uploader retry",
+     "expect": {"total": 1, "top_type": "decision"},
+     "known_limitation": "LIMITATIONS.md §13: the gotcha stays invisible to the feature description; the decision matches only through the literal word 'retry' in its rejected option"},
+    {"kind": "ladder", "expect_counts": [
+      {"type": "gotcha", "trust": "verified", "min": 1},
+      {"type": "decision", "trust": "integrated", "min": 1},
+      {"type": "procedural", "trust": "integrated", "max": 0}
+    ]}
+  ]
+}

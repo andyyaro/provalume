@@ -47,6 +47,9 @@ jobs:
       - name: Evaluation harness
         run: uv run provalume eval
 
+      - name: Trajectory suite
+        run: uv run provalume eval --suite trajectories
+
       - name: Demo (offline, no API key, no network)
         run: uv run provalume demo
 

@@ -1,0 +1,36 @@
+{
+  "trajectory": "env-gotcha",
+  "competencies": ["environment-gotchas", "workflow-knowledge"],
+  "description": "A dependency-shaped failure (ModuleNotFoundError at collection) is recorded, recalled by its error text, resolved by a landing — and stays invisible to a feature-description query",
+  "captured": {
+    "date": "2026-07-26",
+    "provalume": "0.1.4 (installed from PyPI)",
+    "orkestra": "orkestra-runtime 0.5.2, provalume-memory-integration branch @ 18457c2",
+    "scenario": "Fixture variant: the test module imports a nonexistent package, so pytest fails at collection with a ModuleNotFoundError. Run 1 blocks; the bogus import is removed by hand; run 2 lands."
+  },
+  "checkpoints": [
+    {"call": 2, "expect": {"items": 0}},
+    {"call": 3, "expect": {"matched": false}},
+    {"call": 6, "expect": {"items": 1, "contains": ["Agent performance", "alpha on implement: 1/1 succeeded (100%)."]}},
+    {"call": 7, "expect": {"matched": true, "occurrences": 1, "resolved": false, "min_confidence": 0.85}},
+    {"call": 12, "expect": {"items": 2, "contains": ["Agent performance", "alpha on implement: 1/1 succeeded (100%).", "beta on implement: 1/1 succeeded (100%), 1 required fallback."]}},
+    {"call": 13, "expect": {"matched": true, "occurrences": 2, "resolved": false, "min_confidence": 0.85}},
+    {"call": 19, "expect": {"items": 4, "contains": ["Prior failures and lessons", "Verified procedures", "failed (verify_failed)", "[VERIFIED+LANDED]"]}},
+    {"call": 20, "expect": {"matched": true, "occurrences": 2, "resolution_names_commit_of_call": 18}},
+    {"call": 26, "expect": {"items": 0}},
+    {"call": 27, "expect": {"matched": true, "occurrences": 2, "resolution_names_commit_of_call": 18}}
+  ],
+  "probes": [
+    {"kind": "digest", "query": "No module named reqwests", "char_budget": 2000,
+     "expect": {"min_items": 1, "contains": ["Prior failures", "reqwests"]}},
+    {"kind": "recall", "query": "No module named reqwests",
+     "expect": {"min_total": 1, "top_type": "gotcha", "top_trust": "verified"}},
+    {"kind": "recall", "query": "dependency typo",
+     "expect": {"total": 0},
+     "known_limitation": "LIMITATIONS.md §13: the gotcha is findable by its error text, not by a description of the problem"},
+    {"kind": "ladder", "expect_counts": [
+      {"type": "gotcha", "trust": "verified", "min": 1},
+      {"type": "procedural", "trust": "integrated", "min": 3}
+    ]}
+  ]
+}

@@ -51,8 +51,12 @@ matters, so a run today and a run next year produce the same result.
 
 ## Committed baseline
 
-Recorded on 2026-07-25 from a full run, committed at
+Recorded on 2026-07-26 from a full run at 0.1.4, committed at
 [`evals/results/baseline/results.json`](../../evals/results/baseline/results.json).
+(The file was first recorded at 0.1.0 and regenerated when the trajectory
+suite added three counters; the regeneration also absorbed 0.1.0→0.1.4 drift
+in the digest-size statistics. Every pass/fail result and governance rate is
+unchanged.)
 
 **20/20 scenarios passed.**
 
@@ -66,7 +70,7 @@ Recorded on 2026-07-25 from a full run, committed at
 | Recall coverage | 1/1 (100%) | higher is better |
 | Procedure reuse | 1/1 (100%) | higher is better |
 | Repeated-error rate | 0/1 (0%) | lower is better |
-| Retrieval latency | p95 **1.7 ms** | — |
+| Retrieval latency | p95 **0.8 ms** | — |
 | Write latency | see results file | — |
 | Rebuild latency | see results file | — |
 
@@ -81,8 +85,99 @@ reported this way so nobody mistakes one for the other.
 Metrics whose scenarios did not run report a zero denominator rather than a
 fabricated zero rate, so an unrun measurement is visibly unrun rather than
 looking like a perfect score. `task_completion`, `verification_improvement`, and
-`review_cycle_reduction` currently read `n/a (0 observations)` — they need
-production trajectories that 0.1.0 does not have.
+`review_cycle_reduction` still read `n/a (0 observations)`: the trajectory
+suite below replays what real runs *recorded and retrieved*, which cannot
+honestly say whether an agent *did better* — that needs A/B runs with real
+agents, and a test asserts these denominators stay zero until it happens.
+
+## The trajectory suite
+
+The second suite replays **call logs captured from real Orkestra dogfood
+runs** — real git worktrees, real failing pytest gates, real retries, a real
+decision gate (its answer scripted by the capture harness), real integration
+commits — through the same `OrkestraAdapter` surface the integration uses,
+against a fresh database, and scores what memory owed the agent at each
+captured decision point
+([ADR-0019](../adr/ADR-0019-trajectory-benchmark.md),
+[`evals/fixtures/trajectories/`](../../evals/fixtures/trajectories/README.md)).
+
+```sh
+provalume eval --suite trajectories                     # from a repo checkout
+provalume eval --suite trajectories --scenario fix-lands
+```
+
+| Trajectory | Competencies (LongMemEval-V2 shape, not score) | Story |
+|---|---|---|
+| `fix-lands` | premise awareness, workflow knowledge, dynamic state | Gate fails twice, fix lands in run 2, resolution presented at every later decision point |
+| `repeat-blocked` | premise awareness, dynamic state | Four failures across two runs, no fix; occurrences accumulate; the scripted abort decision is remembered |
+| `env-gotcha` | environment gotchas, workflow knowledge | `ModuleNotFoundError` at collection; recallable by error text, invisible to a description query |
+| `two-command-gate` | premise awareness, workflow knowledge | Two-command gate: warns about the failing command at every decision point, never about the passing one |
+
+Recorded on 2026-07-26, committed at
+[`evals/results/trajectories/results.json`](../../evals/results/trajectories/results.json).
+**4/4 trajectories passed.** Each denominator states its composition —
+captured in-run decision points versus authored post-state probes — because
+the two are not the same kind of observation.
+
+| Metric | Result | Reading |
+|---|---|---|
+| Repeated-error rate | **0/16 (0%)** | 15 captured decision points plus 1 post-state probe where the gate owed the failure's history — a warning while unresolved, or the resolution after it landed; none was silent |
+| False warnings | **0/9 (0%)** | 9 captured decision points owed silence (cold starts, a command that never failed); none warned |
+| Occurrence fidelity | **16/16 (100%)** | every non-silent point's occurrence count matched the trajectory's true failure count, across runs |
+| Resolution surfacing | **6/6 (100%)** | every post-landing captured decision point presented the resolution and named the landing commit |
+| Digest inclusion | **15/15 (100%)** | 12 captured decision points plus 3 post-state probes: the required record *content* — not just section headings — appeared in the digest text (budget compliance is a separate hard check on every digest) |
+| Recall coverage / precision | 4/4, 4/4 | post-state recall probes by error text and decision question; three further known-limitation probes are excluded by design and pass by missing |
+
+### Read the denominators (again)
+
+Sixteen should-warn observations come from four trajectories of one scripted
+project family, captured on one machine. These are regression guards over
+real recorded behaviour, not a statistical claim about fleets. The suite
+exists so the *next* real trajectory — from any project — can be added as a
+fixture and scored the same way, at the cost the format demands: expectations
+are authored by hand against the new capture's evidence.
+
+### What the trajectories showed that synthetic scenarios did not
+
+- **The failure knowledge travelled through the preflight channel, not the
+  digest.** The brief digest is queried by task *title*. At every failing
+  task's own decision point the title (`Implement the specification`) shared
+  no vocabulary with the failing command or its error, so the digest carried
+  agent-performance records while the warning channel carried the failure.
+  One other task's title did overlap — `Add or extend tests for the
+  implementation` shares "tests" with `pytest -q tests/` — and its digest
+  retrieved the failure records, which is the exception that proves the
+  mechanism: inclusion is lexical overlap, not relevance. That is LIMITATIONS
+  §13 operating at the integration's choke point, now measured instead of
+  predicted.
+- **Known misses are pinned as fixtures that fail if the behaviour moves.**
+  Probes marked `known_limitation` pass by missing and touch no counter:
+  `uploader retry` and `dependency typo` find no gotcha under lexical
+  retrieval (and in one trajectory the word "retry" finds the recorded
+  *decision* instead, through its rejected option). If vector retrieval ever
+  moves these, the fixtures will say so.
+- **A failing trajectory mints no truth.** `repeat-blocked` asserts zero
+  integrated procedures — four failures and an abort leave verified failure
+  evidence, verified performance aggregates, and one integrated decision
+  record, and nothing reaches integrated truth through work, because no work
+  landed.
+
+### What replay cannot show
+
+The practice agents in the captured runs are scripted placeholders. Attempt
+outcomes in the logs say nothing about memory quality and are never scored as
+if they did. Whether a real model reads a digest and repeats fewer failures
+remains unmeasured (LIMITATIONS §1), and the agent-outcome metrics stay at
+zero denominators until it is measured honestly.
+
+Replay is also not byte-identical to the live runs: it uses `git=None`, so
+events lose the commit anchors the live client stamped and commit-anchored
+digest items render `applicability: UNCERTAIN` where the live run said
+`HISTORICAL` (ADR-0019, "Fidelity limits"). The suite compares every replayed
+read against the captured return and reports each divergence as a note in the
+results — currently three, one per landing trajectory's largest digest —
+so the gap is visible rather than silent, and the CURRENT/HISTORICAL/UNCERTAIN
+labelling itself is explicitly outside what this suite can regress-test.
 
 ## What is deliberately not used
 
@@ -130,6 +225,9 @@ uv venv && uv pip install -e ".[vectors,signatures]"
 uv run provalume eval --json --out /tmp/mine.json
 diff <(jq -S '.scenarios[].passed' evals/results/baseline/results.json) \
      <(jq -S '.scenarios[].passed' /tmp/mine.json)
+uv run provalume eval --suite trajectories --json --out /tmp/traj.json
+diff <(jq -S '.trajectories[].passed' evals/results/trajectories/results.json) \
+     <(jq -S '.trajectories[].passed' /tmp/traj.json)
 ```
 
 Latency figures will differ by machine; the pass/fail results and the governance
@@ -137,7 +235,11 @@ metrics (poisoning, leakage, staleness) should not.
 
 ## What would make these numbers meaningful
 
-Production trajectories. Until Provalume has run against real agent fleets, these
-scenarios verify that the mechanisms work as designed — which is worth having and
-is not the same as knowing they matter. That gap is the first item in
-[`LIMITATIONS.md`](LIMITATIONS.md).
+More trajectories, and agent outcomes. The trajectory suite grounds the
+scenario mechanisms in what real runs actually recorded and retrieved — a
+first step past synthetic fixtures, taken with placeholder agents on one
+scripted project family. What would move the needle next: trajectories from
+unrelated real projects dropped into the same fixture format, and A/B runs
+with real agents that could honestly populate `task_completion`,
+`verification_improvement`, and `review_cycle_reduction`. Until then the gap
+remains the first item in [`LIMITATIONS.md`](LIMITATIONS.md).

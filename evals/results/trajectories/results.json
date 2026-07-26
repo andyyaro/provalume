@@ -1,0 +1,150 @@
+{
+  "metrics": {
+    "context": {
+      "max_chars": 1763,
+      "mean_chars": 461.9,
+      "samples": 22
+    },
+    "cross_scope_leakage": {
+      "denominator": 0,
+      "numerator": 0,
+      "rate": 0.0
+    },
+    "digest_inclusion": {
+      "denominator": 15,
+      "numerator": 15,
+      "rate": 1.0
+    },
+    "false_warnings": {
+      "denominator": 9,
+      "numerator": 0,
+      "rate": 0.0
+    },
+    "occurrence_fidelity": {
+      "denominator": 16,
+      "numerator": 16,
+      "rate": 1.0
+    },
+    "poisoning_success": {
+      "denominator": 0,
+      "numerator": 0,
+      "rate": 0.0
+    },
+    "procedure_reuse": {
+      "denominator": 0,
+      "numerator": 0,
+      "rate": 0.0
+    },
+    "rebuild_latency": {
+      "count": 4,
+      "max_ms": 8.597,
+      "median_ms": 6.542,
+      "p95_ms": 8.597
+    },
+    "recall_coverage": {
+      "denominator": 4,
+      "numerator": 4,
+      "rate": 1.0
+    },
+    "recall_precision": {
+      "denominator": 4,
+      "numerator": 4,
+      "rate": 1.0
+    },
+    "repeated_error": {
+      "denominator": 16,
+      "numerator": 0,
+      "rate": 0.0
+    },
+    "resolution_surfacing": {
+      "denominator": 6,
+      "numerator": 6,
+      "rate": 1.0
+    },
+    "retrieval_latency": {
+      "count": 66,
+      "max_ms": 0.774,
+      "median_ms": 0.206,
+      "p95_ms": 0.546
+    },
+    "review_cycle_reduction": {
+      "denominator": 0,
+      "numerator": 0,
+      "rate": 0.0
+    },
+    "stale_memory": {
+      "denominator": 0,
+      "numerator": 0,
+      "rate": 0.0
+    },
+    "task_completion": {
+      "denominator": 0,
+      "numerator": 0,
+      "rate": 0.0
+    },
+    "verification_improvement": {
+      "denominator": 0,
+      "numerator": 0,
+      "rate": 0.0
+    },
+    "write_latency": {
+      "count": 73,
+      "max_ms": 2.196,
+      "median_ms": 0.66,
+      "p95_ms": 1.625
+    }
+  },
+  "note": "All figures are Provalume measured against Provalume, replaying call logs captured from real Orkestra runs. No comparison against another system is made or implied.",
+  "pass_count": 4,
+  "passed": true,
+  "summary": "4/4 trajectories passed",
+  "total": 4,
+  "trajectories": [
+    {
+      "description": "A dependency-shaped failure (ModuleNotFoundError at collection) is recorded, recalled by its error text, resolved by a landing \u2014 and stays invisible to a feature-description query",
+      "elapsed_ms": 32.34,
+      "failures": [],
+      "id": 1,
+      "name": "env-gotcha",
+      "notes": [
+        "drift@19 brief_digest: captured items=4 chars=1740, replayed items=4 chars=1761",
+        "probe#2(recall) exercised: LIMITATIONS.md \u00a713: the gotcha is findable by its error text, not by a description of the problem"
+      ],
+      "passed": true
+    },
+    {
+      "description": "A task fails its gate twice, a fix lands in run 2, and the resolution is presented at every later decision point",
+      "elapsed_ms": 27.04,
+      "failures": [],
+      "id": 2,
+      "name": "fix-lands",
+      "notes": [
+        "drift@26 brief_digest: captured items=4 chars=1742, replayed items=4 chars=1763",
+        "probe#2(recall) exercised: LIMITATIONS.md \u00a713: the gotcha is keyed on command and error, so the feature description finds nothing under lexical retrieval"
+      ],
+      "passed": true
+    },
+    {
+      "description": "The same gate fails four times across two runs with no fix; occurrences accumulate, nothing is ever presented as resolved, and the abort decision is remembered",
+      "elapsed_ms": 17.06,
+      "failures": [],
+      "id": 3,
+      "name": "repeat-blocked",
+      "notes": [
+        "probe#3(recall) exercised: LIMITATIONS.md \u00a713: the gotcha stays invisible to the feature description; the decision matches only through the literal word 'retry' in its rejected option"
+      ],
+      "passed": true
+    },
+    {
+      "description": "A two-command gate where lint always passes and pytest fails: the gate warns about the failing command at every decision point and never once warns about the passing one",
+      "elapsed_ms": 33.34,
+      "failures": [],
+      "id": 4,
+      "name": "two-command-gate",
+      "notes": [
+        "drift@36 brief_digest: captured items=4 chars=1742, replayed items=4 chars=1763"
+      ],
+      "passed": true
+    }
+  ]
+}

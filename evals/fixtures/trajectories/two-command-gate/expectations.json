@@ -1,0 +1,36 @@
+{
+  "trajectory": "two-command-gate",
+  "competencies": ["premise-awareness", "workflow-knowledge"],
+  "description": "A two-command gate where lint always passes and pytest fails: the gate warns about the failing command at every decision point and never once warns about the passing one",
+  "captured": {
+    "date": "2026-07-26",
+    "provalume": "0.1.4 (installed from PyPI)",
+    "orkestra": "orkestra-runtime 0.5.2, provalume-memory-integration branch @ 18457c2",
+    "scenario": "Fixture variant with verify commands [lint_ok.py, pytest]. Run 1 blocks on pytest; the retry fix is committed by hand; run 2 lands all three tasks. Every decision point consults preflight once per command."
+  },
+  "checkpoints": [
+    {"call": 2, "expect": {"items": 0}},
+    {"call": 3, "expect": {"matched": false}},
+    {"call": 4, "expect": {"matched": false}},
+    {"call": 8, "expect": {"items": 1, "contains": ["Agent performance", "alpha on implement: 1/1 succeeded (100%)."]}},
+    {"call": 9, "expect": {"matched": false}},
+    {"call": 10, "expect": {"matched": true, "occurrences": 1, "resolved": false, "min_confidence": 0.85}},
+    {"call": 16, "expect": {"items": 2, "contains": ["Agent performance", "alpha on implement: 1/1 succeeded (100%).", "beta on implement: 1/1 succeeded (100%), 1 required fallback."]}},
+    {"call": 17, "expect": {"matched": false}},
+    {"call": 18, "expect": {"matched": true, "occurrences": 2, "resolved": false, "min_confidence": 0.85}},
+    {"call": 26, "expect": {"items": 0}},
+    {"call": 27, "expect": {"matched": false}},
+    {"call": 28, "expect": {"matched": true, "occurrences": 2, "resolution_names_commit_of_call": 25}},
+    {"call": 36, "expect": {"items": 4, "contains": ["Prior failures and lessons", "Verified procedures", "failed (verify_failed)", "[VERIFIED+LANDED]"]}},
+    {"call": 37, "expect": {"matched": false}},
+    {"call": 38, "expect": {"matched": true, "occurrences": 2, "resolution_names_commit_of_call": 25}}
+  ],
+  "probes": [
+    {"kind": "recall", "query": "transient upstream reset",
+     "expect": {"total": 1, "top_type": "gotcha", "top_trust": "verified"}},
+    {"kind": "ladder", "expect_counts": [
+      {"type": "gotcha", "trust": "verified", "min": 1},
+      {"type": "procedural", "trust": "integrated", "min": 6}
+    ]}
+  ]
+}
