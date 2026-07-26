@@ -162,15 +162,20 @@ derives nothing (threats T17, T28).
 
 These four types were declared ahead of their writers, deliberately: the
 schema was locked at design time (ADR-0020) and the writers arrive milestone
-by milestone. **`blast_radius.recorded`'s writer is live**:
+by milestone. **The `blast_radius.recorded`, `freshness.triggered`, and
+`relevance.assessed` writers are live**:
 `record_verification` now attaches a radius to each claim record (procedural,
 gotcha) it produces, extracted without executing the verification command or
 any project code — read-only git plumbing only, fail-open, nothing recorded
 for a git-less client. When the same record accrues several radius events (a
 repeated failure re-anchors its gotcha), **the latest by journal order wins**
-for freshness derivation. The remaining three writers arrive with M2
-(triggering), M3 (relevance), M4 (re-execution); until then those events are
-stored and inert, which is the intended state.
+for freshness derivation. The watcher (`provalume freshness <sha>`)
+triggers and assesses in one pass: trivia-only landings (whitespace,
+comments, docstrings) discharge their own trigger and leave the record
+`current`; everything else — including a file the differ cannot parse —
+stays `suspect`. The one remaining writer, `reverification.executed`,
+arrives with M4; until then that event is stored and inert, which is the
+intended state.
 
 ## Recording events
 
