@@ -23,6 +23,7 @@ is reported by ``provalume doctor`` rather than hidden.
 from __future__ import annotations
 
 import contextlib
+import re
 import shutil
 import subprocess  # nosec B404 - read-only git invocations, never shell=True
 from pathlib import Path
@@ -32,6 +33,11 @@ from provalume.schemas.scope import Applicability
 #: Every subprocess call is bounded. A pathological repository must slow a query,
 #: never hang one.
 _TIMEOUT_S = 10.0
+
+#: ``git version 2.39.5 (Apple Git-154)`` -> ``2.39.5``. Linear by construction:
+#: every repetition of the group must consume a literal ``.``, so no input can be
+#: split two ways (the ReDoS shape guarded in tests/security/test_redos.py).
+_VERSION = re.compile(r"\d+(?:\.\d+)*")
 
 
 class GitUnavailable(Exception):
@@ -200,6 +206,74 @@ class GitInfo:
         except GitUnavailable:
             return None
         return self.is_ancestor(sha, head)
+
+    def changed_files(self, sha: str) -> tuple[str, ...] | None:
+        """The paths ``sha`` touched — sorted, de-duplicated, repository-relative.
+
+        Three cases, and the differences between them are the whole point:
+
+        - **Ordinary commit** — the diff against its one parent.
+        - **Merge commit** — the diff against its **first** parent, which for an
+          integration merge is what "what did this landing change" means. Every
+          other reading is worse: the default plumbing answer for a merge is
+          *nothing at all*, diffing against the second parent would attribute
+          the whole trunk to the merge, and diffing against all parents at once
+          would attribute the whole side branch to it.
+        - **Root commit** — nothing to diff against, so every file in it.
+
+        Names are whatever git reports. Plumbing does no rename detection (the
+        ``diff.renames`` default is porcelain-only), so a rename appears as both
+        its old and its new path, and a deletion's path still counts as touched
+        — code that referred to a file is very much affected by its removal.
+
+        Returns ``None`` when the question could not be answered — no
+        repository, unknown or unreadable commit, git failure — and ``()`` for a
+        commit that genuinely changed nothing (``git commit --allow-empty``).
+        The two are kept apart because a caller deciding between "nothing to do"
+        and "degrade" needs to tell them apart.
+        """
+        if not self.available or not sha:
+            return None
+        try:
+            # One call that both resolves the revision and names its parents:
+            # `rev-list --parents -n 1` prints "<commit> <parent>...". The
+            # trailing `--` ends the revision list, so a revision that also
+            # names a file cannot be read as a pathspec.
+            described = self._run(["rev-list", "--parents", "-n", "1", sha, "--"]).split()
+        except GitUnavailable:
+            return None
+        if not described:
+            return None
+
+        commit, parents = described[0], described[1:]
+        # `-z` keeps a path containing a space, a quote, or a newline intact;
+        # without it git C-quotes such names and the caller would compare a
+        # quoted string against a real path forever.
+        args = ["diff-tree", "--no-commit-id", "--name-only", "-r", "-z"]
+        args += [parents[0], commit, "--"] if parents else ["--root", commit, "--"]
+        try:
+            output = self._run(args)
+        except GitUnavailable:
+            return None
+        return tuple(sorted({path for path in output.split("\0") if path}))
+
+    def git_version(self) -> str | None:
+        """The numeric version of the git executable, e.g. ``"2.39.2"``.
+
+        Recorded alongside anything git extracted, so a result produced by one
+        git can be told from a result produced by another. ``None`` when git
+        cannot be run or prints something with no version in it; not cached,
+        because it is asked for once per extraction and a cache that outlives an
+        upgrade would answer with the old version.
+        """
+        if not self.available:
+            return None
+        try:
+            reported = self._run(["--version"])
+        except GitUnavailable:
+            return None
+        match = _VERSION.search(reported)
+        return match.group(0) if match else None
 
 
 def applicability_at(
