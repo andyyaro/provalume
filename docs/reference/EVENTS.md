@@ -133,6 +133,26 @@ nobody can evaluate is a gate nobody should trust.
 Refusals are recorded because a refused call is a security signal, and a
 silently-dropped one is what an attacker wants.
 
+## Freshness (ADR-0020)
+
+**None of these can promote a memory.** They move the freshness axis only —
+deliberately absent from the evidence set, so code-grounded invalidation
+gains no trust authority.
+
+| Type | Moves freshness | Payload |
+|---|---|---|
+| `blast_radius.recorded` | → `current` (the record becomes watchable) | `record_id`, `method` (`coverage` \| `import_graph` \| `commit_touch`), `paths`, `line_ranges` (optional), `tool`, `tool_version`; envelope `commit_sha` names the commit the radius was measured at |
+| `freshness.triggered` | → `suspect`, unless a relevance verdict for the same trigger discharges it | `record_id`, `trigger_commit`, `changed_paths`, `intersecting_paths` |
+| `relevance.assessed` | verdict `irrelevant` → back to `current`; `relevant` → stays `suspect` | `record_id`, `trigger_commit`, `verdict` (`relevant` \| `irrelevant`), `differ_version`, `reason_code` (closed enum: `whitespace_only`, `comment_only`, `docstring_only`, `signature_changed`, `body_changed`, `import_changed`, `unparseable`) |
+| `reverification.executed` | outcome `passed` → `current`; `failed` → `stale`; `errored` → **no transition** (fail-open) | `record_id`, `trigger_commit`, `command`, `exit_code`, `duration_ms`, `environment_fingerprint`, `outcome` (`passed` \| `failed` \| `errored`) |
+
+`environment_fingerprint` is a hash over the interpreter version and the
+dependency lockfile — without it, `stale` cannot distinguish "the code broke
+this" from "the environment drifted".
+
+`freshness.triggered` fires only for **landed** commits, consistent with the
+rule that semantic truth requires a landing. Worktree state never triggers.
+
 ## Recording events
 
 The SDK's helpers cover the common cases and set `source` correctly:

@@ -72,6 +72,16 @@ FORBIDDEN_TOOLS: Final[frozenset[str]] = frozenset(
         "open_database",
         "set_database",
         "configure",
+        # Freshness (ADR-0020, threat T27): the axis is machine-observed and
+        # operator-gated. An MCP client that could trigger, relabel, or re-run
+        # would hold exactly the unattended-execution lever T27 exists to deny.
+        "reverify",
+        "reverify_record",
+        "trigger_freshness",
+        "set_freshness",
+        "mark_stale",
+        "mark_current",
+        "record_blast_radius",
     }
 )
 

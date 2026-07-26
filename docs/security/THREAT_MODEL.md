@@ -1,7 +1,10 @@
 # Provalume threat model
 
 **Status:** written before the trust and retrieval engine was implemented.
-**Applies to:** Provalume 0.1.0.
+T27–T29 added 2026-07-26, before the re-verification executor they describe was
+implemented — same discipline, same reason.
+**Applies to:** Provalume 0.1.0; T27–T29 apply from the first release carrying
+the freshness axis.
 **Companion documents:** [`TRUST_MODEL.md`](TRUST_MODEL.md) (what trust states
 mean and how promotion works), [`MEMORY_POISONING.md`](MEMORY_POISONING.md) (the
 attack this project exists to survive), [`PRIVACY_MODEL.md`](PRIVACY_MODEL.md)
@@ -155,6 +158,20 @@ Severity is stated as the impact if the control fails, not as likelihood.
 | **T25** | **Oversized memory entries.** A single 50 MB "fact" bloats the database and consumes an entire digest budget. | Per-field and per-record size caps at admission, enforced before the write. Oversized input is rejected with a clear error, not silently truncated. | Medium |
 | **T26** | **Malicious dependency metadata / supply chain.** A compromised release of a dependency, or a typosquat of `provalume` itself. | Three mandatory runtime dependencies, all widely used and pinned to major versions. Every heavy component is an optional extra. CI runs `pip-audit` and dependency review; releases are published through PyPI Trusted Publishing (OIDC, no long-lived token) with attestations. No install-time code execution beyond a standard build backend. | Medium |
 
+### Automatic re-execution and freshness
+
+The freshness axis introduces a capability Provalume has never had: acting on a
+stored record without an operator watching. A verification command today runs
+once, at recording time, under the eye of whoever ran it. Automatic
+re-verification removes that human from the loop, which changes the threat
+class of every stored command from *data* to *potential execution*.
+
+| ID | Threat | Control | Severity |
+|---|---|---|---|
+| **T27** | **Stored-command re-execution as a code-execution path.** A poisoned proposal, a tampered record, or simply a careless original command becomes something Provalume itself executes later, unattended. This is the closest thing to remote code execution this design has ever contained. | Re-execution is **off by default**: the command allowlist ships empty, and an empty allowlist disables the feature entirely. Enabling it is an explicit per-repository operator action. Only records at trust `verified` or above are eligible — agent-sourced records are capped at `observed` and can never reach the executor without independent deterministic evidence having promoted them first. Commands run as argument vectors, never `shell=True`, under a hard timeout that is recorded in the event. There is no daemon: execution happens only inside an explicit CLI invocation or an operator-installed hook. Every execution is journaled with command, exit code, duration, and environment fingerprint. | Critical |
+| **T28** | **Freshness suppression as a trust-erosion attack.** An attacker who can land commits touches files inside a true record's blast radius so the record flips to `suspect` (or engineers a failing re-run to reach `stale`), degrading confidence in true facts — potentially so a poisoned alternative outranks them. | Only **landed** commits trigger freshness transitions — the same bar semantic truth itself requires, so the attacker needs the same access that already lets them change project truth. `suspect` and `stale` relabel and demote; they never remove a record from retrieval and never grant trust to anything else. `stale` additionally requires an actual failed re-execution under the T27 control set, with the environment fingerprint recorded. Reviewer invalidation remains a separate, human judgement this machinery cannot reach. The full trigger → assessment → execution chain is appended to the journal and auditable. | Medium |
+| **T29** | **Trigger and re-execution flooding.** A commit touching a widely shared path (a `conftest.py`, a core module) intersects many blast radii at once; a burst of such commits multiplies journal writes and, with execution enabled, queues many re-runs. | Triggering is pure computation over git plumbing, invoked explicitly — there is no background watcher to saturate. Event volume is bounded by records × commits actually processed, with the standard per-event size caps. Re-execution is bounded by the allowlist, runs serially within one invocation, and every run carries the hard timeout. | Medium |
+
 ## 5. Explicit non-goals for 0.1.0
 
 Stating these plainly is part of the model. Provalume does **not** defend against:
@@ -221,5 +238,12 @@ the only control on a path.
 **Provenance resolution depends on the Git repository being present.** Commit
 existence and ancestry cannot be checked in a bare or absent checkout; in that
 case applicability is labelled uncertain rather than assumed valid.
+
+**Re-execution runs with the operator's privileges (T27).** The allowlist,
+trust floor, argv-only invocation, and timeout constrain *which* commands run
+and *how*; they do not sandbox them. A command the operator allowlists can do
+whatever the operator can do. Sandboxing is out of scope for this design;
+the control is that nothing runs the operator did not explicitly pattern-match
+in advance, and that the default is that nothing runs at all.
 
 Report a vulnerability per [`SECURITY.md`](../../SECURITY.md).
