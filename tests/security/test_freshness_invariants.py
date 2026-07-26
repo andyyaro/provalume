@@ -206,10 +206,6 @@ def _land_commit(repo: Path, filename: str, content: str) -> str:
 # --- I1: the freshness engine is deterministic stdlib + provalume ------------
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="red until M1: the freshness engine package does not exist yet",
-)
 def test_freshness_engine_is_stdlib_and_provalume_only() -> None:
     """I1. No model SDK, no network client, no third-party import of any kind
     inside the freshness engine. The non-empty assertion is part of the same
@@ -431,31 +427,51 @@ def test_surface_guard_rejects_a_freshness_tool() -> None:
     strict=True,
     reason="red until M1: blast-radius extraction does not exist yet",
 )
-def test_extraction_fails_open(pv: Provalume, monkeypatch: pytest.MonkeyPatch) -> None:
-    """I5, extraction stage. Positive control first: on a healthy path the
-    extractor MUST append a `blast_radius.recorded` event. Then with every
-    subprocess exploding and an unreadable root, it returns None, appends no
+def test_extraction_fails_open(
+    pv: Provalume, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """I5, extraction stage. Positive control first: against a real project
+    tree, the extractor MUST append a `blast_radius.recorded` event whose
+    paths cover the entry point and its import closure. Then with every
+    subprocess exploding and file reads failing, it returns None, appends no
     radius, and raises nothing."""
     from provalume.freshness.blast_radius import record_blast_radius
+
+    root = tmp_path / "proj"
+    (root / "tests").mkdir(parents=True)
+    (root / "mod.py").write_text("VALUE = 1\n")
+    (root / "tests" / "test_mod.py").write_text(
+        "import mod\n\n\ndef test_value():\n    assert mod.VALUE == 1\n"
+    )
 
     pv.record_verification(command="pytest -q tests/", passed=True)
     record_id = next(m.memory_id for m in pv.memory_records(limit=10))
 
     produced = record_blast_radius(
-        pv, record_id=record_id, command=f"{sys.executable} -m pytest tests/"
+        pv,
+        record_id=record_id,
+        command=f"{sys.executable} -m pytest tests/",
+        root=root,
     )
     assert produced is not None
     radii = [e for e in pv.events() if e.event_type == EventType.BLAST_RADIUS_RECORDED]
     assert len(radii) == 1, "healthy extraction must record exactly one radius"
+    paths = set(produced.payload["paths"])
+    assert "tests/test_mod.py" in paths
+    assert "mod.py" in paths, "the import closure must reach what the entry imports"
+    assert produced.payload["method"] == "import_graph"
 
     def explode(*args: object, **kwargs: object) -> None:
-        raise OSError("injected: no subprocess available")
+        raise OSError("injected: no subprocess / unreadable file")
 
     monkeypatch.setattr(subprocess, "run", explode)
     monkeypatch.setattr(subprocess, "Popen", explode)
     monkeypatch.setattr(Path, "read_text", explode)
     result = record_blast_radius(
-        pv, record_id=record_id, command=f"{sys.executable} -m pytest tests/"
+        pv,
+        record_id=record_id,
+        command=f"{sys.executable} -m pytest tests/",
+        root=root,
     )
     assert result is None
     radii = [e for e in pv.events() if e.event_type == EventType.BLAST_RADIUS_RECORDED]
