@@ -1034,20 +1034,23 @@ def reverify(
     # the execution cwd — anchors to the DATABASE's repository, never to
     # whatever directory the operator happens to be standing in. T27's
     # opt-in is per-repository; the enabling artifact must live in the
-    # repository whose records execute (M4 review, B2).
-    root_hint: Path | None = None
-    if db is not None:
+    # repository whose records execute (M4 review, B2). A database that
+    # does not live under a `.provalume/` directory has no repository to
+    # anchor to, and guessing (the old cwd fallback) is exactly what let a
+    # hostile tree's allowlist enable execution — refuse instead (R1).
+    if db is None:
+        root = Path.cwd()
+    else:
         resolved_db = Path(db).resolve()
-        if resolved_db.parent.name == ".provalume":
-            root_hint = resolved_db.parent.parent
-    pv = _open(db, project, root=root_hint)
-    root = root_hint
-    if root is None:
-        root = (
-            Path(pv.git.root)
-            if pv.git is not None and getattr(pv.git, "available", False)
-            else Path.cwd()
-        )
+        if resolved_db.parent.name != ".provalume":
+            err_console.print(
+                "[pv.error]error:[/] reverify requires the database under "
+                "<repository>/.provalume/ so the allowlist and execution root bind "
+                f"to that repository; {resolved_db} does not (THREAT_MODEL T27)."
+            )
+            raise typer.Exit(code=2)
+        root = resolved_db.parent.parent
+    pv = _open(db, project, root=root)
     patterns: list[str] = []
     allowlist_path = root / ".provalume" / "reverify-allowlist"
     try:

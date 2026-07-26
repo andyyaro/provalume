@@ -69,6 +69,7 @@ import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final
 
+from provalume.redact import REDACTED
 from provalume.schemas.events import EventType
 from provalume.schemas.freshness import ReverificationOutcome
 from provalume.schemas.memories import MemoryType
@@ -122,10 +123,14 @@ def _refused(
         log.warning("reverify refused: record %s belongs to another project", record_id)
         return None
     record_repo = memory.scope.repository_id
-    if record_repo and pv.repository_id and record_repo != pv.repository_id:
+    if record_repo != pv.repository_id:
+        # Strict equality, fail-closed on a half-known identity (M4 review,
+        # R1): a record with no repository identity must not execute in a
+        # tree that has one, and vice versa. Only both-unknown passes — a
+        # git-less project has no identity to check on either side.
         log.warning(
             "reverify refused: record %s belongs to repository %r, this tree is %r — "
-            "a foreign tree must not answer for it (T27)",
+            "a foreign or unidentified tree must not answer for it (T27)",
             record_id,
             record_repo,
             pv.repository_id,
@@ -166,6 +171,18 @@ def _refused(
         log.warning(
             "reverify refused: command of record %s contains the <TMP> normalization "
             "placeholder and cannot be faithfully re-run",
+            record_id,
+        )
+        return None
+    if REDACTED in command:
+        # Redaction runs at admission, BEFORE the writer stores raw_command,
+        # so a credential-shaped token leaves the sentinel in the stored
+        # string. Running it would let the engine's own redaction break a
+        # true claim (M4 review, N1 — the same class as re-running the
+        # normalized rewrite).
+        log.warning(
+            "reverify refused: command of record %s carries the redaction sentinel "
+            "and cannot be faithfully re-run",
             record_id,
         )
         return None
