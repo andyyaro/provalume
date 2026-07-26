@@ -3,7 +3,9 @@
 Pure computation over git plumbing — no execution, no network. Given a
 **landed** commit, compute its changed paths, intersect them against the
 recorded blast radii, and append one ``freshness.triggered`` event per
-touched record; projection flips those records to ``suspect``.
+touched record; projection flips those records to ``suspect`` and books the
+trigger as outstanding until a relevance verdict or a passing re-run
+discharges it.
 
 Landed-only is the caller's assertion, consistent with the rule that semantic
 truth requires a landing: the CLI and hook documentation say to invoke this
@@ -13,14 +15,17 @@ which commit was claimed. Worktree state never triggers.
 There is no daemon. This runs inside an explicit CLI invocation or an
 operator-installed hook, and nowhere else (ADR-0020).
 
-Fail-open (I5): any failure — git unavailable, an unreadable commit — appends
-nothing, logs, and never raises. A commit that changed nothing in the
-client's world is a clean no-op, not a failure.
+Fail-open (I5) — with honest reporting: an unreadable commit is *degradation*
+and says so (``commit_readable=False``); a commit that changed nothing in the
+client's world is a clean no-op; a mid-loop failure returns what was actually
+appended (``completed=False``) rather than denying work already done. Nothing
+here ever raises.
 """
 
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Final
 
 from provalume.schemas.events import EventType
@@ -39,32 +44,59 @@ log = logging.getLogger("provalume.freshness")
 MAX_CHANGED_PATHS_RECORDED: Final = 2_000
 
 
-def process_landed_commit(pv: Provalume, *, commit_sha: str) -> list[Event]:
+@dataclass
+class WatchResult:
+    """What one scan did — and whether it could do it at all.
+
+    ``commit_readable=False`` means the commit could not be read (bad sha,
+    shallow clone, absent object): the operator's hook is mis-wired and a
+    caller must not present it as "nothing to mark". ``completed=False``
+    means a mid-scan failure: ``triggered`` still lists every event that was
+    actually appended and projected, because denying finished work would be
+    its own lie. ``skipped`` counts records whose trigger for this commit
+    was already outstanding — re-scanning a commit is idempotent.
+    """
+
+    commit_readable: bool = True
+    completed: bool = True
+    triggered: list[Event] = field(default_factory=list)
+    skipped: int = 0
+
+
+def process_landed_commit(pv: Provalume, *, commit_sha: str) -> WatchResult:
     """Trigger freshness for every record ``commit_sha``'s landing touched.
 
-    Returns the appended ``freshness.triggered`` events, in deterministic
-    (record-id) order. Empty on a clean no-op and on any failure.
+    Events are appended in deterministic (record-id) order. Never raises.
     """
+    result = WatchResult()
     try:
         git = getattr(pv, "git", None)
         if git is None or not getattr(git, "available", False):
             log.debug("freshness watcher: no repository, nothing to trigger")
-            return []
+            result.commit_readable = False
+            return result
         changed = git.changed_files(commit_sha)
         if changed is None:
             log.warning("freshness watcher: could not read commit %s", commit_sha[:12])
-            return []
+            result.commit_readable = False
+            return result
         if not changed:
-            return []
+            return result
         touched = pv.memories.records_touching(pv.project_id, changed)
         if not touched:
-            return []
+            return result
         recorded_changed = list(changed)
         total = len(recorded_changed)
         if total > MAX_CHANGED_PATHS_RECORDED:
             recorded_changed = []
-        events: list[Event] = []
         for record_id, intersecting in touched.items():
+            if commit_sha in pv.memories.outstanding_triggers(
+                project_id=pv.project_id, record_id=record_id
+            ):
+                # Already booked: a hook that fires twice must not multiply
+                # journal volume (T29).
+                result.skipped += 1
+                continue
             payload = {
                 "record_id": record_id,
                 "trigger_commit": commit_sha,
@@ -72,7 +104,7 @@ def process_landed_commit(pv: Provalume, *, commit_sha: str) -> list[Event]:
                 "changed_paths_total": total,
                 "intersecting_paths": list(intersecting),
             }
-            events.append(
+            result.triggered.append(
                 pv.record_event(
                     EventType.FRESHNESS_TRIGGERED,
                     source=Source.KERNEL,
@@ -80,7 +112,8 @@ def process_landed_commit(pv: Provalume, *, commit_sha: str) -> list[Event]:
                     commit_sha=commit_sha,
                 )
             )
-        return events
+        return result
     except Exception:
         log.warning("freshness watcher failed open", exc_info=True)
-        return []
+        result.completed = False
+        return result

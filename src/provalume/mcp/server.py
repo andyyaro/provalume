@@ -424,15 +424,13 @@ class McpServer:
                 structured={"count": 0, "results": []},
             )
 
+        from provalume.retrieval.digest import rendered_label
         from provalume.schemas.retrieval import DIGEST_BANNER
 
         lines = [DIGEST_BANNER, "", f"{heading} ({len(results)} record(s)):", ""]
         payload: list[dict[str, Any]] = []
         for result in results:
-            label = result.trust_state.value.upper()
-            if result.freshness.value != "current":
-                label += f" · {result.freshness.value.upper()}"
-            lines.append(f"- [{label}] {result.text}")
+            lines.append(f"- [{rendered_label(result)}] {result.text}")
             if result.provenance_summary:
                 lines.append(f"  evidence: {result.provenance_summary}")
             if not result.presentable_as_current_truth:

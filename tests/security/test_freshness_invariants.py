@@ -85,14 +85,21 @@ FRESHNESS_EVENT_TYPES = frozenset(
 )
 
 
-def _freshness_events(pv: Provalume) -> list:
-    """One event of each freshness type, shaped per EVENTS.md."""
-    return [
+def _freshness_events(pv: Provalume, record_id: str | None = None) -> list:
+    """One event of each freshness type, shaped per EVENTS.md.
+
+    ``record_id`` should name a REAL record so the projection handlers run
+    their full bodies — an M2 review found the original literal id made these
+    guards green by short-circuit. A missing-id event is appended too, so the
+    nothing-to-derive path stays covered.
+    """
+    target = record_id or "mem_missing"
+    events = [
         pv.record_event(
             EventType.BLAST_RADIUS_RECORDED,
             source=Source.KERNEL,
             payload={
-                "record_id": "mem_guard",
+                "record_id": target,
                 "method": "coverage",
                 "paths": ["src/pkg/mod.py"],
                 "tool": "coverage.py",
@@ -104,7 +111,7 @@ def _freshness_events(pv: Provalume) -> list:
             EventType.FRESHNESS_TRIGGERED,
             source=Source.KERNEL,
             payload={
-                "record_id": "mem_guard",
+                "record_id": target,
                 "trigger_commit": "b" * 40,
                 "changed_paths": ["src/pkg/mod.py", "README.md"],
                 "intersecting_paths": ["src/pkg/mod.py"],
@@ -114,7 +121,7 @@ def _freshness_events(pv: Provalume) -> list:
             EventType.RELEVANCE_ASSESSED,
             source=Source.KERNEL,
             payload={
-                "record_id": "mem_guard",
+                "record_id": target,
                 "trigger_commit": "b" * 40,
                 "verdict": "relevant",
                 "differ_version": "1",
@@ -125,7 +132,7 @@ def _freshness_events(pv: Provalume) -> list:
             EventType.REVERIFICATION_EXECUTED,
             source=Source.KERNEL,
             payload={
-                "record_id": "mem_guard",
+                "record_id": target,
                 "trigger_commit": "b" * 40,
                 "command": "pytest -q tests/",
                 "exit_code": 1,
@@ -136,6 +143,20 @@ def _freshness_events(pv: Provalume) -> list:
             },
         ),
     ]
+    events.append(
+        pv.record_event(
+            EventType.FRESHNESS_TRIGGERED,
+            source=Source.KERNEL,
+            payload={
+                "record_id": "mem_missing",
+                "trigger_commit": "b" * 40,
+                "changed_paths": ["src/pkg/mod.py"],
+                "changed_paths_total": 1,
+                "intersecting_paths": ["src/pkg/mod.py"],
+            },
+        )
+    )
+    return events
 
 
 def _projection_snapshot(pv: Provalume) -> str:
@@ -240,8 +261,9 @@ def test_freshness_events_move_no_trust_state(pv: Provalume) -> None:
     this is the test that goes red."""
     pv.record_verification(command="pytest -q tests/", passed=True)
     pv.record_verification(command="pytest -q tests/", passed=False, excerpt="boom")
+    real = next(m.memory_id for m in pv.memory_records(limit=10))
     before = _trust_snapshot(pv)
-    _freshness_events(pv)
+    _freshness_events(pv, real)
     assert _trust_snapshot(pv) == before
     pv.rebuild()
     assert _trust_snapshot(pv) == before
@@ -354,7 +376,8 @@ def test_rebuild_is_byte_identical_with_freshness_events_present(pv: Provalume) 
     declaring the event types broke nothing."""
     pv.record_verification(command="pytest -q tests/", passed=True)
     pv.record_verification(command="pytest -q tests/", passed=False, excerpt="boom")
-    _freshness_events(pv)
+    real = next(m.memory_id for m in pv.memory_records(limit=10))
+    _freshness_events(pv, real)
     pv.rebuild()
     first = _projection_snapshot(pv)
     pv.rebuild()
@@ -371,7 +394,8 @@ def test_rebuild_never_executes_a_command(pv: Provalume, monkeypatch: pytest.Mon
         raise AssertionError("rebuild attempted to execute a subprocess (I3)")
 
     pv.record_verification(command="pytest -q tests/", passed=False, excerpt="boom")
-    _freshness_events(pv)
+    real = next(m.memory_id for m in pv.memory_records(limit=10))
+    _freshness_events(pv, real)
     monkeypatch.setattr(subprocess, "run", explode)
     monkeypatch.setattr(subprocess, "Popen", explode)
     pv.rebuild()
@@ -609,5 +633,16 @@ def test_the_record_path_spawns_nothing_but_git(
         pv.record_verification(command="make lint", passed=False, excerpt="boom")
         radii = [e for e in pv.events() if e.event_type == EventType.BLAST_RADIUS_RECORDED]
         assert radii, "positive control: radii must have been recorded"
+
+        # The scan path carries the same rule — the M2 gate says "no
+        # execution anywhere in this path", and this is what enforces it if a
+        # future edit puts an executing method on the watcher.
+        from provalume.freshness.watcher import process_landed_commit
+
+        sha = _land_commit(repo, "mod.py", "V = 3\n")
+        result = process_landed_commit(pv, commit_sha=sha)
+        assert result.commit_readable and result.triggered, (
+            "positive control: the scan must trigger under the spawn guard"
+        )
     finally:
         pv.close()

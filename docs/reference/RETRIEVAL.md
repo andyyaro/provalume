@@ -207,11 +207,13 @@ digest = pv.recall("integration tests").digest(char_budget=2000)
   control for instruction replay.
 - **Every item's bracket carries both axes** (ADR-0020): trust, then
   freshness when it is a signal — `[VERIFIED+LANDED · SUSPECT]`,
-  `[INTEGRATED · STALE]`, `[VERIFIED · UNVERIFIABLE]`. `current` is the
+  `[VERIFIED+LANDED · STALE]`, `[VERIFIED · UNVERIFIABLE]`. `current` is the
   unmarked state, so the word never appears and cannot be confused with the
-  applicability line's vocabulary. A record whose covering code changed says
-  so in the same bracket that vouches for it; the full state also rides in
-  `DigestItem.freshness` and `RecallResult.freshness`.
+  applicability line's vocabulary; `unverifiable` renders only on the types
+  a radius can attach to (procedural, gotcha), where it is a real signal
+  rather than the only value the type can hold. A record whose covering code
+  changed says so in the same bracket that vouches for it; the full state
+  also rides in `DigestItem.freshness` and `RecallResult.freshness`.
 - **The budget is a hard ceiling enforced by construction.** Items are measured
   before inclusion — against the footer that will actually be rendered, not a
   fixed guess at its size — so the digest is never assembled and then trimmed. A

@@ -395,10 +395,11 @@ def explain_command(
         err_console.print(f"[pv.error]no such memory:[/] {memory_id}")
         raise typer.Exit(code=1)
 
-    if _emit(provenance.model_dump(), as_json=json):
+    memory = pv.memories.get(memory_id)
+    freshness = memory.freshness.value if memory is not None else "unverifiable"
+    if _emit({**provenance.model_dump(), "freshness": freshness}, as_json=json):
         return
 
-    memory = pv.memories.get(memory_id)
     console.print(f"[pv.heading]{memory_id}[/]")
     if memory is not None:
         console.print(f"  {memory.text}\n")
@@ -408,7 +409,7 @@ def explain_command(
     console.print(f"  verification   {provenance.verification_state}")
     console.print(f"  review         {provenance.review_state}")
     console.print(f"  integration    {provenance.integration_state}")
-    console.print(f"  freshness      {memory.freshness.value}")
+    console.print(f"  freshness      {freshness}")
     console.print(
         f"  provenance     [pv.provenance]{provenance.resolution}[/] "
         f"— {provenance.resolution_detail}"
@@ -519,6 +520,10 @@ def memories(
     db: DbOption = None,
     project: ProjectOption = None,
     trust: Annotated[str | None, typer.Option("--trust", help="Exact trust state.")] = None,
+    freshness: Annotated[
+        str | None,
+        typer.Option("--freshness", help="Exact freshness state (e.g. suspect, stale)."),
+    ] = None,
     types: Annotated[list[str] | None, typer.Option("--type", "-t")] = None,
     limit: Annotated[int, typer.Option("--limit", "-n")] = 25,
     explain: Annotated[bool, typer.Option("--explain")] = False,
@@ -528,9 +533,12 @@ def memories(
     from provalume.schemas.memories import MemoryFilter
 
     pv = _open(db, project)
+    from provalume.schemas.freshness import FreshnessState
+
     spec = MemoryFilter(
         project_id=pv.project_id,
         trust_states=(TrustState(trust),) if trust else (),
+        freshness=FreshnessState(freshness) if freshness else None,
         memory_types=tuple(MemoryType(t) for t in (types or [])),
         include_terminal=True,
         current_only=False,
@@ -849,22 +857,46 @@ def freshness(
     if not sha:
         console.print("[pv.error]No commit to scan: not in a repository and none given.[/]")
         raise typer.Exit(code=1)
-    events = process_landed_commit(pv, commit_sha=sha)
+    result = process_landed_commit(pv, commit_sha=sha)
     payload = {
         "commit": sha,
-        "triggered": sorted(str(e.payload.get("record_id", "")) for e in events),
+        "commit_readable": result.commit_readable,
+        "completed": result.completed,
+        "skipped_already_outstanding": result.skipped,
+        "triggered": sorted(str(e.payload.get("record_id", "")) for e in result.triggered),
     }
     if _emit(payload, as_json=json):
+        if not result.commit_readable or not result.completed:
+            raise typer.Exit(code=1)
         return
-    if not events:
+    if not result.commit_readable:
+        err_console.print(
+            f"[pv.error]Could not read commit {sha[:12]}[/] — bad revision, shallow "
+            "clone, or no repository. Nothing was scanned; this is not a clean result."
+        )
+        raise typer.Exit(code=1)
+    if result.triggered:
+        console.print(
+            f"[pv.warning]{len(result.triggered)} record(s) marked suspect[/] by commit {sha[:12]}:"
+        )
+        for event in result.triggered:
+            intersecting = ", ".join(event.payload.get("intersecting_paths", [])[:5])
+            console.print(f"  {event.payload.get('record_id', '')}  [pv.muted]{intersecting}[/]")
+    elif result.skipped:
+        console.print(
+            f"[pv.muted]{result.skipped} record(s) already marked for {sha[:12]} — "
+            "re-scan is a no-op.[/]"
+        )
+    else:
         console.print(
             f"[pv.muted]No recorded blast radius intersects {sha[:12]} — nothing to mark.[/]"
         )
-        return
-    console.print(f"[pv.warning]{len(events)} record(s) marked suspect[/] by commit {sha[:12]}:")
-    for event in events:
-        intersecting = ", ".join(event.payload.get("intersecting_paths", [])[:5])
-        console.print(f"  {event.payload.get('record_id', '')}  [pv.muted]{intersecting}[/]")
+    if not result.completed:
+        err_console.print(
+            "[pv.error]The scan did not complete[/] — the records listed above were "
+            "marked before the failure; the journal has the fail-open log."
+        )
+        raise typer.Exit(code=1)
 
 
 @app.command()

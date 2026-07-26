@@ -29,6 +29,7 @@ from provalume.schemas.events import Event, EventType
 from provalume.schemas.freshness import FreshnessState, RelevanceVerdict, ReverificationOutcome
 from provalume.schemas.memories import CLAIM_TYPES, Memory, MemoryType, Transition
 from provalume.schemas.trust import (
+    TERMINAL_STATES,
     IntegrationState,
     ReviewState,
     Source,
@@ -280,6 +281,9 @@ class Projector:
             # A record from another project must be unreachable even by a
             # crafted record_id (threat T9).
             return None
+        if memory.trust_state in TERMINAL_STATES:
+            # A withdrawn record has nothing left to be suspect about.
+            return None
         return memory
 
     def _set_freshness(self, memory: Memory, state: FreshnessState, stats: ProjectionStats) -> None:
@@ -294,13 +298,21 @@ class Projector:
         paths = tuple(str(p) for p in event.payload.get("paths", []) if p)
         if not paths:
             return
-        self.repository.replace_blast_radius(
-            record_id=memory.memory_id,
-            project_id=memory.scope.project_id,
-            method=str(event.payload.get("method", "")),
-            paths=paths,
-        )
-        self._set_freshness(memory, FreshnessState.CURRENT, stats)
+        # One transaction: the radius rows, the discharge, and the column move
+        # together or not at all (nested tx reuses the outer transaction).
+        with self.repository.db.tx():
+            self.repository.replace_blast_radius(
+                record_id=memory.memory_id,
+                project_id=memory.scope.project_id,
+                method=str(event.payload.get("method", "")),
+                paths=paths,
+            )
+            # A radius is a fresh measurement against the tree that contains
+            # every landed commit, so it discharges whatever was outstanding.
+            self.repository.clear_triggers(
+                project_id=memory.scope.project_id, record_id=memory.memory_id
+            )
+            self._set_freshness(memory, FreshnessState.CURRENT, stats)
 
     def _on_freshness_trigger(
         self, event: Event, landing: TrustState, stats: ProjectionStats
@@ -308,16 +320,46 @@ class Projector:
         memory = self._freshness_target(event)
         if memory is None:
             return
-        self._set_freshness(memory, FreshnessState.SUSPECT, stats)
+        trigger_commit = str(event.payload.get("trigger_commit", ""))
+        if not trigger_commit:
+            return  # malformed: stored, derives nothing
+        with self.repository.db.tx():
+            self.repository.add_outstanding_trigger(
+                project_id=memory.scope.project_id,
+                record_id=memory.memory_id,
+                trigger_commit=trigger_commit,
+            )
+            if memory.freshness is not FreshnessState.STALE:
+                # Stale dominates: a further touch cannot make a failed re-run
+                # less failed.
+                self._set_freshness(memory, FreshnessState.SUSPECT, stats)
 
     def _on_relevance(self, event: Event, landing: TrustState, stats: ProjectionStats) -> None:
+        """A verdict answers ONE trigger. The record returns to `current`
+        only when no trigger remains outstanding — a single irrelevant
+        verdict must never discharge changes it was not asked about (a false
+        `current` is the failure this axis exists to prevent)."""
         memory = self._freshness_target(event)
         if memory is None:
             return
         verdict = str(event.payload.get("verdict", ""))
-        if verdict == RelevanceVerdict.IRRELEVANT.value:
-            self._set_freshness(memory, FreshnessState.CURRENT, stats)
-        elif verdict == RelevanceVerdict.RELEVANT.value:
+        trigger_commit = str(event.payload.get("trigger_commit", ""))
+        if verdict == RelevanceVerdict.IRRELEVANT.value and trigger_commit:
+            with self.repository.db.tx():
+                self.repository.discharge_trigger(
+                    project_id=memory.scope.project_id,
+                    record_id=memory.memory_id,
+                    trigger_commit=trigger_commit,
+                )
+                outstanding = self.repository.outstanding_triggers(
+                    project_id=memory.scope.project_id, record_id=memory.memory_id
+                )
+                if not outstanding and memory.freshness is FreshnessState.SUSPECT:
+                    self._set_freshness(memory, FreshnessState.CURRENT, stats)
+        elif (
+            verdict == RelevanceVerdict.RELEVANT.value
+            and memory.freshness is not FreshnessState.STALE
+        ):
             self._set_freshness(memory, FreshnessState.SUSPECT, stats)
         # Any other verdict is a malformed event: stored, derives nothing.
 
@@ -327,7 +369,13 @@ class Projector:
             return
         outcome = str(event.payload.get("outcome", ""))
         if outcome == ReverificationOutcome.PASSED.value:
-            self._set_freshness(memory, FreshnessState.CURRENT, stats)
+            # The re-run executed against the tree containing every landed
+            # commit, so it answers every outstanding trigger at once.
+            with self.repository.db.tx():
+                self.repository.clear_triggers(
+                    project_id=memory.scope.project_id, record_id=memory.memory_id
+                )
+                self._set_freshness(memory, FreshnessState.CURRENT, stats)
         elif outcome == ReverificationOutcome.FAILED.value:
             self._set_freshness(memory, FreshnessState.STALE, stats)
         # `errored` is the engine failing, not the record failing: no
