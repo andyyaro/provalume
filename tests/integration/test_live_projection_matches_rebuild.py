@@ -95,9 +95,14 @@ def test_re_projecting_a_counted_event_does_not_inflate_the_aggregate(pv: Proval
 def test_verification_counts_accumulate_across_live_writes(pv: Provalume) -> None:
     """The same defect showed up on verification counts, so pin those too."""
     for index in range(5):
-        pv.record_verification(command=f"pytest tests/test_{index}.py", passed=True,
-                               purpose="the unit suite", agent_profile=AGENT,
-                               adapter="orkestra", task_id=f"task-{index}")
+        pv.record_verification(
+            command=f"pytest tests/test_{index}.py",
+            passed=True,
+            purpose="the unit suite",
+            agent_profile=AGENT,
+            adapter="orkestra",
+            task_id=f"task-{index}",
+        )
 
     assert _performance(pv)["content"]["verifications"] == 5
 

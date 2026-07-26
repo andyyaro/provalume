@@ -106,9 +106,7 @@ def generate_ed25519_keypair() -> tuple[bytes, bytes]:
     )
 
 
-def sign_ed25519(
-    record: dict[str, Any], *, private_key: bytes, key_id: str = ""
-) -> dict[str, Any]:
+def sign_ed25519(record: dict[str, Any], *, private_key: bytes, key_id: str = "") -> dict[str, Any]:
     """Sign with Ed25519."""
     if not ed25519_available():
         msg = (
@@ -126,9 +124,7 @@ def sign_ed25519(
     }
 
 
-def verify_ed25519(
-    record: dict[str, Any], signature: dict[str, Any], *, public_key: bytes
-) -> bool:
+def verify_ed25519(record: dict[str, Any], signature: dict[str, Any], *, public_key: bytes) -> bool:
     """Verify an Ed25519 signature.
 
     Raises rather than returning ``False`` when the backend is missing. The

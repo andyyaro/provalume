@@ -52,8 +52,10 @@ PATTERNS: Final[tuple[Pattern, ...]] = (
     Pattern(
         "instruction-override",
         "ignore-previous",
-        re.compile(r"(?i)\bignore\s+(?:all\s+|any\s+)?(?:previous|prior|above|earlier)\s+"
-                   r"(?:instructions?|prompts?|rules?|directions?)"),
+        re.compile(
+            r"(?i)\bignore\s+(?:all\s+|any\s+)?(?:previous|prior|above|earlier)\s+"
+            r"(?:instructions?|prompts?|rules?|directions?)"
+        ),
     ),
     Pattern(
         "instruction-override",
@@ -73,14 +75,18 @@ PATTERNS: Final[tuple[Pattern, ...]] = (
     Pattern(
         "instruction-override",
         "override-directive",
-        re.compile(r"(?i)\boverride\s+(?:your\s+|the\s+)?(?:instructions?|rules?|policy|guardrails?)"),
+        re.compile(
+            r"(?i)\boverride\s+(?:your\s+|the\s+)?(?:instructions?|rules?|policy|guardrails?)"
+        ),
     ),
     # --- Address to an AI ------------------------------------------------
     Pattern(
         "ai-directed",
         "note-for-ai",
-        re.compile(r"(?i)\b(?:note|notice|message|instruction)s?\s+(?:for|to)\s+"
-                   r"(?:the\s+)?(?:ai|llm|assistant|agent|model|claude|gpt|copilot)\b"),
+        re.compile(
+            r"(?i)\b(?:note|notice|message|instruction)s?\s+(?:for|to)\s+"
+            r"(?:the\s+)?(?:ai|llm|assistant|agent|model|claude|gpt|copilot)\b"
+        ),
     ),
     Pattern(
         "ai-directed",
@@ -90,21 +96,27 @@ PATTERNS: Final[tuple[Pattern, ...]] = (
     Pattern(
         "ai-directed",
         "as-an-ai",
-        re.compile(r"(?i)\bas\s+an?\s+(?:ai|llm|language\s+model|assistant|agent)\s+you\s+"
-                   r"(?:must|should|will|need\s+to|are\s+required)"),
+        re.compile(
+            r"(?i)\bas\s+an?\s+(?:ai|llm|language\s+model|assistant|agent)\s+you\s+"
+            r"(?:must|should|will|need\s+to|are\s+required)"
+        ),
     ),
     # --- Self-asserted trust ---------------------------------------------
     Pattern(
         "self-asserted-trust",
         "record-as-verified",
-        re.compile(r"(?i)\b(?:record|store|save|remember|mark|treat|flag)\s+(?:this|it|the\s+following)"
-                   r"\s+as\s+(?:a\s+)?(?:verified|trusted|approved|confirmed|proven|official)"),
+        re.compile(
+            r"(?i)\b(?:record|store|save|remember|mark|treat|flag)\s+(?:this|it|the\s+following)"
+            r"\s+as\s+(?:a\s+)?(?:verified|trusted|approved|confirmed|proven|official)"
+        ),
     ),
     Pattern(
         "self-asserted-trust",
         "this-is-trusted",
-        re.compile(r"(?i)\bthis\s+(?:is|has\s+been)\s+(?:already\s+)?"
-                   r"(?:verified|trusted|approved|confirmed|validated|proven)\b"),
+        re.compile(
+            r"(?i)\bthis\s+(?:is|has\s+been)\s+(?:already\s+)?"
+            r"(?:verified|trusted|approved|confirmed|validated|proven)\b"
+        ),
     ),
     Pattern(
         "self-asserted-trust",
@@ -114,8 +126,10 @@ PATTERNS: Final[tuple[Pattern, ...]] = (
     Pattern(
         "self-asserted-trust",
         "promote-directive",
-        re.compile(r"(?i)\b(?:promote|escalate|elevate)\s+(?:this|it)\s+to\s+"
-                   r"(?:verified|reviewed|integrated|trusted|project\s+truth)"),
+        re.compile(
+            r"(?i)\b(?:promote|escalate|elevate)\s+(?:this|it)\s+to\s+"
+            r"(?:verified|reviewed|integrated|trusted|project\s+truth)"
+        ),
     ),
     # --- Dangerous shell -------------------------------------------------
     Pattern(
@@ -152,38 +166,50 @@ PATTERNS: Final[tuple[Pattern, ...]] = (
     Pattern(
         "credential-steering",
         "commit-secrets",
-        re.compile(r"(?i)\b(?:commit|push|add|check\s+in)\b[^\n.]{0,60}\b"
-                   r"(?:secrets?|credentials?|\.env|api\s*keys?|private\s+keys?)\b"),
+        re.compile(
+            r"(?i)\b(?:commit|push|add|check\s+in)\b[^\n.]{0,60}\b"
+            r"(?:secrets?|credentials?|\.env|api\s*keys?|private\s+keys?)\b"
+        ),
     ),
     Pattern(
         "credential-steering",
         "disable-tls",
-        re.compile(r"(?i)\b(?:disable|skip|turn\s+off|bypass|ignore)\b[^\n.]{0,40}\b"
-                   r"(?:tls|ssl|certificate|cert)\s*(?:verification|validation|checks?)?\b"),
+        re.compile(
+            r"(?i)\b(?:disable|skip|turn\s+off|bypass|ignore)\b[^\n.]{0,40}\b"
+            r"(?:tls|ssl|certificate|cert)\s*(?:verification|validation|checks?)?\b"
+        ),
     ),
     Pattern(
         "credential-steering",
         "insecure-flags",
-        re.compile(r"(?i)(?:--insecure\b|--no-verify-ssl\b|verify\s*=\s*False\b|"
-                   r"NODE_TLS_REJECT_UNAUTHORIZED\s*=\s*0)"),
+        re.compile(
+            r"(?i)(?:--insecure\b|--no-verify-ssl\b|verify\s*=\s*False\b|"
+            r"NODE_TLS_REJECT_UNAUTHORIZED\s*=\s*0)"
+        ),
     ),
     Pattern(
         "credential-steering",
         "exfiltrate",
-        re.compile(r"(?i)\b(?:send|post|upload|transmit|exfiltrate)\b[^\n.]{0,50}\b"
-                   r"(?:secrets?|credentials?|tokens?|keys?|\.env)\b[^\n.]{0,50}\bto\b"),
+        re.compile(
+            r"(?i)\b(?:send|post|upload|transmit|exfiltrate)\b[^\n.]{0,50}\b"
+            r"(?:secrets?|credentials?|tokens?|keys?|\.env)\b[^\n.]{0,50}\bto\b"
+        ),
     ),
     Pattern(
         "credential-steering",
         "weaken-auth",
-        re.compile(r"(?i)\b(?:disable|remove|bypass|skip)\b[^\n.]{0,40}\b"
-                   r"(?:authentication|authorization|auth\s+check|permission\s+check)\b"),
+        re.compile(
+            r"(?i)\b(?:disable|remove|bypass|skip)\b[^\n.]{0,40}\b"
+            r"(?:authentication|authorization|auth\s+check|permission\s+check)\b"
+        ),
     ),
     # --- Role confusion --------------------------------------------------
     Pattern(
         "role-confusion",
         "fake-role-marker",
-        re.compile(r"(?i)(?:^|\n)\s*(?:###\s*)?(?:system|assistant|user|tool|function)\s*[:：]\s*\S"),
+        re.compile(
+            r"(?i)(?:^|\n)\s*(?:###\s*)?(?:system|assistant|user|tool|function)\s*[:：]\s*\S"
+        ),
     ),
     Pattern(
         "role-confusion",

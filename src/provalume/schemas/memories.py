@@ -67,9 +67,7 @@ TYPE_CEILING_WITHOUT_INTEGRATION: Final[dict[MemoryType, TrustState]] = {
 
 #: Categories that must reach INTEGRATED before being presented as current
 #: project truth without a qualifying label.
-REQUIRES_INTEGRATION_FOR_TRUTH: Final[frozenset[MemoryType]] = frozenset(
-    {MemoryType.SEMANTIC}
-)
+REQUIRES_INTEGRATION_FOR_TRUTH: Final[frozenset[MemoryType]] = frozenset({MemoryType.SEMANTIC})
 
 #: Categories for which INTEGRATED is meaningless. An episode happened regardless
 #: of what landed; a statistic does not land in a commit.

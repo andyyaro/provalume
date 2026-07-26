@@ -58,9 +58,7 @@ def test_pem_redaction_is_linear_on_repeated_markers(probe: str) -> None:
 def test_a_pem_private_key_is_still_removed() -> None:
     """The bound must not have narrowed what the rule matches."""
     pem = (
-        "-----BEGIN RSA PRIVATE KEY-----\n"
-        "MIIEpAIBAAKCAQEA1234567890\n"
-        "-----END RSA PRIVATE KEY-----"
+        "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA1234567890\n-----END RSA PRIVATE KEY-----"
     )
     out, report = redact.redact_text(f"key:\n{pem}\ndone")
 

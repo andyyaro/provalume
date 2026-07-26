@@ -58,14 +58,10 @@ def can_widen(
         )
 
     if SCOPE_BREADTH[target] <= SCOPE_BREADTH[current]:
-        return ScopeDecision(
-            False, REFUSE_NARROWING, f"{target} is not broader than {current}"
-        )
+        return ScopeDecision(False, REFUSE_NARROWING, f"{target} is not broader than {current}")
 
     if actor_source is Source.AGENT:
-        return ScopeDecision(
-            False, REFUSE_AGENT, "agents cannot widen scope"
-        )
+        return ScopeDecision(False, REFUSE_AGENT, "agents cannot widen scope")
 
     if target is ScopeLevel.REPOSITORY:
         if memory.integration_state not in LANDED_STATES:
@@ -90,9 +86,7 @@ def can_widen(
             True, RULE_WIDEN_TO_PROJECT, "human approved widening to project scope"
         )
 
-    return ScopeDecision(
-        False, REFUSE_NARROWING, f"no rule covers widening {current} -> {target}"
-    )
+    return ScopeDecision(False, REFUSE_NARROWING, f"no rule covers widening {current} -> {target}")
 
 
 def confine(candidate: Path | str, root: Path | str) -> Path:

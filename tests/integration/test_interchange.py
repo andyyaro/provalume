@@ -22,9 +22,13 @@ from provalume.sdk.client import Provalume
 
 @pytest.fixture
 def exported(pv: Provalume, tmp_path: Path) -> tuple[Provalume, Path]:
-    pv.record_verification(command="pytest -q", passed=False,
-                           excerpt="E AssertionError: boom", error_kind="test_failure",
-                           task_id="t1")
+    pv.record_verification(
+        command="pytest -q",
+        passed=False,
+        excerpt="E AssertionError: boom",
+        error_kind="test_failure",
+        task_id="t1",
+    )
     pv.record_verification(command="pytest -q tests/unit", passed=True, task_id="t1")
     pv.record_decision(selected="split the suite", rejected=["raise the timeout"])
     out = tmp_path / "export"
@@ -51,10 +55,7 @@ def test_export_is_byte_identical_across_runs(exported: tuple[Provalume, Path]) 
 def test_records_are_sorted_by_kind_and_id(exported: tuple[Provalume, Path]) -> None:
     """Sorting by ID is what makes two machines produce comparable files."""
     _, out = exported
-    ids = [
-        json.loads(line)["id"]
-        for line in (out / jsonl.EVENTS_FILE).read_text().splitlines()
-    ]
+    ids = [json.loads(line)["id"] for line in (out / jsonl.EVENTS_FILE).read_text().splitlines()]
     assert ids == sorted(ids)
 
 
@@ -109,14 +110,10 @@ def test_import_into_a_fresh_database_reconstructs_memory(
     assert fresh.memory_records(include_terminal=True, current_only=False, limit=50)
 
 
-def test_imported_records_are_never_trusted_on_arrival(
-    exported: tuple[Provalume, Path]
-) -> None:
+def test_imported_records_are_never_trusted_on_arrival(exported: tuple[Provalume, Path]) -> None:
     """A record's *claimed* trust state in a file carries no weight (T17)."""
     _, out = exported
-    records = [
-        json.loads(line) for line in (out / jsonl.MEMORIES_FILE).read_text().splitlines()
-    ]
+    records = [json.loads(line) for line in (out / jsonl.MEMORIES_FILE).read_text().splitlines()]
     assert any(r["trust_state"] != "quarantined" for r in records), (
         "the fixture should contain a trusted record for this test to mean anything"
     )
@@ -152,9 +149,7 @@ def tamper_payload(directory: Path, *, key: str, value: object) -> dict:
     return target
 
 
-def test_a_tampered_payload_with_a_stale_hash_is_rejected(
-    exported: tuple[Provalume, Path]
-) -> None:
+def test_a_tampered_payload_with_a_stale_hash_is_rejected(exported: tuple[Provalume, Path]) -> None:
     """The forgery shape a trusting importer would wave through as a duplicate."""
     pv, out = exported
     # Payload changed, declared hash left untouched — the whole point.
@@ -166,7 +161,7 @@ def test_a_tampered_payload_with_a_stale_hash_is_rejected(
 
 
 def test_a_genuine_divergence_is_a_conflict_not_an_overwrite(
-    exported: tuple[Provalume, Path]
+    exported: tuple[Provalume, Path],
 ) -> None:
     """Content genuinely differs and the hash was updated to match: a real
     divergence between two machines, not a forgery. Must be a conflict rather
@@ -193,9 +188,7 @@ def test_a_future_record_version_is_rejected(exported: tuple[Provalume, Path]) -
     assert any("newer than this build" in str(i) for i in result.rejected)
 
 
-def test_a_future_version_can_be_quarantined_instead(
-    exported: tuple[Provalume, Path]
-) -> None:
+def test_a_future_version_can_be_quarantined_instead(exported: tuple[Provalume, Path]) -> None:
     pv, out = exported
     record = json.loads((out / jsonl.EVENTS_FILE).read_text().splitlines()[0])
     record["rv"] = jsonl.RECORD_VERSION + 99
@@ -206,9 +199,7 @@ def test_a_future_version_can_be_quarantined_instead(
     assert not result.rejected
 
 
-def test_a_foreign_project_is_rejected_by_default(
-    exported: tuple[Provalume, Path]
-) -> None:
+def test_a_foreign_project_is_rejected_by_default(exported: tuple[Provalume, Path]) -> None:
     pv, out = exported
     record = json.loads((out / jsonl.EVENTS_FILE).read_text().splitlines()[0])
     record["project_id"] = "someone-elses-project"
@@ -224,7 +215,7 @@ def test_a_foreign_project_is_rejected_by_default(
 
 
 def test_malformed_lines_are_reported_and_the_file_continues(
-    exported: tuple[Provalume, Path]
+    exported: tuple[Provalume, Path],
 ) -> None:
     pv, out = exported
     good = (out / jsonl.EVENTS_FILE).read_text().splitlines()
@@ -235,9 +226,7 @@ def test_malformed_lines_are_reported_and_the_file_continues(
     assert result.skipped_duplicates > 0, "one bad line aborted the whole file"
 
 
-def test_an_oversized_line_is_rejected_without_aborting(
-    exported: tuple[Provalume, Path]
-) -> None:
+def test_an_oversized_line_is_rejected_without_aborting(exported: tuple[Provalume, Path]) -> None:
     pv, out = exported
     huge = json.dumps({"rv": 1, "kind": "event", "id": "X", "pad": "x" * (2 * 1024 * 1024)})
     existing = (out / jsonl.EVENTS_FILE).read_text()
@@ -247,9 +236,7 @@ def test_an_oversized_line_is_rejected_without_aborting(
     assert any("size cap" in str(i) for i in result.rejected)
 
 
-def test_divergent_supersession_is_surfaced_not_resolved(
-    pv: Provalume, tmp_path: Path
-) -> None:
+def test_divergent_supersession_is_surfaced_not_resolved(pv: Provalume, tmp_path: Path) -> None:
     """Auto-resolving would be auto-deciding which contributor was right."""
     pv.record_fact(subject="pm", statement="Uses pip.")
     original = pv.memory_records(limit=5)[0]
@@ -261,7 +248,7 @@ def test_divergent_supersession_is_surfaced_not_resolved(
     rivals = []
     for suffix in ("AAA", "BBB"):
         rival = dict(record)
-        rival["id"] = (record["id"][:-3] + suffix)
+        rival["id"] = record["id"][:-3] + suffix
         rival["supersedes_id"] = original.memory_id
         rivals.append(canonical_json(rival))
     (out / jsonl.MEMORIES_FILE).write_text("\n".join([*lines, *rivals]) + "\n")
@@ -369,7 +356,7 @@ def test_ed25519_detects_tampering() -> None:
 
 
 def test_verification_without_the_backend_raises_rather_than_returning_false() -> None:
-    """"Invalid" and "I cannot check this" are different facts; collapsing them
+    """ "Invalid" and "I cannot check this" are different facts; collapsing them
     would let a missing dependency read as a forgery, or get skipped."""
     if signatures.ed25519_available():
         pytest.skip("the backend is installed, so this path cannot be exercised")
@@ -390,9 +377,7 @@ def test_signed_export_import_round_trip(pv: Provalume, tmp_path: Path) -> None:
     assert not result.quarantined, [str(q) for q in result.quarantined]
 
 
-def test_a_bad_signature_quarantines_rather_than_accepting(
-    pv: Provalume, tmp_path: Path
-) -> None:
+def test_a_bad_signature_quarantines_rather_than_accepting(pv: Provalume, tmp_path: Path) -> None:
     pv.record_verification(command="pytest", passed=True)
     out = tmp_path / "signed"
     pv.export(out, signer=lambda r: signatures.sign_hmac(r, key=b"real", key_id="team"))

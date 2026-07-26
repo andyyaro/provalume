@@ -66,12 +66,8 @@ def test_terminal_states_weigh_zero() -> None:
 def test_a_failed_verification_counts_as_evidence_present() -> None:
     """The gotcha case. Treating `failed` as absence would systematically demote
     exactly the records the preflight gate needs."""
-    failed = evidence_weight(
-        VerificationState.FAILED, ReviewState.NONE, IntegrationState.NONE
-    )
-    unknown = evidence_weight(
-        VerificationState.UNKNOWN, ReviewState.NONE, IntegrationState.NONE
-    )
+    failed = evidence_weight(VerificationState.FAILED, ReviewState.NONE, IntegrationState.NONE)
+    unknown = evidence_weight(VerificationState.UNKNOWN, ReviewState.NONE, IntegrationState.NONE)
     assert failed > unknown
     assert failed == evidence_weight(
         VerificationState.PASSED, ReviewState.NONE, IntegrationState.NONE
@@ -148,23 +144,35 @@ def test_relevance_outweighs_trust() -> None:
     policy = RankingPolicy()
     relevant_but_weak = ranking.score(
         memory(trust_state=TrustState.VERIFIED),
-        policy=policy, lexical=1.0, scope_specificity=1.0, as_of=AS_OF,
+        policy=policy,
+        lexical=1.0,
+        scope_specificity=1.0,
+        as_of=AS_OF,
     )
     trusted_but_irrelevant = ranking.score(
         memory(trust_state=TrustState.INTEGRATED),
-        policy=policy, lexical=0.0, scope_specificity=1.0, as_of=AS_OF,
+        policy=policy,
+        lexical=0.0,
+        scope_specificity=1.0,
+        as_of=AS_OF,
     )
     assert relevant_but_weak.total > trusted_but_irrelevant.total
 
 
 def test_penalties_reduce_the_score() -> None:
     policy = RankingPolicy()
-    clean = ranking.score(memory(), policy=policy, lexical=1.0,
-                          scope_specificity=1.0, as_of=AS_OF)
-    contested = ranking.score(memory(), policy=policy, lexical=1.0,
-                              scope_specificity=1.0, has_contradiction=True, as_of=AS_OF)
-    poisoned = ranking.score(memory(poisoning_risk=0.4), policy=policy, lexical=1.0,
-                             scope_specificity=1.0, as_of=AS_OF)
+    clean = ranking.score(memory(), policy=policy, lexical=1.0, scope_specificity=1.0, as_of=AS_OF)
+    contested = ranking.score(
+        memory(),
+        policy=policy,
+        lexical=1.0,
+        scope_specificity=1.0,
+        has_contradiction=True,
+        as_of=AS_OF,
+    )
+    poisoned = ranking.score(
+        memory(poisoning_risk=0.4), policy=policy, lexical=1.0, scope_specificity=1.0, as_of=AS_OF
+    )
     assert contested.total < clean.total
     assert poisoned.total < clean.total
 
@@ -173,8 +181,11 @@ def test_breakdown_components_sum_to_the_total() -> None:
     """If the arithmetic does not add up, `explain` is lying."""
     breakdown = ranking.score(
         memory(trust_state=TrustState.VERIFIED, access_count=5, poisoning_risk=0.2),
-        policy=RankingPolicy(), lexical=0.7, scope_specificity=0.8,
-        has_contradiction=True, as_of=AS_OF,
+        policy=RankingPolicy(),
+        lexical=0.7,
+        scope_specificity=0.8,
+        has_contradiction=True,
+        as_of=AS_OF,
     )
     total = sum(contribution for _, _, contribution in breakdown.as_table())
     assert total == pytest.approx(breakdown.total, abs=1e-5)
@@ -191,7 +202,10 @@ def test_score_maximum_matches_the_declared_weight_total() -> None:
             access_count=10_000,
             recorded_at=AS_OF,
         ),
-        policy=policy, lexical=1.0, scope_specificity=1.0, as_of=AS_OF,
+        policy=policy,
+        lexical=1.0,
+        scope_specificity=1.0,
+        as_of=AS_OF,
     )
     assert perfect.total == pytest.approx(policy.positive_weight_total(), abs=1e-6)
 
@@ -201,8 +215,9 @@ def test_ordering_is_fully_deterministic() -> None:
     iteration would make every measurement noise."""
     a = memory(memory_id="B" * 26, recorded_at=AS_OF)
     b = memory(memory_id="A" * 26, recorded_at=AS_OF)
-    breakdown = ranking.score(a, policy=RankingPolicy(), lexical=0.5,
-                              scope_specificity=1.0, as_of=AS_OF)
+    breakdown = ranking.score(
+        a, policy=RankingPolicy(), lexical=0.5, scope_specificity=1.0, as_of=AS_OF
+    )
     keys = [ranking.sort_key(a, breakdown), ranking.sort_key(b, breakdown)]
     assert sorted(keys) == sorted(keys)
     # Equal scores and timestamps break on the identifier, ascending.
@@ -212,8 +227,9 @@ def test_ordering_is_fully_deterministic() -> None:
 def test_newer_records_sort_first_on_equal_scores() -> None:
     older = memory(recorded_at="2026-01-01T00:00:00.000Z")
     newer = memory(recorded_at="2026-07-01T00:00:00.000Z")
-    breakdown = ranking.score(older, policy=RankingPolicy(), lexical=0.5,
-                              scope_specificity=1.0, as_of=AS_OF)
+    breakdown = ranking.score(
+        older, policy=RankingPolicy(), lexical=0.5, scope_specificity=1.0, as_of=AS_OF
+    )
     assert ranking.sort_key(newer, breakdown) < ranking.sort_key(older, breakdown)
 
 

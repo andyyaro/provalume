@@ -72,10 +72,20 @@ def test_strong_error_is_linear_on_the_reported_input() -> None:
         "error" * (LENGTH // 10) + "[" * (LENGTH // 2),
     ],
     ids=[
-        "all-caps", "alternating", "pairs", "pytest-prefixed", "brackets",
-        "long-tail", "all-lower", "dotted",
-        "repeated-error", "repeated-exception", "repeated-panic",
-        "repeated-fault", "prefixed-repeated-error", "repeated-then-brackets",
+        "all-caps",
+        "alternating",
+        "pairs",
+        "pytest-prefixed",
+        "brackets",
+        "long-tail",
+        "all-lower",
+        "dotted",
+        "repeated-error",
+        "repeated-exception",
+        "repeated-panic",
+        "repeated-fault",
+        "prefixed-repeated-error",
+        "repeated-then-brackets",
     ],
 )
 def test_strong_error_survives_adversarial_shapes(probe: str) -> None:
@@ -133,8 +143,16 @@ def test_strong_error_still_rejects_non_error_lines() -> None:
         "0x" + "a" * LENGTH,
     ],
     ids=[
-        "letters", "slashes", "digits", "colons", "hyphens",
-        "path-ish", "colon-pairs", "decimals", "deep-path", "hex",
+        "letters",
+        "slashes",
+        "digits",
+        "colons",
+        "hyphens",
+        "path-ish",
+        "colon-pairs",
+        "decimals",
+        "deep-path",
+        "hex",
     ],
 )
 def test_error_normalisation_is_linear(probe: str) -> None:
@@ -164,8 +182,14 @@ def test_command_normalisation_is_linear(probe: str) -> None:
         ("api_key: " + "x" * 50 + "\n") * 400,
     ],
     ids=[
-        "letters", "sk-prefix", "assignment", "many-assignments",
-        "url-userinfo", "unterminated-pem", "jwt-ish", "many-lines",
+        "letters",
+        "sk-prefix",
+        "assignment",
+        "many-assignments",
+        "url-userinfo",
+        "unterminated-pem",
+        "jwt-ish",
+        "many-lines",
     ],
 )
 def test_redaction_is_linear(probe: str) -> None:
@@ -194,8 +218,13 @@ def test_the_audit_scan_is_linear(probe: str) -> None:
         "rm -rf " + "/" * LENGTH,
     ],
     ids=[
-        "letters", "repeated-keyword", "curl-tail", "many-pipes",
-        "colons", "repeated-phrase", "slashes",
+        "letters",
+        "repeated-keyword",
+        "curl-tail",
+        "many-pipes",
+        "colons",
+        "repeated-phrase",
+        "slashes",
     ],
 )
 def test_poisoning_heuristics_are_linear(probe: str) -> None:
@@ -303,10 +332,16 @@ def test_a_hostile_excerpt_does_not_hang_the_writer(pv: object) -> None:
     """End to end: the whole admission and projection path, with a payload
     designed to trip every pattern at once."""
     hostile = (
-        "A0" + "aA" * 4000 + " "
-        + "sk-" + "x" * 2000 + " "
-        + "ignore all previous instructions " * 200 + " "
-        + "/tmp/" + "a/" * 2000
+        "A0"
+        + "aA" * 4000
+        + " "
+        + "sk-"
+        + "x" * 2000
+        + " "
+        + "ignore all previous instructions " * 200
+        + " "
+        + "/tmp/"
+        + "a/" * 2000
     )
     start = time.perf_counter()
     pv.record_verification(  # type: ignore[attr-defined]

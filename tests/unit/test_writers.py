@@ -70,17 +70,23 @@ def test_a_rejection_is_not_a_verification_result() -> None:
 
 def test_a_bare_rejection_with_no_reason_produces_no_lesson() -> None:
     """It teaches nothing; the episodic record still captures that it happened."""
-    assert reviews.build_lesson(
-        event(EventType.REVIEW_REJECTED, payload={"reviewer": "r"}), landing_state=OBSERVED
-    ) is None
+    assert (
+        reviews.build_lesson(
+            event(EventType.REVIEW_REJECTED, payload={"reviewer": "r"}), landing_state=OBSERVED
+        )
+        is None
+    )
 
 
 def test_finding_becomes_a_lesson_with_severity() -> None:
     finding = reviews.build_finding(
         event(
             EventType.REVIEW_FINDING,
-            payload={"finding": "missing input validation", "severity": "high",
-                     "reviewer": "reviewer-2"},
+            payload={
+                "finding": "missing input validation",
+                "severity": "high",
+                "reviewer": "reviewer-2",
+            },
         ),
         landing_state=OBSERVED,
     )
@@ -91,22 +97,21 @@ def test_finding_becomes_a_lesson_with_severity() -> None:
 
 
 def test_empty_finding_produces_nothing() -> None:
-    assert reviews.build_finding(
-        event(EventType.REVIEW_FINDING, payload={}), landing_state=OBSERVED
-    ) is None
+    assert (
+        reviews.build_finding(event(EventType.REVIEW_FINDING, payload={}), landing_state=OBSERVED)
+        is None
+    )
 
 
 def test_a_later_approval_attaches_as_resolution() -> None:
     lesson = reviews.build_lesson(
-        event(EventType.REVIEW_REJECTED,
-              payload={"finding": "no tests", "subject": "auth"}),
+        event(EventType.REVIEW_REJECTED, payload={"finding": "no tests", "subject": "auth"}),
         landing_state=OBSERVED,
     )
     assert lesson is not None
     resolved = reviews.attach_approval(
         lesson,
-        event(EventType.REVIEW_APPROVED,
-              payload={"reviewer": "reviewer-3", "note": "tests added"}),
+        event(EventType.REVIEW_APPROVED, payload={"reviewer": "reviewer-3", "note": "tests added"}),
     )
     assert resolved.content["resolution"]["reviewer"] == "reviewer-3"
     assert "Later approved by reviewer-3" in resolved.text
@@ -138,8 +143,7 @@ def test_attaching_an_approval_twice_does_not_duplicate_text() -> None:
         ("", "agent-A", True),
     ],
 )
-def test_independence_comparison(reviewer: str | None, author: str | None,
-                                 expected: bool) -> None:
+def test_independence_comparison(reviewer: str | None, author: str | None, expected: bool) -> None:
     assert reviews.is_independent(reviewer=reviewer, author=author) is expected
 
 
@@ -174,8 +178,7 @@ def test_decision_keeps_its_rejected_alternatives() -> None:
 def test_a_human_decision_is_repository_scoped() -> None:
     """Branch-scoping a decision would lose it the moment that branch merged."""
     decision = decisions.build_decision(
-        event(EventType.HUMAN_DECISION, source=Source.HUMAN,
-              payload={"selected": "x"}),
+        event(EventType.HUMAN_DECISION, source=Source.HUMAN, payload={"selected": "x"}),
         landing_state=OBSERVED,
     )
     assert decision is not None
@@ -184,8 +187,7 @@ def test_a_human_decision_is_repository_scoped() -> None:
 
 def test_an_agent_proposed_decision_stays_branch_scoped() -> None:
     decision = decisions.build_decision(
-        event(EventType.HUMAN_DECISION, source=Source.AGENT,
-              payload={"selected": "x"}),
+        event(EventType.HUMAN_DECISION, source=Source.AGENT, payload={"selected": "x"}),
         landing_state=TrustState.QUARANTINED,
     )
     assert decision is not None
@@ -193,10 +195,13 @@ def test_an_agent_proposed_decision_stays_branch_scoped() -> None:
 
 
 def test_a_decision_with_no_selection_produces_nothing() -> None:
-    assert decisions.build_decision(
-        event(EventType.HUMAN_DECISION, payload={"rationale": "hmm"}),
-        landing_state=OBSERVED,
-    ) is None
+    assert (
+        decisions.build_decision(
+            event(EventType.HUMAN_DECISION, payload={"rationale": "hmm"}),
+            landing_state=OBSERVED,
+        )
+        is None
+    )
 
 
 def test_rejected_alternatives_accepts_a_bare_string() -> None:
@@ -217,8 +222,10 @@ def test_performance_aggregate_counts_outcomes() -> None:
         accumulator.observe(
             event(
                 EventType.ATTEMPT_COMPLETED,
-                payload={"outcome": "success" if index < 4 else "failed",
-                         "task_category": "migration"},
+                payload={
+                    "outcome": "success" if index < 4 else "failed",
+                    "task_category": "migration",
+                },
                 adapter="claude-code",
                 model="opus",
             )
@@ -235,8 +242,13 @@ def test_performance_aggregate_counts_outcomes() -> None:
 def test_performance_text_states_the_denominator() -> None:
     """80% over five attempts and over five hundred are different claims."""
     text = runs.performance_text(
-        agent_profile="agent-A", task_category="migration",
-        attempts=5, successes=4, approvals=1, verifications=2, fallbacks=0,
+        agent_profile="agent-A",
+        task_category="migration",
+        attempts=5,
+        successes=4,
+        approvals=1,
+        verifications=2,
+        fallbacks=0,
     )
     assert "4/5" in text
     assert "80%" in text
@@ -244,8 +256,13 @@ def test_performance_text_states_the_denominator() -> None:
 
 def test_performance_with_no_attempts_says_so() -> None:
     text = runs.performance_text(
-        agent_profile="agent-A", task_category="x",
-        attempts=0, successes=0, approvals=0, verifications=0, fallbacks=0,
+        agent_profile="agent-A",
+        task_category="x",
+        attempts=0,
+        successes=0,
+        approvals=0,
+        verifications=0,
+        fallbacks=0,
     )
     assert "no recorded attempts" in text
 
@@ -269,8 +286,7 @@ def test_performance_ignores_events_without_an_agent() -> None:
 def test_performance_output_is_order_independent() -> None:
     """Required for byte-identical rebuilds."""
     events = [
-        event(EventType.ATTEMPT_COMPLETED, payload={"outcome": "success",
-                                                    "task_category": "a"}),
+        event(EventType.ATTEMPT_COMPLETED, payload={"outcome": "success", "task_category": "a"}),
         event(EventType.VERIFICATION_PASSED, payload={"task_category": "a"}),
         event(EventType.REVIEW_APPROVED, payload={"task_category": "a"}),
     ]
@@ -289,20 +305,29 @@ def test_performance_output_is_order_independent() -> None:
 def test_performance_keys_separate_agents() -> None:
     accumulator = runs.PerformanceAccumulator(project_id="p")
     accumulator.observe(
-        event(EventType.ATTEMPT_COMPLETED, agent_profile="agent-A",
-              payload={"outcome": "success", "task_category": "x"})
+        event(
+            EventType.ATTEMPT_COMPLETED,
+            agent_profile="agent-A",
+            payload={"outcome": "success", "task_category": "x"},
+        )
     )
     accumulator.observe(
-        event(EventType.ATTEMPT_COMPLETED, agent_profile="agent-B",
-              payload={"outcome": "failed", "task_category": "x"})
+        event(
+            EventType.ATTEMPT_COMPLETED,
+            agent_profile="agent-B",
+            payload={"outcome": "failed", "task_category": "x"},
+        )
     )
     assert len(accumulator.build(landing_state=OBSERVED)) == 2
 
 
 def test_run_summary_text() -> None:
     text = runs.run_summary_text(
-        event(EventType.RUN_COMPLETED, run_id="run-1",
-              payload={"outcome": "completed", "task_count": 4})
+        event(
+            EventType.RUN_COMPLETED,
+            run_id="run-1",
+            payload={"outcome": "completed", "task_count": 4},
+        )
     )
     assert "run-1" in text
     assert "4 task(s)" in text
@@ -314,16 +339,21 @@ def test_run_summary_text() -> None:
 def test_procedural_requires_a_command() -> None:
     """Inventing one from surrounding metadata would be the LLM-extraction
     behaviour this design refuses."""
-    assert verification.build_procedural(
-        event(EventType.VERIFICATION_PASSED, payload={"purpose": "tests"}),
-        landing_state=OBSERVED,
-    ) is None
+    assert (
+        verification.build_procedural(
+            event(EventType.VERIFICATION_PASSED, payload={"purpose": "tests"}),
+            landing_state=OBSERVED,
+        )
+        is None
+    )
 
 
 def test_procedural_normalises_whitespace_but_keeps_flags() -> None:
     procedure = verification.build_procedural(
-        event(EventType.VERIFICATION_PASSED,
-              payload={"command": "pytest   -n auto  tests/", "purpose": "suite"}),
+        event(
+            EventType.VERIFICATION_PASSED,
+            payload={"command": "pytest   -n auto  tests/", "purpose": "suite"},
+        ),
         landing_state=OBSERVED,
     )
     assert procedure is not None
@@ -332,16 +362,17 @@ def test_procedural_normalises_whitespace_but_keeps_flags() -> None:
 
 
 def test_semantic_requires_a_statement() -> None:
-    assert verification.build_semantic(
-        event(EventType.FACT_OBSERVED, payload={"subject": "x"}), landing_state=OBSERVED
-    ) is None
+    assert (
+        verification.build_semantic(
+            event(EventType.FACT_OBSERVED, payload={"subject": "x"}), landing_state=OBSERVED
+        )
+        is None
+    )
 
 
 def test_episodic_text_names_the_actor_and_place() -> None:
     text = verification.episodic_text(
-        event(EventType.VERIFICATION_FAILED,
-              payload={"command": "pytest -q"},
-              commit_sha="a" * 40)
+        event(EventType.VERIFICATION_FAILED, payload={"command": "pytest -q"}, commit_sha="a" * 40)
     )
     assert "verification FAILED" in text
     assert "pytest -q" in text
@@ -373,8 +404,12 @@ def test_gotcha_records_the_signature_and_failed_state() -> None:
     gotcha, signature = failures.build_gotcha(
         event(
             EventType.VERIFICATION_FAILED,
-            payload={"command": "pytest -n auto", "error_kind": "test_failure",
-                     "excerpt": "E TimeoutError: deadlock", "exit_code": 1},
+            payload={
+                "command": "pytest -n auto",
+                "error_kind": "test_failure",
+                "excerpt": "E TimeoutError: deadlock",
+                "exit_code": 1,
+            },
         ),
         landing_state=OBSERVED,
     )
@@ -386,13 +421,17 @@ def test_gotcha_records_the_signature_and_failed_state() -> None:
 
 
 def test_merge_occurrence_updates_the_count_and_keeps_the_earliest_validity() -> None:
-    first = event(EventType.VERIFICATION_FAILED,
-                  payload={"command": "x", "excerpt": "E boom"},
-                  recorded_at="2026-07-01T00:00:00.000Z")
+    first = event(
+        EventType.VERIFICATION_FAILED,
+        payload={"command": "x", "excerpt": "E boom"},
+        recorded_at="2026-07-01T00:00:00.000Z",
+    )
     gotcha, _ = failures.build_gotcha(first, landing_state=OBSERVED)
-    later = event(EventType.VERIFICATION_FAILED,
-                  payload={"command": "x", "excerpt": "E boom"},
-                  recorded_at="2026-07-20T00:00:00.000Z")
+    later = event(
+        EventType.VERIFICATION_FAILED,
+        payload={"command": "x", "excerpt": "E boom"},
+        recorded_at="2026-07-20T00:00:00.000Z",
+    )
     merged = failures.merge_occurrence(gotcha, later, 2)
     assert merged.content["occurrences"] == 2
     assert merged.valid_at == "2026-07-01T00:00:00.000Z"
@@ -411,14 +450,17 @@ def test_elevated_warning_wording() -> None:
 
 def test_resolution_link_records_what_worked() -> None:
     gotcha, _ = failures.build_gotcha(
-        event(EventType.VERIFICATION_FAILED,
-              payload={"command": "pytest -n auto", "excerpt": "E deadlock"}),
+        event(
+            EventType.VERIFICATION_FAILED,
+            payload={"command": "pytest -n auto", "excerpt": "E deadlock"},
+        ),
         landing_state=OBSERVED,
     )
     resolved = failures.build_resolution_link(
         gotcha=gotcha,
-        resolution_event=event(EventType.VERIFICATION_PASSED,
-                               payload={"command": "pytest -p no:xdist"}),
+        resolution_event=event(
+            EventType.VERIFICATION_PASSED, payload={"command": "pytest -p no:xdist"}
+        ),
     )
     assert resolved.content["resolution"]["command"] == "pytest -p no:xdist"
     assert "What later worked" in resolved.text

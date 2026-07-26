@@ -35,9 +35,30 @@ MAX_QUERY_CHARS: Final = 4_096
 #: "no" and "not" can be the whole point ("no:xdist").
 _STOPWORDS: Final[frozenset[str]] = frozenset(
     {
-        "a", "an", "the", "is", "are", "was", "were", "be", "been",
-        "to", "of", "in", "on", "at", "for", "with", "by", "from",
-        "this", "that", "these", "those", "it", "its",
+        "a",
+        "an",
+        "the",
+        "is",
+        "are",
+        "was",
+        "were",
+        "be",
+        "been",
+        "to",
+        "of",
+        "in",
+        "on",
+        "at",
+        "for",
+        "with",
+        "by",
+        "from",
+        "this",
+        "that",
+        "these",
+        "those",
+        "it",
+        "its",
     }
 )
 

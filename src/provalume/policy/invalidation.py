@@ -56,9 +56,7 @@ def can_invalidate(memory: Memory, *, rule: str) -> WithdrawalDecision:
             f"{memory.trust_state} is permanent; there is nothing left to withdraw",
         )
     if memory.trust_state is TrustState.INVALIDATED:
-        return WithdrawalDecision(
-            False, REFUSE_ALREADY_TERMINAL, "already invalidated"
-        )
+        return WithdrawalDecision(False, REFUSE_ALREADY_TERMINAL, "already invalidated")
     return WithdrawalDecision(True, rule, "record withdrawn; history retained")
 
 
@@ -70,9 +68,7 @@ def can_supersede(old: Memory, new: Memory) -> WithdrawalDecision:
     may be the poisoned one.
     """
     if old.memory_id == new.memory_id:
-        return WithdrawalDecision(
-            False, REFUSE_SELF_SUPERSEDE, "a record cannot supersede itself"
-        )
+        return WithdrawalDecision(False, REFUSE_SELF_SUPERSEDE, "a record cannot supersede itself")
     if is_permanent(old.trust_state):
         return WithdrawalDecision(
             False,
@@ -115,10 +111,40 @@ _WORD = re.compile(r"[a-z0-9]+")
 #: contradictions between unrelated facts.
 _STOPWORDS: Final[frozenset[str]] = frozenset(
     {
-        "a", "an", "the", "is", "are", "was", "were", "be", "been", "being",
-        "to", "of", "in", "on", "at", "for", "with", "by", "from", "as",
-        "this", "that", "these", "those", "it", "its", "we", "our", "you",
-        "and", "or", "but", "not", "no",
+        "a",
+        "an",
+        "the",
+        "is",
+        "are",
+        "was",
+        "were",
+        "be",
+        "been",
+        "being",
+        "to",
+        "of",
+        "in",
+        "on",
+        "at",
+        "for",
+        "with",
+        "by",
+        "from",
+        "as",
+        "this",
+        "that",
+        "these",
+        "those",
+        "it",
+        "its",
+        "we",
+        "our",
+        "you",
+        "and",
+        "or",
+        "but",
+        "not",
+        "no",
     }
 )
 

@@ -244,9 +244,7 @@ class PerformanceAccumulator:
         # `verification.passed` carries none, and defaulting it to a category
         # name filed those outcomes under a task category the agent was never
         # asked to work on, next to the real bucket for the same agent.
-        category = str(
-            event.payload.get("task_category", event.payload.get("kind", ""))
-        ).strip()
+        category = str(event.payload.get("task_category", event.payload.get("kind", ""))).strip()
         key = (agent, event.adapter or "", event.model or "", category)
         bucket = self._buckets.setdefault(
             key,
@@ -291,7 +289,7 @@ class PerformanceAccumulator:
         else, so review reliability was aggregated for no one.
         """
         out: list[Memory] = []
-        for (agent, adapter, model, category) in sorted(self._buckets):
+        for agent, adapter, model, category in sorted(self._buckets):
             bucket = self._buckets[(agent, adapter, model, category)]
             if not (bucket["attempts"] or bucket["verifications"] or bucket["approvals"]):
                 continue

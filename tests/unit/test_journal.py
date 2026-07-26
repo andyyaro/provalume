@@ -80,23 +80,19 @@ def test_delete_is_blocked_by_the_database(db: Database, journal: Journal) -> No
         db.execute("DELETE FROM events WHERE seq = 1")
 
 
-def test_chain_verification_detects_a_tampered_payload(
-    db: Database, journal: Journal
-) -> None:
+def test_chain_verification_detects_a_tampered_payload(db: Database, journal: Journal) -> None:
     """Direct row surgery must be visible to audit, even though the triggers
     block the ordinary paths."""
     journal.append(make_event())
     # Drop the triggers to simulate an attacker who can write the raw file.
     db.execute("DROP TRIGGER events_no_update")
-    db.execute("UPDATE events SET payload = '{\"command\":\"evil\"}' WHERE seq = 1")
+    db.execute('UPDATE events SET payload = \'{"command":"evil"}\' WHERE seq = 1')
     problems = journal.verify_chain()
     assert problems, "a tampered payload was not detected"
     assert any("payload hash mismatch" in p for p in problems)
 
 
-def test_chain_verification_detects_a_removed_event(
-    db: Database, journal: Journal
-) -> None:
+def test_chain_verification_detects_a_removed_event(db: Database, journal: Journal) -> None:
     journal.append(make_event())
     journal.append(make_event())
     db.execute("DROP TRIGGER events_no_delete")

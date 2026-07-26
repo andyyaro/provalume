@@ -17,8 +17,9 @@ from provalume.store.repository import MemoryRepository
 
 @pytest.fixture
 def busy(pv: Provalume) -> Provalume:
-    pv.record_verification(command="pytest -q", passed=False, excerpt="E boom",
-                           error_kind="test_failure", task_id="t1")
+    pv.record_verification(
+        command="pytest -q", passed=False, excerpt="E boom", error_kind="test_failure", task_id="t1"
+    )
     pv.record_verification(command="pytest -q tests", passed=True, task_id="t1")
     pv.record_decision(selected="a", rejected=["b"])
     pv.record_fact(subject="pm", statement="Uses uv.")
@@ -133,8 +134,9 @@ def test_refusals_are_queryable(pv: Provalume) -> None:
     pv.propose(text="a claim", agent="agent-A")
     memory = pv.memory_records(include_terminal=True, current_only=False, limit=5)[0]
     with pytest.raises(TrustError):
-        pv.promote(memory.memory_id, TrustState.OBSERVED, actor="agent-A",
-                   actor_source=Source.AGENT)
+        pv.promote(
+            memory.memory_id, TrustState.OBSERVED, actor="agent-A", actor_source=Source.AGENT
+        )
     refusals = pv.memories.refusals()
     assert refusals
     assert refusals[0]["policy_rule"].startswith("refuse.")
@@ -155,10 +157,8 @@ def test_adding_the_same_link_twice_is_idempotent(repository: MemoryRepository) 
 
 
 def test_contradiction_pairs_are_order_independent(repository: MemoryRepository) -> None:
-    repository.add_contradiction(project_id="p", subject_key="s",
-                                 memory_id_a="B", memory_id_b="A")
-    repository.add_contradiction(project_id="p", subject_key="s",
-                                 memory_id_a="A", memory_id_b="B")
+    repository.add_contradiction(project_id="p", subject_key="s", memory_id_a="B", memory_id_b="A")
+    repository.add_contradiction(project_id="p", subject_key="s", memory_id_a="A", memory_id_b="B")
     assert len(repository.contradictions("p")) == 1
     assert repository.contradicted_ids("p") == {"A", "B"}
 
@@ -166,19 +166,27 @@ def test_contradiction_pairs_are_order_independent(repository: MemoryRepository)
 def test_signature_occurrences_accumulate(repository: MemoryRepository) -> None:
     for expected in (1, 2, 3):
         count = repository.record_signature(
-            signature="sig", project_id="p", memory_id="m",
-            command="cmd", error_kind="e", when="2026-07-25T00:00:00.000Z",
+            signature="sig",
+            project_id="p",
+            memory_id="m",
+            command="cmd",
+            error_kind="e",
+            when="2026-07-25T00:00:00.000Z",
         )
         assert count == expected
     assert repository.signature_rows("p", "sig")[0]["occurrences"] == 3
 
 
 def test_signature_resolution_is_recorded(repository: MemoryRepository) -> None:
-    repository.record_signature(signature="sig", project_id="p", memory_id="m",
-                                command="c", error_kind="e",
-                                when="2026-07-25T00:00:00.000Z")
-    repository.set_signature_resolution(project_id="p", signature="sig",
-                                        resolved_by_id="E1")
+    repository.record_signature(
+        signature="sig",
+        project_id="p",
+        memory_id="m",
+        command="c",
+        error_kind="e",
+        when="2026-07-25T00:00:00.000Z",
+    )
+    repository.set_signature_resolution(project_id="p", signature="sig", resolved_by_id="E1")
     assert repository.signature_rows("p", "sig")[0]["resolved_by_id"] == "E1"
 
 
@@ -191,11 +199,16 @@ def test_lookup_by_content_hash_finds_an_identical_record(busy: Provalume) -> No
 
 
 def test_counting_respects_the_filter(busy: Provalume) -> None:
-    total = busy.memories.count(MemoryFilter(project_id=busy.project_id,
-                                             include_terminal=True, current_only=False))
+    total = busy.memories.count(
+        MemoryFilter(project_id=busy.project_id, include_terminal=True, current_only=False)
+    )
     gotchas = busy.memories.count(
-        MemoryFilter(project_id=busy.project_id, memory_types=(MemoryType.GOTCHA,),
-                     include_terminal=True, current_only=False)
+        MemoryFilter(
+            project_id=busy.project_id,
+            memory_types=(MemoryType.GOTCHA,),
+            include_terminal=True,
+            current_only=False,
+        )
     )
     assert 0 < gotchas < total
 
@@ -213,8 +226,14 @@ def test_projection_watermark_advances(busy: Provalume) -> None:
 
 def test_scope_widening_drops_narrower_fields() -> None:
     """A record promoted to repository scope must not keep claiming a branch."""
-    narrow = Scope(level=ScopeLevel.BRANCH, project_id="p", repository_id="r",
-                   branch="feature/x", run_id="run1", task_id="t1")
+    narrow = Scope(
+        level=ScopeLevel.BRANCH,
+        project_id="p",
+        repository_id="r",
+        branch="feature/x",
+        run_id="run1",
+        task_id="t1",
+    )
     wide = narrow.widened_to(ScopeLevel.PROJECT)
     assert wide.branch is None
     assert wide.run_id is None
@@ -228,9 +247,15 @@ def test_widening_to_a_narrower_level_is_refused() -> None:
 
 
 def test_scope_describe_is_readable() -> None:
-    described = Scope(level=ScopeLevel.BRANCH, project_id="p", repository_id="r",
-                      branch="main", run_id="run1", task_id="t1",
-                      agent_profile="agent-A").describe()
+    described = Scope(
+        level=ScopeLevel.BRANCH,
+        project_id="p",
+        repository_id="r",
+        branch="main",
+        run_id="run1",
+        task_id="t1",
+        agent_profile="agent-A",
+    ).describe()
     assert "project=p" in described
     assert "branch=main" in described
 
@@ -244,8 +269,9 @@ def test_scope_describe_is_readable() -> None:
         ("main", None, Applicability.UNCERTAIN),
     ],
 )
-def test_branch_specificity(record_branch: str | None, query_branch: str | None,
-                            expected: Applicability) -> None:
+def test_branch_specificity(
+    record_branch: str | None, query_branch: str | None, expected: Applicability
+) -> None:
     record = Scope(level=ScopeLevel.BRANCH, project_id="p", branch=record_branch)
     query = Scope(level=ScopeLevel.BRANCH, project_id="p", branch=query_branch)
     _, applicability = specificity(record, query)
@@ -278,8 +304,7 @@ def test_widening_to_repository_requires_landed_history(busy: Provalume) -> None
     memory = busy.memory_records(memory_types=[MemoryType.GOTCHA], limit=1)[0].model_copy(
         update={"scope": Scope(level=ScopeLevel.BRANCH, project_id="p", branch="x")}
     )
-    decision = scope_policy.can_widen(memory, ScopeLevel.REPOSITORY,
-                                      actor_source=Source.HUMAN)
+    decision = scope_policy.can_widen(memory, ScopeLevel.REPOSITORY, actor_source=Source.HUMAN)
     assert not decision.allowed
     assert decision.rule == scope_policy.REFUSE_NOT_LANDED
 
@@ -288,21 +313,22 @@ def test_widening_to_project_requires_a_human(busy: Provalume) -> None:
     from provalume.schemas.trust import IntegrationState
 
     memory = busy.memory_records(limit=1)[0].model_copy(
-        update={"integration_state": IntegrationState.ACCEPTED_USER,
-                "scope": Scope(level=ScopeLevel.REPOSITORY, project_id="p")}
+        update={
+            "integration_state": IntegrationState.ACCEPTED_USER,
+            "scope": Scope(level=ScopeLevel.REPOSITORY, project_id="p"),
+        }
     )
-    assert not scope_policy.can_widen(memory, ScopeLevel.PROJECT,
-                                      actor_source=Source.KERNEL).allowed
-    assert scope_policy.can_widen(memory, ScopeLevel.PROJECT,
-                                  actor_source=Source.HUMAN).allowed
+    assert not scope_policy.can_widen(
+        memory, ScopeLevel.PROJECT, actor_source=Source.KERNEL
+    ).allowed
+    assert scope_policy.can_widen(memory, ScopeLevel.PROJECT, actor_source=Source.HUMAN).allowed
 
 
 def test_agents_cannot_widen_scope(busy: Provalume) -> None:
     memory = busy.memory_records(limit=1)[0].model_copy(
         update={"scope": Scope(level=ScopeLevel.BRANCH, project_id="p", branch="x")}
     )
-    decision = scope_policy.can_widen(memory, ScopeLevel.REPOSITORY,
-                                      actor_source=Source.AGENT)
+    decision = scope_policy.can_widen(memory, ScopeLevel.REPOSITORY, actor_source=Source.AGENT)
     assert not decision.allowed
     assert decision.rule == scope_policy.REFUSE_AGENT
 

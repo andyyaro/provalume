@@ -18,7 +18,10 @@ from provalume.store.gitinfo import GitInfo, applicability_at
 def git(repo: Path, *args: str) -> str:
     return subprocess.run(  # noqa: S603 - fixed argv, throwaway repository
         ["git", "-C", str(repo), *args],
-        capture_output=True, text=True, check=True, timeout=30,
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=30,
     ).stdout.strip()
 
 
@@ -63,9 +66,7 @@ def test_ancestor_returns_true_for_an_earlier_commit(
     assert info.is_ancestor(git_commits[0], git_commits[2]) is True
 
 
-def test_ancestor_returns_false_for_a_later_commit(
-    git_repo: Path, git_commits: list[str]
-) -> None:
+def test_ancestor_returns_false_for_a_later_commit(git_repo: Path, git_commits: list[str]) -> None:
     info = GitInfo(git_repo)
     assert info.is_ancestor(git_commits[2], git_commits[0]) is False
 
@@ -108,9 +109,7 @@ def test_ancestor_record_is_current(git_repo: Path, git_commits: list[str]) -> N
     assert "ancestor" in reason
 
 
-def test_non_ancestor_record_is_historical(
-    git_repo: Path, git_commits: list[str]
-) -> None:
+def test_non_ancestor_record_is_historical(git_repo: Path, git_commits: list[str]) -> None:
     """The core rule: a fact introduced later is not current truth at an
     earlier commit."""
     applicability, _ = applicability_at(
@@ -181,9 +180,7 @@ def test_rebase_degrades_to_uncertain_rather_than_guessing(
     assert verdict in {False, None}, "a rewritten commit must not read as an ancestor"
 
 
-def test_cherry_pick_produces_a_different_sha(
-    git_repo: Path, git_commits: list[str]
-) -> None:
+def test_cherry_pick_produces_a_different_sha(git_repo: Path, git_commits: list[str]) -> None:
     """Same change, different identity — so ancestry legitimately fails and the
     result is labelled rather than asserted."""
     git(git_repo, "checkout", "-q", "-b", "side", git_commits[0])
@@ -200,9 +197,7 @@ def test_cherry_pick_produces_a_different_sha(
     assert GitInfo(git_repo).is_ancestor(source, picked) is False
 
 
-def test_merge_commit_reaches_both_parents(
-    git_repo: Path, git_commits: list[str]
-) -> None:
+def test_merge_commit_reaches_both_parents(git_repo: Path, git_commits: list[str]) -> None:
     git(git_repo, "checkout", "-q", "-b", "topic", git_commits[0])
     (git_repo / "topic.txt").write_text("topic\n")
     git(git_repo, "add", "-A")
@@ -220,8 +215,7 @@ def test_merge_commit_reaches_both_parents(
 
 def test_deleted_branch_leaves_records_retrievable(git_repo: Path) -> None:
     pv = Provalume.open(project_id="p", root=git_repo)
-    pv.record_fact(statement="A fact from a doomed branch.", subject="doomed",
-                   branch="gone")
+    pv.record_fact(statement="A fact from a doomed branch.", subject="doomed", branch="gone")
     git(git_repo, "checkout", "-q", "-b", "gone")
     git(git_repo, "checkout", "-q", "main")
     git(git_repo, "branch", "-D", "gone")
@@ -246,8 +240,7 @@ def test_sdk_fills_branch_and_commit_from_the_repository(git_repo: Path) -> None
 
 def test_recall_labels_applicability(git_repo: Path) -> None:
     pv = Provalume.open(project_id="p", root=git_repo)
-    pv.record_verification(command="pytest -q", passed=False, excerpt="E boom",
-                           error_kind="e")
+    pv.record_verification(command="pytest -q", passed=False, excerpt="E boom", error_kind="e")
     results = pv.recall("boom", limit=5).results
     assert results
     assert results[0].explanation.applicability in set(Applicability)

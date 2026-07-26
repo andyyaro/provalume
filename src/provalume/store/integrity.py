@@ -83,9 +83,7 @@ class AuditReport:
 class Auditor:
     """Runs integrity checks over a Provalume database."""
 
-    def __init__(
-        self, db: Database, journal: Journal, repository: MemoryRepository
-    ) -> None:
+    def __init__(self, db: Database, journal: Journal, repository: MemoryRepository) -> None:
         self.db = db
         self.journal = journal
         self.repository = repository
@@ -172,9 +170,7 @@ class Auditor:
                 f"missing: {', '.join(sorted(missing))}",
             )
         else:
-            report.add(
-                "append_only_triggers", Severity.INFO, "append-only triggers present"
-            )
+            report.add("append_only_triggers", Severity.INFO, "append-only triggers present")
         report.checks_run.append("append_only_triggers")
 
     def _check_chain(self, report: AuditReport) -> None:
@@ -301,9 +297,7 @@ class Auditor:
         hits: list[str] = []
 
         for event in self.journal.iter_all(project_id=project_id):
-            found = redact.scan_for_secrets(
-                json.dumps(event.payload, separators=(",", ":"))
-            )
+            found = redact.scan_for_secrets(json.dumps(event.payload, separators=(",", ":")))
             if found:
                 hits.append(f"event {event.event_id}: {', '.join(found)}")
                 if len(hits) >= 20:
@@ -338,19 +332,11 @@ class Auditor:
         report.stats["events"] = self.journal.count(project_id=project_id)
         report.stats["chain_head"] = report.chain_head
 
-        rows = self.db.query(
-            "SELECT trust_state, COUNT(*) AS n FROM memories GROUP BY trust_state"
-        )
-        report.stats["memories_by_trust"] = {
-            str(r["trust_state"]): int(r["n"]) for r in rows
-        }
+        rows = self.db.query("SELECT trust_state, COUNT(*) AS n FROM memories GROUP BY trust_state")
+        report.stats["memories_by_trust"] = {str(r["trust_state"]): int(r["n"]) for r in rows}
 
-        rows = self.db.query(
-            "SELECT memory_type, COUNT(*) AS n FROM memories GROUP BY memory_type"
-        )
-        report.stats["memories_by_type"] = {
-            str(r["memory_type"]): int(r["n"]) for r in rows
-        }
+        rows = self.db.query("SELECT memory_type, COUNT(*) AS n FROM memories GROUP BY memory_type")
+        report.stats["memories_by_type"] = {str(r["memory_type"]): int(r["n"]) for r in rows}
 
         report.stats["transitions"] = int(
             self.db.scalar("SELECT COUNT(*) FROM memory_transitions") or 0
@@ -369,9 +355,7 @@ class Auditor:
                 Severity.INFO,
                 f"{quarantined} record(s) are quarantined and will not be served as fact",
             )
-        terminal = sum(
-            report.stats["memories_by_trust"].get(s.value, 0) for s in TERMINAL_STATES
-        )
+        terminal = sum(report.stats["memories_by_trust"].get(s.value, 0) for s in TERMINAL_STATES)
         if terminal:
             report.add(
                 "terminal_records",

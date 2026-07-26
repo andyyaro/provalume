@@ -63,9 +63,7 @@ def build_lesson(event: Event, *, landing_state: TrustState) -> Memory | None:
         memory_id=derive_memory_id(event.event_id, "lesson"),
         memory_type=MemoryType.GOTCHA,
         content=content,
-        text=lesson_text(
-            reviewer=reviewer, finding=finding, subject=subject, branch=event.branch
-        ),
+        text=lesson_text(reviewer=reviewer, finding=finding, subject=subject, branch=event.branch),
         scope=scope_for(event),
         run_id=event.run_id,
         task_id=event.task_id,

@@ -87,8 +87,9 @@ SERVER_INSTRUCTIONS: Final = (
 )
 
 
-def _text_result(text: str, *, structured: dict[str, Any] | None = None,
-                 is_error: bool = False) -> dict[str, Any]:
+def _text_result(
+    text: str, *, structured: dict[str, Any] | None = None, is_error: bool = False
+) -> dict[str, Any]:
     """Build a CallToolResult.
 
     Structured content is also serialised into a text block, which the spec
@@ -228,8 +229,7 @@ class McpServer:
     def _ok(self, request_id: Any, result: dict[str, Any]) -> dict[str, Any]:
         return {"jsonrpc": "2.0", "id": request_id, "result": result}
 
-    def _error(self, request_id: Any, code: int, message: str,
-               data: Any = None) -> dict[str, Any]:
+    def _error(self, request_id: Any, code: int, message: str, data: Any = None) -> dict[str, Any]:
         error: dict[str, Any] = {"code": code, "message": message}
         if data is not None:
             error["data"] = data
@@ -241,8 +241,7 @@ class McpServer:
         requested = str(params.get("protocolVersion", ""))
         # Spec: answer with the client's version if supported, else our latest.
         self.protocol_version = (
-            requested if requested in SUPPORTED_PROTOCOL_VERSIONS
-            else PREFERRED_PROTOCOL_VERSION
+            requested if requested in SUPPORTED_PROTOCOL_VERSIONS else PREFERRED_PROTOCOL_VERSION
         )
 
         client = params.get("clientInfo") or {}
@@ -280,10 +279,7 @@ class McpServer:
         # the limit entirely, so a loop on `promote` wrote an unbounded number of
         # `mcp.refused` events while the limiter never moved (threat T24).
         if not self.limiter.check():
-            reason = (
-                f"rate limit exceeded ({self.limiter.per_minute} calls/minute). "
-                "Retry shortly."
-            )
+            reason = f"rate limit exceeded ({self.limiter.per_minute} calls/minute). Retry shortly."
             self._record_throttled(name, reason=reason, started=started)
             return _text_result(reason, is_error=True)
 
@@ -498,13 +494,12 @@ class McpServer:
             independent = "independent" if review.independent else "NOT independent"
             lines.append(f"  review {review.verdict} by {review.reviewer} ({independent})")
         for integration in provenance.integrations:
-            lines.append(
-                f"  integration {integration.state} at {integration.commit_sha[:12]}"
-            )
+            lines.append(f"  integration {integration.state} at {integration.commit_sha[:12]}")
         return _text_result("\n".join(lines), structured=provenance.model_dump(mode="json"))
 
-    def _typed_query(self, arguments: dict[str, Any], memory_type: MemoryType,
-                     heading: str) -> dict[str, Any]:
+    def _typed_query(
+        self, arguments: dict[str, Any], memory_type: MemoryType, heading: str
+    ) -> dict[str, Any]:
         """Query one memory type, hard.
 
         ``memory_types`` is a ranking nudge inside the engine, not a filter, so
@@ -709,8 +704,7 @@ _TOOL_SCHEMAS: Final[list[dict[str, Any]]] = [
         "name": "query_decisions",
         "title": "Query decisions",
         "description": (
-            "Find recorded decisions, including the alternatives that were rejected "
-            "and why."
+            "Find recorded decisions, including the alternatives that were rejected and why."
         ),
         "inputSchema": {"type": "object", "properties": dict(_QUERY_PROPERTIES)},
     },

@@ -29,9 +29,7 @@ def derive_memory_id(event_id: str, kind: str) -> str:
 
 
 def with_content_hash(memory: Memory) -> Memory:
-    return memory.model_copy(
-        update={"content_hash": hash_content(memory.content, memory.text)}
-    )
+    return memory.model_copy(update={"content_hash": hash_content(memory.content, memory.text)})
 
 
 def scope_for(event: Event, *, level: ScopeLevel | None = None) -> Scope:
