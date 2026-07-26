@@ -892,13 +892,42 @@ def eval_command(
         str | None,
         typer.Option("--scenario", help="Run one scenario by name instead of all."),
     ] = None,
+    suite: Annotated[
+        str,
+        typer.Option(
+            "--suite",
+            help=(
+                "Which suite to run: 'scenarios' (synthetic fixtures) or "
+                "'trajectories' (captured Orkestra call logs; needs a "
+                "repository checkout)."
+            ),
+        ),
+    ] = "scenarios",
+    fixtures: Annotated[
+        Path | None,
+        typer.Option("--fixtures", help="Trajectory fixtures directory override."),
+    ] = None,
     out: Annotated[Path | None, typer.Option("--out", help="Write results JSON here.")] = None,
     json: JsonOption = False,
 ) -> None:
     """Run the replayable evaluation harness."""
-    from provalume.evals.replay import run_all, run_one
+    if suite == "scenarios":
+        from provalume.evals.replay import run_all, run_one
 
-    results = run_one(scenario) if scenario else run_all()
+        results: Any = run_one(scenario) if scenario else run_all()
+        entries = results.scenarios
+    elif suite == "trajectories":
+        from provalume.evals import trajectories
+
+        results = (
+            trajectories.run_one(scenario, root=fixtures)
+            if scenario
+            else trajectories.run_all(root=fixtures)
+        )
+        entries = results.trajectories
+    else:
+        console.print(f"[pv.error]unknown suite {suite!r}; use scenarios or trajectories[/]")
+        raise typer.Exit(code=2)
     payload = results.as_dict()
 
     if out is not None:
@@ -909,12 +938,14 @@ def eval_command(
         raise typer.Exit(code=0 if results.passed else 1)
 
     console.print("[pv.heading]Provalume evaluation[/]\n")
-    for entry in results.scenarios:
+    for entry in entries:
         mark = "[pv.success]pass[/]" if entry["passed"] else "[pv.error]FAIL[/]"
         console.print(f"  {mark}  {entry['id']:<3} {entry['name']}")
         if not entry["passed"]:
             for failure in entry["failures"]:
                 console.print(f"        [pv.error]{failure}[/]")
+        for note in entry["notes"]:
+            console.print(f"        [pv.muted]{note}[/]")
     console.print(f"\n  {results.summary()}")
     if not results.passed:
         raise typer.Exit(code=1)

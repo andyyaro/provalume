@@ -15,10 +15,18 @@ defects no test, eval, or review had caught (`IMPLEMENTATION_TRACKER.md`, bugs
 15–21), including that no memory could climb past `verified` in a real run and
 that cross-run resolution was unreachable.
 
+That scenario family has since been re-run against released 0.1.4 and
+captured as replayable fixtures: the trajectory suite
+(`provalume eval --suite trajectories`, [ADR-0019](../adr/ADR-0019-trajectory-benchmark.md))
+replays the captured adapter calls and scores every decision point, so the
+behaviour the dogfooding exercised stays verified on every commit instead of
+once. (The bug-finding runs themselves predate the capture shim and were not
+recorded; the fixtures re-create the same stories against the fixed code.)
+
 What this still does not establish is whether a digest measurably helps a real
-model. That needs real agents and real quota. Everything verified so far
-concerns what gets *recorded* and *retrieved*, not whether an agent reads it and
-does better.
+model. That needs real agents and real quota. Everything verified so far —
+including the trajectory suite — concerns what gets *recorded* and
+*retrieved*, not whether an agent reads it and does better.
 
 
 **This is the biggest weakness of 0.1.0.**
@@ -197,12 +205,16 @@ runs and that vectors cannot bypass governance — not the quality.
 
 ## 13. Lexical retrieval misses synonyms
 
-**Confirmed by dogfooding.** A gotcha is keyed on the command and the error, so
-it is findable by `ConnectionError` or `transient upstream reset` but *not* by
-`uploader retry` — the feature being worked on appears nowhere in the record. A
-developer asking "what do we know about the uploader?" gets nothing, while one
-who already knows the error message gets the answer. That is backwards from how
-the question usually arrives.
+**Confirmed by dogfooding, and now pinned as fixtures.** A gotcha is keyed on
+the command and the error, so it is findable by `ConnectionError` or
+`transient upstream reset` but *not* by `uploader retry` — the feature being
+worked on appears nowhere in the record. A developer asking "what do we know
+about the uploader?" gets nothing, while one who already knows the error
+message gets the answer. That is backwards from how the question usually
+arrives. The trajectory suite carries `known_limitation` probes that pass by
+missing and fail if the behaviour ever silently changes — and the same gap
+operates at the integration's brief-digest choke point, which queries by task
+title (see `BENCHMARKS.md`, "What the trajectories showed").
 
 
 The default installation uses FTS5 and BM25. A query for "dependency resolution
@@ -212,10 +224,13 @@ extras exist to address.
 
 ## 14. Benchmarks are self-comparisons
 
-The eval harness compares Provalume against Provalume, on Provalume's own
-fixtures. Several metrics have small denominators — five adversarial records, three
-cross-scope checks — because they are targeted scenarios rather than a large
-corpus. Rates are always reported with their denominators for that reason.
+Both suites compare Provalume against Provalume — the twenty scenarios on
+fixtures this project wrote, the trajectory suite on call logs this project
+captured from its own dogfood runs (one scripted project family, placeholder
+agents, one machine). Several metrics have small denominators — five
+adversarial records, nineteen decision points — because they are targeted
+scenarios and four trajectories rather than a large corpus. Rates are always
+reported with their denominators for that reason.
 
 **No LongMemEval-V2 score is claimed**, no comparison against another system is
 made, and no superiority claim appears anywhere in this repository. See

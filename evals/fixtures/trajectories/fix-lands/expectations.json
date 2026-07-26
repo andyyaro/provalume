@@ -1,0 +1,36 @@
+{
+  "trajectory": "fix-lands",
+  "competencies": ["premise-awareness", "workflow-knowledge", "dynamic-state-tracking"],
+  "description": "A task fails its gate twice, a fix lands in run 2, and the resolution is presented at every later decision point",
+  "captured": {
+    "date": "2026-07-26",
+    "provalume": "0.1.4 (installed from PyPI)",
+    "orkestra": "orkestra-runtime 0.5.2, provalume-memory-integration branch @ 18457c2",
+    "scenario": "Dogfood fixture, two runs: run 1 blocks on a failing pytest gate; the retry fix is committed by hand; run 2 passes, reviews, and lands all three tasks."
+  },
+  "checkpoints": [
+    {"call": 2, "expect": {"items": 0}},
+    {"call": 3, "expect": {"matched": false}},
+    {"call": 6, "expect": {"items": 1, "contains": ["Agent performance", "alpha on implement: 1/1 succeeded (100%)."]}},
+    {"call": 7, "expect": {"matched": true, "occurrences": 1, "resolved": false, "min_confidence": 0.85}},
+    {"call": 12, "expect": {"items": 2, "contains": ["Agent performance", "alpha on implement: 1/1 succeeded (100%).", "beta on implement: 1/1 succeeded (100%), 1 required fallback."]}},
+    {"call": 13, "expect": {"matched": true, "occurrences": 2, "resolved": false, "min_confidence": 0.85}},
+    {"call": 19, "expect": {"items": 0}},
+    {"call": 20, "expect": {"matched": true, "occurrences": 2, "resolution_names_commit_of_call": 18}},
+    {"call": 26, "expect": {"items": 4, "contains": ["Prior failures and lessons", "Verified procedures", "failed (verify_failed)", "[VERIFIED+LANDED]"]}},
+    {"call": 27, "expect": {"matched": true, "occurrences": 2, "resolution_names_commit_of_call": 18}}
+  ],
+  "probes": [
+    {"kind": "digest", "query": "transient upstream reset", "char_budget": 2000,
+     "expect": {"min_items": 1, "contains": ["Prior failures", "ConnectionError"]}},
+    {"kind": "recall", "query": "transient upstream reset",
+     "expect": {"total": 1, "top_type": "gotcha", "top_trust": "verified"}},
+    {"kind": "recall", "query": "uploader retry",
+     "expect": {"total": 0},
+     "known_limitation": "LIMITATIONS.md §13: the gotcha is keyed on command and error, so the feature description finds nothing under lexical retrieval"},
+    {"kind": "ladder", "expect_counts": [
+      {"type": "gotcha", "trust": "verified", "min": 1},
+      {"type": "procedural", "trust": "integrated", "min": 3}
+    ]}
+  ]
+}

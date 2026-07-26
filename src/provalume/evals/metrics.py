@@ -130,6 +130,22 @@ class Metrics:
     verification_improvement: Counter = field(default_factory=Counter)
     review_cycle_reduction: Counter = field(default_factory=Counter)
 
+    occurrence_fidelity: Counter = field(default_factory=Counter)
+    """Fraction of warned decision points whose occurrence count exactly matched
+    the trajectory's ground truth. A wrong count misstates how often something
+    failed, which is the difference between "this once failed" and "this keeps
+    failing". Observed by the trajectory suite."""
+
+    resolution_surfacing: Counter = field(default_factory=Counter)
+    """Fraction of post-landing decision points that presented the resolution
+    and named the landing commit, rather than warning as if still unresolved.
+    Observed by the trajectory suite."""
+
+    digest_inclusion: Counter = field(default_factory=Counter)
+    """Fraction of digest checks whose required content strings appeared in the
+    digest text. Budget compliance is a separate hard check, not this counter.
+    Observed by the trajectory suite."""
+
     retrieval_latency: Timing = field(default_factory=Timing)
     write_latency: Timing = field(default_factory=Timing)
     rebuild_latency: Timing = field(default_factory=Timing)
@@ -159,6 +175,9 @@ class Metrics:
             "procedure_reuse": self.procedure_reuse.as_dict(),
             "verification_improvement": self.verification_improvement.as_dict(),
             "review_cycle_reduction": self.review_cycle_reduction.as_dict(),
+            "occurrence_fidelity": self.occurrence_fidelity.as_dict(),
+            "resolution_surfacing": self.resolution_surfacing.as_dict(),
+            "digest_inclusion": self.digest_inclusion.as_dict(),
             "retrieval_latency": self.retrieval_latency.as_dict(),
             "write_latency": self.write_latency.as_dict(),
             "rebuild_latency": self.rebuild_latency.as_dict(),
@@ -182,6 +201,9 @@ class Metrics:
             "procedure_reuse",
             "verification_improvement",
             "review_cycle_reduction",
+            "occurrence_fidelity",
+            "resolution_surfacing",
+            "digest_inclusion",
         ):
             mine: Counter = getattr(self, name)
             theirs: Counter = getattr(other, name)
@@ -202,6 +224,9 @@ class Metrics:
             ("poisoning success", self.poisoning_success, "target 0"),
             ("false warnings", self.false_warnings, "lower is better"),
             ("procedure reuse", self.procedure_reuse, "higher is better"),
+            ("occurrence fidelity", self.occurrence_fidelity, "higher is better"),
+            ("resolution surfacing", self.resolution_surfacing, "higher is better"),
+            ("digest inclusion", self.digest_inclusion, "higher is better"),
         ]
         lines = [f"  {name:<24} {counter}  ({note})" for name, counter, note in rows]
         lines.append(

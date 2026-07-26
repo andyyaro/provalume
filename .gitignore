@@ -19,9 +19,11 @@ htmlcov/
 .provalume/
 
 # Eval outputs are reproducible artifacts, not source. The committed
-# baselines live in evals/results/baseline/ and are tracked explicitly.
+# baselines live in evals/results/baseline/ and evals/results/trajectories/
+# and are tracked explicitly.
 evals/results/*
 !evals/results/baseline/
+!evals/results/trajectories/
 !evals/results/.gitkeep
 
 # Generated agent context files. Provalume must never let these enter a
