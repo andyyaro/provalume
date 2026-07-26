@@ -144,6 +144,25 @@ Every normalisation rule is individually tested and the false-positive rate is a
 eval metric rather than an assumption — but two failures sharing a signature are
 *probably* the same failure, never certainly.
 
+## 9a. A resolution is repository-scoped, not task-scoped
+
+A failure signature is keyed on the command and the error, not on the task that
+hit it. Under an orchestrator the verification gate is repo-wide, so two
+unrelated tasks share one signature — and when either one's work lands and the
+command passes, the signature is marked resolved while the other task may still
+be blocked.
+
+This is deliberate as far as it goes: the signature says "this command failed
+this way in this repository", and a landing that makes the command pass is a
+real answer to that. What it does *not* say is "your task is fixed". Only work
+that actually landed can resolve anything — a pass inside a worktree that is
+later discarded (merge conflict, rejected review, exhausted budget, or a
+non-mutating task) never resolves a failure, which is enforced and tested.
+
+The residual: a still-blocked task can find its shared signature already
+resolved by a sibling's landing, and the gate will describe that landing rather
+than warn afresh.
+
 ## 10. Single writer, single machine
 
 Provalume assumes one writing process. Concurrent writers serialise on SQLite's

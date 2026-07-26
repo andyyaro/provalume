@@ -298,6 +298,7 @@ class OrkestraAdapter:
         target: str = "run",
         task_id: str | None = None,
         branch: str | None = None,
+        resolves_signature: str = "",
     ) -> Event:
         """Record that work landed. What semantic truth requires."""
         # `branch` goes through fields() rather than alongside it: fields()
@@ -306,6 +307,7 @@ class OrkestraAdapter:
         return self.pv.record_integration(
             commit_sha=commit_sha,
             target=target,
+            resolves_signature=resolves_signature,
             **fields,
         )
 

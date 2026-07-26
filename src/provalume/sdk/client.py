@@ -340,14 +340,39 @@ class Provalume:
         )
 
     def record_integration(
-        self, *, commit_sha: str, target: str = "run", branch: str | None = None, **fields: Any
+        self,
+        *,
+        commit_sha: str,
+        target: str = "run",
+        branch: str | None = None,
+        resolves_signature: str = "",
+        **fields: Any,
     ) -> Event:
-        """Record that work landed. The evidence semantic truth requires."""
+        """Record that work landed. The evidence semantic truth requires.
+
+        ``resolves_signature`` names a failure this landing resolves. Prefer it
+        to the same argument on :meth:`record_verification` whenever an
+        orchestrator can supply it: a verification proves a command succeeded in
+        some worktree, and worktrees are discarded for merge conflicts, rejected
+        reviews and exhausted budgets. Only a landing proves the repository
+        changed, which is what "what later worked" claims.
+        """
         return self.record_event(
             EventType.INTEGRATION_LANDED,
             source=Source.KERNEL,
-            payload={"target": target, "branch": branch or ""},
+            payload={
+                "target": target,
+                "branch": branch or "",
+                **({"resolves_signature": resolves_signature} if resolves_signature else {}),
+            },
             commit_sha=commit_sha,
+            # The envelope branch too, not only the payload. Without this the
+            # event falls back to whatever branch the recording process happens
+            # to have checked out — for an orchestrator that is the *base*
+            # branch, so the row read "landed on main" while the payload
+            # correctly named the integration branch. A consumer reading the
+            # column rather than the payload drew the opposite conclusion.
+            **({"branch": branch} if branch else {}),
             **fields,
         )
 

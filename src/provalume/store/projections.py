@@ -504,7 +504,18 @@ class Projector:
         self._try_promote(semantic, (event,), stats)
 
     def _on_integration(self, event: Event, landing: TrustState, stats: ProjectionStats) -> None:
-        """Work landed: records from that branch or task become promotable."""
+        """Work landed: records from that branch or task become promotable.
+
+        A landing may also name the failure it resolves. That claim belongs here
+        rather than on the verification that passed: a pass proves a command
+        succeeded in some worktree, and an orchestrator discards worktrees for
+        merge conflicts, rejected reviews, and exhausted budgets. Only a landing
+        proves the repository changed, which is what "what later worked" asserts.
+        """
+        resolves = str(event.payload.get("resolves_signature", "")).strip()
+        if resolves:
+            self._link_resolution(event, resolves, stats)
+
         target = str(event.payload.get("target", "run"))
         state = (
             IntegrationState.ACCEPTED_USER if target == "user" else IntegrationState.INTEGRATED_RUN
@@ -513,7 +524,14 @@ class Projector:
             updated = memory.model_copy(
                 update={
                     "integration_state": state,
-                    "commit_sha": memory.commit_sha or event.commit_sha,
+                    # The landed commit wins. `commit_sha` is what currency is
+                    # judged against ("still true at this commit?"), and a
+                    # record that has landed is true of what landed — not of
+                    # the base its worktree branched from, which is where the
+                    # verification that observed it happened to run. The
+                    # observation itself is still recoverable through
+                    # `source_event_ids`.
+                    "commit_sha": event.commit_sha or memory.commit_sha,
                     "source_event_ids": tuple(
                         dict.fromkeys([*memory.source_event_ids, event.event_id])
                     ),

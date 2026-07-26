@@ -370,6 +370,14 @@ def resolution_summary(
         head = note
 
     if not head:
+        # No command and no note: this resolution came from a landing, which is
+        # the strongest evidence there is — the tree changed and the change
+        # survived review and the merge — but it names no command, because a
+        # landing is not one. The commit is the whole answer.
+        branch = str(resolution.get("branch") or "").strip()
+        if commit:
+            where = f" on {branch}" if branch else ""
+            return f"work landed{where} as commit {commit[:12]}"
         return ""
     if commit:
         return f"{head} after commit {commit[:12]}"
@@ -391,6 +399,7 @@ def build_resolution_link(
     """
     content = dict(gotcha.content)
     content["resolution"] = {
+        "branch": resolution_event.payload.get("branch", "") or resolution_event.branch or "",
         "command": resolution_event.payload.get("command", ""),
         "event_id": resolution_event.event_id,
         "recorded_at": resolution_event.recorded_at,
