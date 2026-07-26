@@ -1,0 +1,9 @@
+{
+  "setup": {
+    "repo": "boltons",
+    "base": "df92fa4f0e13c92f9536a4e8f7ec78ced90e8789",
+    "head": "e66cade323f5c11cebb4bd0f099e634b245adccd",
+    "records": {}
+  },
+  "rows": []
+}
