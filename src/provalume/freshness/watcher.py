@@ -18,8 +18,12 @@ operator-installed hook, and nowhere else (ADR-0020).
 Fail-open (I5) — with honest reporting: an unreadable commit is *degradation*
 and says so (``commit_readable=False``); a commit that changed nothing in the
 client's world is a clean no-op; a mid-loop failure returns what was actually
-appended (``completed=False``) rather than denying work already done. Nothing
-here ever raises.
+appended (``completed=False``) rather than denying work already done; an
+assessment that failed open is *counted* (``assessment_failed``), because a
+failure the caller cannot see is a failure nobody will retry. A re-scan
+re-assesses a seen-but-never-assessed trigger, so a transient git error
+cannot permanently pin a trivia landing at ``suspect``. Nothing here ever
+raises.
 """
 
 from __future__ import annotations
@@ -43,6 +47,12 @@ log = logging.getLogger("provalume.freshness")
 #: trigger it should have produced.
 MAX_CHANGED_PATHS_RECORDED: Final = 2_000
 
+#: Assessment reads two blobs per intersecting path; over this bound the
+#: record simply stays ``suspect`` unassessed rather than turning a
+#: post-merge hook into thousands of subprocess spawns. Escalation is the
+#: cheap direction (LIMITATIONS §9f).
+MAX_ASSESSED_PATHS: Final = 200
+
 
 @dataclass
 class WatchResult:
@@ -53,8 +63,13 @@ class WatchResult:
     caller must not present it as "nothing to mark". ``completed=False``
     means a mid-scan failure: ``triggered`` still lists every event that was
     actually appended and projected, because denying finished work would be
-    its own lie. ``skipped`` counts records whose trigger for this commit
-    was already outstanding — re-scanning a commit is idempotent.
+    its own lie. ``assessed`` lists the relevance verdicts appended — for
+    fresh triggers and for seen triggers recovered from an earlier failed
+    assessment alike. ``skipped`` counts records whose trigger for this
+    commit was already seen *and* assessed — re-scanning a commit is
+    idempotent. ``assessment_failed`` counts triggers left ``suspect``
+    because their assessment failed open (safe direction, but incomplete —
+    callers must surface it).
     """
 
     commit_readable: bool = True
@@ -62,6 +77,7 @@ class WatchResult:
     triggered: list[Event] = field(default_factory=list)
     assessed: list[Event] = field(default_factory=list)
     skipped: int = 0
+    assessment_failed: int = 0
 
 
 def process_landed_commit(pv: Provalume, *, commit_sha: str) -> WatchResult:
@@ -94,9 +110,18 @@ def process_landed_commit(pv: Provalume, *, commit_sha: str) -> WatchResult:
             if pv.memories.trigger_seen(
                 project_id=pv.project_id, record_id=record_id, trigger_commit=commit_sha
             ):
-                # Already booked: a hook that fires twice must not multiply
-                # journal volume (T29).
-                result.skipped += 1
+                if pv.memories.trigger_assessed(
+                    project_id=pv.project_id, record_id=record_id, trigger_commit=commit_sha
+                ):
+                    # Already booked and answered: a hook that fires twice
+                    # must not multiply journal volume (T29).
+                    result.skipped += 1
+                    continue
+                # Booked, but its assessment failed open on an earlier scan:
+                # recover rather than skip, or the trigger is suspect forever
+                # with no path back (M3 review, finding 5). No new trigger
+                # event — the booking already happened.
+                _record_assessment(pv, git, commit_sha, record_id, intersecting, result)
                 continue
             payload = {
                 "record_id": record_id,
@@ -113,14 +138,39 @@ def process_landed_commit(pv: Provalume, *, commit_sha: str) -> WatchResult:
                     commit_sha=commit_sha,
                 )
             )
-            assessment = _assess(pv, git, commit_sha, record_id, intersecting)
-            if assessment is not None:
-                result.assessed.append(assessment)
+            _record_assessment(pv, git, commit_sha, record_id, intersecting, result)
         return result
     except Exception:
         log.warning("freshness watcher failed open", exc_info=True)
         result.completed = False
         return result
+
+
+def _record_assessment(
+    pv: Provalume,
+    git: Any,
+    commit_sha: str,
+    record_id: str,
+    intersecting: tuple[str, ...],
+    result: WatchResult,
+) -> None:
+    """Assess one trigger and book the outcome on ``result``."""
+    if len(intersecting) > MAX_ASSESSED_PATHS:
+        # Deliberately unassessed, not failed: the record stays suspect and
+        # the bound is a documented policy, not an error (LIMITATIONS §9f).
+        log.info(
+            "freshness watcher: %d intersecting paths exceed the assessment "
+            "bound (%d); record %s stays suspect unassessed",
+            len(intersecting),
+            MAX_ASSESSED_PATHS,
+            record_id,
+        )
+        return
+    assessment = _assess(pv, git, commit_sha, record_id, intersecting)
+    if assessment is None:
+        result.assessment_failed += 1
+    else:
+        result.assessed.append(assessment)
 
 
 def _assess(
@@ -138,15 +188,29 @@ def _assess(
     """
     try:
         from provalume.freshness import relevance
+        from provalume.schemas.freshness import ReasonCode, RelevanceVerdict
 
         parents = git.parents(commit_sha)
         parent = parents[0] if parents else None
         files: list[tuple[str, str | None, str | None]] = []
+        identical = 0
         for path in intersecting:
             pre = git.file_at(parent, path) if parent else None
             post = git.file_at(commit_sha, path)
+            if pre is not None and pre == post:
+                # Git says this path changed and the text is byte-identical:
+                # a mode flip, an eol conversion the text layer normalised, a
+                # filter — a change the differ cannot see is a change it
+                # cannot clear (M3 review, finding 8).
+                identical += 1
+                continue
             files.append((path, pre, post))
-        verdict, reason = relevance.assess_paths(files)
+        memory = pv.memories.get(record_id)
+        command = str(memory.content.get("command", "")) if memory is not None else ""
+        if identical:
+            verdict, reason = RelevanceVerdict.RELEVANT, ReasonCode.UNPARSEABLE
+        else:
+            verdict, reason = relevance.assess_paths(files, command=command or None)
         return pv.record_event(
             EventType.RELEVANCE_ASSESSED,
             source=Source.KERNEL,

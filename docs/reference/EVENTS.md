@@ -172,10 +172,15 @@ repeated failure re-anchors its gotcha), **the latest by journal order wins**
 for freshness derivation. The watcher (`provalume freshness <sha>`)
 triggers and assesses in one pass: trivia-only landings (whitespace,
 comments, docstrings) discharge their own trigger and leave the record
-`current`; everything else — including a file the differ cannot parse —
-stays `suspect`. The one remaining writer, `reverification.executed`,
-arrives with M4; until then that event is stored and inert, which is the
-intended state.
+`current`; everything else — including a file the differ cannot parse, a
+change git reports but the text layer cannot see, and any trivia landing on
+a record whose verification command reads comments or docstrings
+(LIMITATIONS §9e) — stays `suspect`. A trigger can end up booked but
+unassessed: the assessment failed open, or the intersection exceeded the
+per-record bound (LIMITATIONS §9f). The CLI reports both rather than
+claiming a clean pass, and a re-scan re-assesses a failed-open trigger. The
+one remaining writer, `reverification.executed`, arrives with M4; until
+then that event is stored and inert, which is the intended state.
 
 ## Recording events
 

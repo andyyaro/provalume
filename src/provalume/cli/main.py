@@ -858,15 +858,40 @@ def freshness(
         console.print("[pv.error]No commit to scan: not in a repository and none given.[/]")
         raise typer.Exit(code=1)
     result = process_landed_commit(pv, commit_sha=sha)
+    # One scan both triggers and assesses; the output must say which of the
+    # two actually decided each record's fate. Reporting a discharged trivia
+    # landing as "marked suspect" is the exact inversion of what happened.
+    verdicts: dict[str, tuple[str, str]] = {
+        str(e.payload.get("record_id", "")): (
+            str(e.payload.get("verdict", "")),
+            str(e.payload.get("reason_code", "")),
+        )
+        for e in result.assessed
+    }
+    intersecting_by_record = {
+        str(e.payload.get("record_id", "")): list(e.payload.get("intersecting_paths", []))
+        for e in result.triggered
+    }
+    scanned = sorted(set(intersecting_by_record) | set(verdicts))
+    left_current = [rid for rid in scanned if verdicts.get(rid, ("", ""))[0] == "irrelevant"]
+    marked_suspect = [rid for rid in scanned if rid not in left_current]
     payload = {
         "commit": sha,
         "commit_readable": result.commit_readable,
         "completed": result.completed,
-        "skipped_already_outstanding": result.skipped,
-        "triggered": sorted(str(e.payload.get("record_id", "")) for e in result.triggered),
+        "skipped_already_seen": result.skipped,
+        "triggered": sorted(intersecting_by_record),
+        "assessed": [
+            {"record_id": rid, "verdict": verdicts[rid][0], "reason_code": verdicts[rid][1]}
+            for rid in sorted(verdicts)
+        ],
+        "marked_suspect": marked_suspect,
+        "left_current": left_current,
+        "assessment_failed": result.assessment_failed,
     }
+    incomplete = not result.commit_readable or not result.completed or result.assessment_failed > 0
     if _emit(payload, as_json=json):
-        if not result.commit_readable or not result.completed:
+        if incomplete:
             raise typer.Exit(code=1)
         return
     if not result.commit_readable:
@@ -875,27 +900,48 @@ def freshness(
             "clone, or no repository. Nothing was scanned; this is not a clean result."
         )
         raise typer.Exit(code=1)
-    if result.triggered:
+
+    def _describe(rid: str) -> str:
+        verdict, reason = verdicts.get(rid, ("", ""))
+        label = reason if verdict else "unassessed"
+        paths = ", ".join(intersecting_by_record.get(rid, [])[:5])
+        detail = f"{label}; {paths}" if paths else label
+        return f"  {rid}  [pv.muted]{detail}[/]"
+
+    if marked_suspect:
         console.print(
-            f"[pv.warning]{len(result.triggered)} record(s) marked suspect[/] by commit {sha[:12]}:"
+            f"[pv.warning]{len(marked_suspect)} record(s) marked suspect[/] by commit {sha[:12]}:"
         )
-        for event in result.triggered:
-            intersecting = ", ".join(event.payload.get("intersecting_paths", [])[:5])
-            console.print(f"  {event.payload.get('record_id', '')}  [pv.muted]{intersecting}[/]")
-    elif result.skipped:
+        for rid in marked_suspect:
+            console.print(_describe(rid))
+    if left_current:
         console.print(
-            f"[pv.muted]{result.skipped} record(s) already marked for {sha[:12]} — "
-            "re-scan is a no-op.[/]"
+            f"[pv.success]{len(left_current)} record(s) assessed irrelevant[/] "
+            f"for commit {sha[:12]} — left current:"
         )
-    else:
-        console.print(
-            f"[pv.muted]No recorded blast radius intersects {sha[:12]} — nothing to mark.[/]"
+        for rid in left_current:
+            console.print(_describe(rid))
+    if not scanned:
+        if result.skipped:
+            console.print(
+                f"[pv.muted]{result.skipped} record(s) already scanned for {sha[:12]} — "
+                "re-scan is a no-op.[/]"
+            )
+        else:
+            console.print(
+                f"[pv.muted]No recorded blast radius intersects {sha[:12]} — nothing to mark.[/]"
+            )
+    if result.assessment_failed:
+        err_console.print(
+            f"[pv.error]{result.assessment_failed} assessment(s) failed open[/] — those "
+            "records stay suspect unassessed; a re-scan of this commit will retry them."
         )
     if not result.completed:
         err_console.print(
             "[pv.error]The scan did not complete[/] — the records listed above were "
             "marked before the failure; the journal has the fail-open log."
         )
+    if incomplete:
         raise typer.Exit(code=1)
 
 

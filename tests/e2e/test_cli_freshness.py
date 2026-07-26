@@ -60,6 +60,46 @@ def test_a_landed_commit_marks_records_suspect(cli: CliRunner, tmp_path: Path) -
     assert suspect, f"no suspect record surfaced in recall: {results}"
 
 
+def test_a_trivia_landing_reports_left_current_not_marked_suspect(
+    cli: CliRunner, tmp_path: Path
+) -> None:
+    """The command triggers and assesses in one pass, and its output must say
+    which one decided the record's fate. The M3 review caught it announcing
+    'marked suspect' for a landing the assessment had just discharged — the
+    exact opposite of what happened."""
+    repo = _repo(tmp_path)
+    db = str(repo / ".provalume" / "db.sqlite")
+    from provalume.sdk.client import Provalume
+
+    pv = Provalume.open(db, project_id="e2e", root=repo)
+    pv.record_verification(command=f"{sys.executable} -m pytest tests/", passed=True)
+    pv.close()
+
+    (repo / "mod.py").write_text("V = 1  # a comment\n")
+    _git(repo, "add", "-A")
+    _git(repo, "-c", "user.email=a@b", "-c", "user.name=a", "commit", "-qm", "comment")
+    sha = _git(repo, "rev-parse", "HEAD")
+
+    result = cli("freshness", sha, "--db", db, "--project", "e2e", "--json", cwd=repo)
+    payload = json.loads(result.stdout)
+    assert payload["triggered"], "the landing touched the radius; the trigger is real"
+    assert payload["marked_suspect"] == []
+    assert payload["left_current"] == payload["triggered"]
+    assert payload["assessment_failed"] == 0
+    assert [a["verdict"] for a in payload["assessed"]] == ["irrelevant"]
+    assert [a["reason_code"] for a in payload["assessed"]] == ["comment_only"]
+
+    text = cli("freshness", sha, "--db", db, "--project", "e2e", cwd=repo)
+    combined = text.stdout + text.stderr
+    assert "marked suspect" not in combined
+    assert "already scanned" in combined, "a re-scan of an assessed trigger is a no-op"
+
+    rescan = cli("freshness", sha, "--db", db, "--project", "e2e", "--json", cwd=repo)
+    repayload = json.loads(rescan.stdout)
+    assert repayload["triggered"] == [] and repayload["assessed"] == []
+    assert repayload["skipped_already_seen"] == 1
+
+
 def test_an_untouching_commit_marks_nothing(cli: CliRunner, tmp_path: Path) -> None:
     repo = _repo(tmp_path)
     db = str(repo / ".provalume" / "db.sqlite")

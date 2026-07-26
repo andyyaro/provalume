@@ -284,6 +284,29 @@ class MemoryRepository:
         )
         return row is not None
 
+    def trigger_assessed(self, *, project_id: str, record_id: str, trigger_commit: str) -> bool:
+        """Whether the trigger's relevance was ever assessed (or the trigger
+        discharged wholesale by a radius or a passing re-run). A seen trigger
+        that is neither is one whose assessment failed open — a re-scan may
+        re-assess it rather than skipping (M3 review, finding 5)."""
+        row = self.db.query_one(
+            "SELECT 1 FROM freshness_triggers "
+            "WHERE project_id = ? AND record_id = ? AND trigger_commit = ? "
+            "AND (assessed = 1 OR discharged = 1)",
+            (project_id, record_id, trigger_commit),
+        )
+        return row is not None
+
+    def mark_trigger_assessed(
+        self, *, project_id: str, record_id: str, trigger_commit: str
+    ) -> None:
+        with self.db.tx() as conn:
+            conn.execute(
+                "UPDATE freshness_triggers SET assessed = 1 "
+                "WHERE project_id = ? AND record_id = ? AND trigger_commit = ?",
+                (project_id, record_id, trigger_commit),
+            )
+
     def discharge_trigger(self, *, project_id: str, record_id: str, trigger_commit: str) -> None:
         with self.db.tx() as conn:
             conn.execute(

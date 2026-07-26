@@ -92,8 +92,8 @@ rebuild derives it. The transition sources:
 |---|---|
 | `blast_radius.recorded` | record becomes `current` (it is now watchable); when a record accrues several radii — a repeated failure re-anchors its gotcha — the latest by journal order is the one derivation and intersection read |
 | `freshness.triggered` | record becomes `suspect`; the trigger is booked as **outstanding** until discharged. Bookkeeping is per trigger commit: a verdict answers one trigger, and the record returns to `current` only when nothing remains outstanding |
-| `relevance.assessed` (verdict `irrelevant`) | the trigger is discharged; record returns to `current` |
-| `relevance.assessed` (verdict `relevant`) | record stays `suspect` |
+| `relevance.assessed` (verdict `irrelevant`) | discharges exactly its trigger; record returns to `current` only if no other trigger remains outstanding |
+| `relevance.assessed` (verdict `relevant`) | record stays `suspect`; a verdict naming a never-booked trigger derives nothing |
 | `reverification.executed` (outcome `passed`) | record returns to `current` — the re-run executed the tree containing every landed commit, so it discharges **all** outstanding triggers at once; a fresh blast-radius measurement discharges them for the same reason |
 | `reverification.executed` (outcome `failed`) | record becomes `stale` |
 | `reverification.executed` (outcome `errored`) | **no transition** — fail-open (I5): the engine's own failure is never evidence about the record |

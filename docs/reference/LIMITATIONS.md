@@ -231,6 +231,38 @@ With several projects sharing one database, run it once per `--project` —
 the intersection is project-scoped. Re-scanning a commit is idempotent, and
 an unreadable commit exits non-zero rather than reporting a clean no-op.
 
+## 9e. The relevance filter's "trivia" is defined for test commands
+
+`comment_only`, `docstring_only`, and `whitespace_only` short-circuit on the
+premise that comments cannot change a command's outcome. For linters
+(`# noqa`, `# nosec`), type checkers (`# type:` comments), doctest runners
+(docstrings ARE the test), and formatters, that premise is false. The
+watcher suppresses the short-circuit when the record's verification command
+contains a marker from a closed, case-insensitive list (`doctest`, `ruff`,
+`flake8`, `pylint`, `pycodestyle`, `pydocstyle`, `mypy`, `pyright`,
+`bandit`, `black`, `isort`, `lint`) — those records escalate on every
+textual change, trading false suspects for zero false currents.
+
+The list is deliberately dumb and cannot see through a wrapper: a record
+verified by `make check` that runs a linter inside still gets the trivia
+short-circuit, and a comment-only landing can leave it `current` while the
+linter's verdict changed. If your verification commands hide
+comment-sensitive tools behind neutral names, the trivia classes are not
+safe for you; name the tool in the command, or treat `current` accordingly.
+Type comments (`# type: ignore` under a plain `mypy`-less pytest run that
+imports typed code) are covered only when the command names the checker.
+
+## 9f. Relevance assessment is bounded per record
+
+Assessing a trigger reads two blobs per intersecting path. Over 200
+intersecting paths, the watcher books the trigger and stops: the record
+stays `suspect` with no verdict, which is the cheap direction — a hook that
+spawns thousands of `git show` processes on a wide landing would be a
+correctness risk of its own (an operator who feels the latency uninstalls
+the hook, and §9d says what an uninstalled hook costs). A re-scan retries
+nothing for these records; a passing re-run (M4) or a fresh radius is what
+clears them.
+
 ## 10. Single writer, single machine
 
 Provalume assumes one writing process. Concurrent writers serialise on SQLite's

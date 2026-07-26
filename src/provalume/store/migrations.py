@@ -376,12 +376,28 @@ _004_TRIGGER_DISCHARGE = """
 ALTER TABLE freshness_triggers ADD COLUMN discharged INTEGER NOT NULL DEFAULT 0;
 """
 
+_005_TRIGGER_ASSESSED = """
+-- ----------------------------------------------------------------------------
+-- A trigger remembers whether its relevance was ever assessed (ADR-0020, M3
+-- review). "Seen" alone cannot distinguish a trigger whose assessment
+-- happened from one whose assessment failed open — and skipping both made a
+-- transient git error permanently pin a trivia landing at `suspect`, with no
+-- re-scan able to recover it. A re-scan now re-assesses seen-but-unassessed
+-- triggers. Default 0 on upgrade: a pre-existing database recovers on its
+-- next rebuild (the flag is a projection of `relevance.assessed` events); an
+-- explicit re-scan before that rebuild may append one duplicate verdict,
+-- which is append-only noise, not a derivation change.
+-- ----------------------------------------------------------------------------
+ALTER TABLE freshness_triggers ADD COLUMN assessed INTEGER NOT NULL DEFAULT 0;
+"""
+
 #: Every migration, in order. Index + 1 is the resulting schema version.
 MIGRATIONS: Final[tuple[str, ...]] = (
     _001_INITIAL,
     _002_FRESHNESS,
     _003_FRESHNESS_TRIGGERS,
     _004_TRIGGER_DISCHARGE,
+    _005_TRIGGER_ASSESSED,
 )
 
 #: The schema version this build writes and expects.
