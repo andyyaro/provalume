@@ -194,9 +194,26 @@ def _extract(
 
 
 def _checked(radius: BlastRadius | None) -> BlastRadius | None:
-    """A radius over the path cap is noise, not evidence — the method fails."""
+    """A radius over the path cap is noise, not evidence — the method fails.
+
+    ``.provalume/`` is excluded from every radius: in a repository where the
+    operator has tracked the database (Provalume writes an ignore file, but
+    cannot untrack what was already added), a ``commit_touch`` radius would
+    otherwise capture ``db.sqlite`` — and since every subsequent landing
+    rewrites the journal, the record would intersect itself into permanent
+    ``suspect``, unclearable by the relevance filter (M3 review flag).
+    """
     if radius is None:
         return None
+    paths = tuple(p for p in radius.paths if p != ".provalume" and not p.startswith(".provalume/"))
+    if paths != radius.paths:
+        radius = BlastRadius(
+            method=radius.method,
+            paths=paths,
+            line_ranges=radius.line_ranges,
+            tool=radius.tool,
+            tool_version=radius.tool_version,
+        )
     if not radius.paths or len(radius.paths) > MAX_RADIUS_PATHS:
         return None
     return radius

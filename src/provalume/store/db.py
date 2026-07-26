@@ -42,6 +42,21 @@ class Database:
 
         if str(path) != MEMORY_PATH:
             self.path.parent.mkdir(parents=True, exist_ok=True)
+            if self.path.parent.name == ".provalume" and not read_only:
+                # `.provalume/` must never enter version control: `git add -A`
+                # would track the database, every journal write would then
+                # read as a dirty worktree to the re-verification executor's
+                # gate (T27), and a commit_touch radius could capture the db
+                # and self-trigger forever. A `*` ignore file inside the
+                # directory makes "untracked by convention" true by
+                # construction — though it cannot untrack a file that was
+                # already added.
+                ignore = self.path.parent / ".gitignore"
+                try:
+                    if not ignore.exists():
+                        ignore.write_text("*\n")
+                except OSError:  # pragma: no cover - permissions-dependent
+                    pass
 
         try:
             # isolation_level=None puts transaction control in our hands rather

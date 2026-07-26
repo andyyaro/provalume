@@ -184,18 +184,79 @@ def test_a_bounded_out_record_is_reported_on_every_scan(cli: CliRunner, tmp_path
         cli("freshness", sha, "--db", db, "--project", "e2e", "--json", cwd=repo).stdout
     )
     assert first["marked_suspect"] == [record_id]
-    assert first["bounded_unassessed"] == 1
+    assert first["bounded_unassessed"] == [record_id]
     assert first["assessed"] == []
 
     rescan = json.loads(
         cli("freshness", sha, "--db", db, "--project", "e2e", "--json", cwd=repo).stdout
     )
-    assert rescan["bounded_unassessed"] == 1, "a re-scan retries and re-bounds, visibly"
+    assert rescan["bounded_unassessed"] == [record_id], (
+        "a re-scan retries, re-bounds, and NAMES the record"
+    )
 
     text = cli("freshness", sha, "--db", db, "--project", "e2e", cwd=repo)
     combined = text.stdout + text.stderr
     assert "No recorded blast radius" not in combined
     assert "unassessed" in combined
+
+
+def test_a_stale_record_is_reported_stale_not_marked_suspect(
+    cli: CliRunner, tmp_path: Path
+) -> None:
+    """`stale` means a re-run already FAILED; reporting it as "marked
+    suspect" reads as "a re-run is pending" — the axis-label collapse
+    ADR-0020 forbids, and the one the M3 fix-verification caught after the
+    projection fix corrected the label's source but not its granularity."""
+    repo = _repo(tmp_path)
+    (repo / ".gitignore").write_text(".provalume/\n__pycache__/\n")
+    (repo / "check.py").write_text("import mod\nassert mod.V == 1\n")
+    _git(repo, "add", "-A")
+    _git(repo, "-c", "user.email=a@b", "-c", "user.name=a", "commit", "-qm", "check")
+    db = str(repo / ".provalume" / "db.sqlite")
+    from provalume.freshness.executor import reverify_record
+    from provalume.freshness.watcher import process_landed_commit
+    from provalume.schemas.memories import MemoryType
+    from provalume.sdk.client import Provalume
+
+    pv = Provalume.open(db, project_id="e2e", root=repo)
+    pv.record_verification(command=f"{sys.executable} check.py", passed=True)
+    record_id = next(
+        m.memory_id for m in pv.memory_records(limit=10) if m.memory_type is MemoryType.PROCEDURAL
+    )
+    (repo / "mod.py").write_text("V = 2222\n")
+    _git(repo, "add", "-A")
+    _git(repo, "-c", "user.email=a@b", "-c", "user.name=a", "commit", "-qm", "break")
+    breaking = _git(repo, "rev-parse", "HEAD")
+    process_landed_commit(pv, commit_sha=breaking)
+    failed = reverify_record(
+        pv,
+        record_id=record_id,
+        trigger_commit=breaking,
+        allowlist=("*",),
+        timeout_s=60.0,
+        root=repo,
+    )
+    assert failed is not None and failed.payload["outcome"] == "failed"
+    pv.close()
+
+    (repo / "mod.py").write_text("V = 2222  # annotated\n")
+    _git(repo, "add", "-A")
+    _git(repo, "-c", "user.email=a@b", "-c", "user.name=a", "commit", "-qm", "comment")
+    trivia = _git(repo, "rev-parse", "HEAD")
+
+    text = cli("freshness", trivia, "--db", db, "--project", "e2e", cwd=repo)
+    combined = text.stdout + text.stderr
+    assert "remain stale" in combined
+    assert "marked suspect" not in combined
+
+    (repo / "mod.py").write_text("V = 2222  # annotated twice\n")
+    _git(repo, "add", "-A")
+    _git(repo, "-c", "user.email=a@b", "-c", "user.name=a", "commit", "-qm", "comment 2")
+    trivia2 = _git(repo, "rev-parse", "HEAD")
+    result = cli("freshness", trivia2, "--db", db, "--project", "e2e", "--json", cwd=repo)
+    payload = json.loads(result.stdout)
+    assert payload["left_stale"] == [record_id]
+    assert payload["marked_suspect"] == []
 
 
 def test_an_untouching_commit_marks_nothing(cli: CliRunner, tmp_path: Path) -> None:

@@ -182,3 +182,41 @@ def test_the_radius_envelope_names_the_commit_extraction_read(tmp_path: Path) ->
         assert radii[0].commit_sha != "f" * 40
     finally:
         pv.close()
+
+
+def test_a_radius_never_contains_the_provalume_directory(tmp_path: Path) -> None:
+    """A tracked db.sqlite in a commit_touch radius would self-trigger on
+    every landing forever — the journal write IS the change (M3 review
+    flag). The filter runs in the single funnel every method passes."""
+    from provalume.freshness.blast_radius import BlastRadius, _checked
+    from provalume.schemas.freshness import BlastRadiusMethod
+
+    mixed = BlastRadius(
+        method=BlastRadiusMethod.COMMIT_TOUCH,
+        paths=(".provalume/db.sqlite", ".provalume/db.sqlite-wal", "mod.py"),
+        line_ranges=None,
+        tool="git",
+        tool_version="2",
+    )
+    checked = _checked(mixed)
+    assert checked is not None and checked.paths == ("mod.py",)
+
+    only_db = BlastRadius(
+        method=BlastRadiusMethod.COMMIT_TOUCH,
+        paths=(".provalume/db.sqlite",),
+        line_ranges=None,
+        tool="git",
+        tool_version="2",
+    )
+    assert _checked(only_db) is None, "a radius that was ONLY the database is no radius"
+
+
+def test_opening_a_database_writes_the_provalume_ignore_file(tmp_path: Path) -> None:
+    """`.provalume/` untracked must be true by construction, not convention:
+    the M4 worktree gate and the radius filter both lean on it."""
+    from provalume.sdk.client import Provalume
+
+    pv = Provalume.open(tmp_path / ".provalume" / "db.sqlite", project_id="ignore-test")
+    pv.close()
+    ignore = tmp_path / ".provalume" / ".gitignore"
+    assert ignore.is_file() and ignore.read_text() == "*\n"

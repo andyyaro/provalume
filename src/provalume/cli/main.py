@@ -880,12 +880,17 @@ def freshness(
     }
     scanned = sorted(set(intersecting_by_record) | set(verdicts))
 
-    def _current_now(rid: str) -> bool:
+    def _freshness_now(rid: str) -> str:
         memory = pv.memories.get(rid)
-        return memory is not None and memory.freshness.value == "current"
+        return memory.freshness.value if memory is not None else ""
 
-    left_current = [rid for rid in scanned if _current_now(rid)]
-    marked_suspect = [rid for rid in scanned if rid not in left_current]
+    states = {rid: _freshness_now(rid) for rid in scanned}
+    left_current = [rid for rid in scanned if states[rid] == "current"]
+    # `stale` gets its own bucket: it means a re-run already FAILED, and
+    # calling it "marked suspect" would read as "a re-run is pending" —
+    # the axis-label collapse ADR-0020 forbids.
+    left_stale = [rid for rid in scanned if states[rid] == "stale"]
+    marked_suspect = [rid for rid in scanned if rid not in left_current and rid not in left_stale]
     payload = {
         "commit": sha,
         "commit_readable": result.commit_readable,
@@ -898,8 +903,9 @@ def freshness(
         ],
         "marked_suspect": marked_suspect,
         "left_current": left_current,
+        "left_stale": left_stale,
         "assessment_failed": result.assessment_failed,
-        "bounded_unassessed": result.bounded,
+        "bounded_unassessed": sorted(result.bounded),
     }
     incomplete = not result.commit_readable or not result.completed or result.assessment_failed > 0
     if _emit(payload, as_json=json):
@@ -926,6 +932,13 @@ def freshness(
         )
         for rid in marked_suspect:
             console.print(_describe(rid))
+    if left_stale:
+        console.print(
+            f"[pv.error]{len(left_stale)} record(s) remain stale[/] — a re-run already "
+            f"failed; commit {sha[:12]} touched them again:"
+        )
+        for rid in left_stale:
+            console.print(_describe(rid))
     if left_current:
         console.print(
             f"[pv.success]{len(left_current)} record(s) assessed irrelevant[/] "
@@ -935,10 +948,12 @@ def freshness(
             console.print(_describe(rid))
     if result.bounded:
         console.print(
-            f"[pv.warning]{result.bounded} record(s) stay suspect with their trigger "
+            f"[pv.warning]{len(result.bounded)} record(s) stay suspect with their trigger "
             f"unassessed[/] — the intersection with {sha[:12]} exceeds the assessment "
-            "bound (LIMITATIONS §9f); a passing re-run or a fresh radius clears them."
+            "bound (LIMITATIONS §9f); a passing re-run or a fresh radius clears them:"
         )
+        for rid in sorted(result.bounded):
+            console.print(f"  {rid}")
     if not scanned and not result.bounded and not result.assessment_failed:
         if result.skipped:
             console.print(
