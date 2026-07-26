@@ -147,3 +147,37 @@ jobs:
         with:
           name: distributions
           path: dist/
+
+  artifact-roundtrip:
+    name: distributions survive the artifact round-trip
+    needs: package
+    runs-on: ubuntu-latest
+    # The release pipeline hands distributions between jobs through the
+    # artifact store, and it only runs on a tag — so an upload/download-artifact
+    # major bump was previously unverifiable until a release used it, and a
+    # break would surface as a failed publish. This runs the same hand-off on
+    # every push: same artifact name and path as publish-to-pypi.yml, then
+    # proves the files are byte-identical and still installable.
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: distributions
+          path: dist/
+
+      - name: Both distributions arrived, and nothing else did
+        run: |
+          ls -l dist/
+          test -f dist/*.whl || { echo "::error::no wheel after the round-trip"; exit 1; }
+          test -f dist/*.tar.gz || { echo "::error::no sdist after the round-trip"; exit 1; }
+          # A silently-unzipped or re-wrapped artifact is the failure mode a
+          # major bump would introduce; a stray file means the payload changed
+          # shape in transit.
+          count="$(find dist -type f | wc -l | tr -d ' ')"
+          test "$count" -eq 2 || { echo "::error::expected 2 files, found $count"; find dist -type f; exit 1; }
+
+      - uses: astral-sh/setup-uv@v7
+
+      - name: A downloaded wheel is still an installable wheel
+        run: |
+          uv run --isolated --with ./dist/*.whl --no-project provalume --version
+          uv run --isolated --with ./dist/*.tar.gz --no-project provalume --version
