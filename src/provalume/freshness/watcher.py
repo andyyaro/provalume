@@ -26,7 +26,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 
 from provalume.schemas.events import EventType
 from provalume.schemas.trust import Source
@@ -60,6 +60,7 @@ class WatchResult:
     commit_readable: bool = True
     completed: bool = True
     triggered: list[Event] = field(default_factory=list)
+    assessed: list[Event] = field(default_factory=list)
     skipped: int = 0
 
 
@@ -90,8 +91,8 @@ def process_landed_commit(pv: Provalume, *, commit_sha: str) -> WatchResult:
         if total > MAX_CHANGED_PATHS_RECORDED:
             recorded_changed = []
         for record_id, intersecting in touched.items():
-            if commit_sha in pv.memories.outstanding_triggers(
-                project_id=pv.project_id, record_id=record_id
+            if pv.memories.trigger_seen(
+                project_id=pv.project_id, record_id=record_id, trigger_commit=commit_sha
             ):
                 # Already booked: a hook that fires twice must not multiply
                 # journal volume (T29).
@@ -112,8 +113,52 @@ def process_landed_commit(pv: Provalume, *, commit_sha: str) -> WatchResult:
                     commit_sha=commit_sha,
                 )
             )
+            assessment = _assess(pv, git, commit_sha, record_id, intersecting)
+            if assessment is not None:
+                result.assessed.append(assessment)
         return result
     except Exception:
         log.warning("freshness watcher failed open", exc_info=True)
         result.completed = False
         return result
+
+
+def _assess(
+    pv: Provalume,
+    git: Any,
+    commit_sha: str,
+    record_id: str,
+    intersecting: tuple[str, ...],
+) -> Event | None:
+    """Assess one trigger's relevance and append the verdict event.
+
+    Fail-open in the safe direction: any failure appends nothing, and the
+    record simply stays ``suspect`` — escalation is the default, never the
+    casualty (spec §5.3).
+    """
+    try:
+        from provalume.freshness import relevance
+
+        parents = git.parents(commit_sha)
+        parent = parents[0] if parents else None
+        files: list[tuple[str, str | None, str | None]] = []
+        for path in intersecting:
+            pre = git.file_at(parent, path) if parent else None
+            post = git.file_at(commit_sha, path)
+            files.append((path, pre, post))
+        verdict, reason = relevance.assess_paths(files)
+        return pv.record_event(
+            EventType.RELEVANCE_ASSESSED,
+            source=Source.KERNEL,
+            payload={
+                "record_id": record_id,
+                "trigger_commit": commit_sha,
+                "verdict": verdict.value,
+                "differ_version": relevance.DIFFER_VERSION,
+                "reason_code": reason.value,
+            },
+            commit_sha=commit_sha,
+        )
+    except Exception:
+        log.warning("relevance assessment failed open; record stays suspect", exc_info=True)
+        return None

@@ -365,8 +365,24 @@ ALTER TABLE blast_radii_v2 RENAME TO blast_radii;
 CREATE INDEX idx_blast_radii_path ON blast_radii(project_id, path);
 """
 
+_004_TRIGGER_DISCHARGE = """
+-- ----------------------------------------------------------------------------
+-- Discharge becomes a flag, not a delete (ADR-0020, M3). Once relevance
+-- verdicts discharge triggers, an idempotent re-scan can no longer key on the
+-- outstanding set alone — a discharged trigger would re-book on every scan of
+-- the same commit. The row is the memory that the commit was already seen;
+-- the flag is whether it still demands attention. Still a projection.
+-- ----------------------------------------------------------------------------
+ALTER TABLE freshness_triggers ADD COLUMN discharged INTEGER NOT NULL DEFAULT 0;
+"""
+
 #: Every migration, in order. Index + 1 is the resulting schema version.
-MIGRATIONS: Final[tuple[str, ...]] = (_001_INITIAL, _002_FRESHNESS, _003_FRESHNESS_TRIGGERS)
+MIGRATIONS: Final[tuple[str, ...]] = (
+    _001_INITIAL,
+    _002_FRESHNESS,
+    _003_FRESHNESS_TRIGGERS,
+    _004_TRIGGER_DISCHARGE,
+)
 
 #: The schema version this build writes and expects.
 SCHEMA_VERSION: Final = len(MIGRATIONS)
