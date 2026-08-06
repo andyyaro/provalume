@@ -4,6 +4,20 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versioning: [semantic versioning](https://semver.org/spec/v2.0.0.html), with the
 pre-1.0 caveat that `0.x` minor bumps may break the SDK.
 
+## [Unreleased]
+
+### Fixed
+
+**The MCP transport's nesting bound is its own, not the interpreter's.** A
+deeply nested JSON line was refused because `json.loads` raised `RecursionError`
+on it — a bound borrowed from CPython's stack rather than held by the server.
+CPython 3.14.7 on Linux parses 100k-deep input without overflowing, so the same
+attacker-controlled line stopped being a parse error and became "message is not
+an object" instead. `handle_line` now checks nesting against `MAX_NESTING_DEPTH`
+(100, where the protocol itself asks for 3 or 4) before parsing, so the answer no
+longer depends on which interpreter is running. Brackets inside string literals
+are not counted, or stored content would be refused for looking like an attack.
+
 ## [0.1.4] — 2026-07-25
 
 Found by an independent reviewer running the Orkestra integration, then by
