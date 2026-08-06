@@ -8,6 +8,11 @@ attacker gets for free was the one shape outside the bound (threat T24). And a
 deeply-nested JSON line raised `RecursionError` out of `json.loads`, which
 `handle_line` did not catch, ending the session on one bad line instead of
 returning a parse error.
+
+That second bound turned out to be borrowed rather than held: it was the
+interpreter's stack limit, not ours. CPython 3.14.7 on Linux parses 100k-deep
+input without overflowing, and the line an attacker sends changed error codes
+under us. `MAX_NESTING_DEPTH` makes the bound the server's own.
 """
 
 from __future__ import annotations
@@ -15,7 +20,12 @@ from __future__ import annotations
 import json
 from io import StringIO
 
-from provalume.mcp.server import PARSE_ERROR, McpServer
+from provalume.mcp.server import (
+    MAX_NESTING_DEPTH,
+    PARSE_ERROR,
+    McpServer,
+    _exceeds_nesting_depth,
+)
 from provalume.schemas.events import EventFilter
 from provalume.sdk.client import Provalume
 
@@ -122,3 +132,91 @@ def test_an_oversized_message_is_refused_before_parsing(pv: Provalume) -> None:
     assert "result" not in response, "the message was parsed before its size was checked"
     assert response["error"]["code"] == PARSE_ERROR
     assert "over the" in response["error"]["message"]
+
+
+# --- The depth bound is ours, not the interpreter's -------------------------
+
+
+def test_over_deep_input_is_refused_by_the_depth_check_not_the_parser(pv: Provalume) -> None:
+    """The bound has to come from `handle_line`, not from whichever interpreter
+    happens to overflow.
+
+    CPython 3.14.7 on Linux parses 100k-deep input without raising, so the same
+    line that was a PARSE_ERROR on 3.14.6 arrived as a list and earned
+    INVALID_REQUEST instead. Asserting the *message* is what makes this test
+    fail if the depth check is removed: the code alone would still be
+    PARSE_ERROR on any interpreter that overflows.
+    """
+    server = McpServer(pv)
+
+    response = server.handle_line("[" * 100_000 + "]" * 100_000)
+
+    assert response is not None
+    assert response["error"]["code"] == PARSE_ERROR
+    assert "nests deeper" in response["error"]["message"], (
+        "the parser got there first — this passes for the wrong reason on "
+        "interpreters that overflow"
+    )
+
+
+def test_brackets_inside_strings_are_not_nesting(pv: Provalume) -> None:
+    """Stored content that looks like an attack is still content. A memory whose
+    text is a wall of brackets must round-trip, or the bound rejects the data
+    Provalume exists to keep."""
+    server = McpServer(pv)
+
+    response = server.handle_line(call("recall", query="[" * (MAX_NESTING_DEPTH * 10)))
+
+    assert response is not None
+    assert "error" not in response, f"a bracket-filled string was read as nesting: {response}"
+
+
+def test_a_message_at_the_limit_is_still_served(pv: Provalume) -> None:
+    """The cap is an upper bound, not an off-by-one."""
+    server = McpServer(pv)
+    # The request object and its params object are themselves two levels.
+    payload: object = "x"
+    for _ in range(MAX_NESTING_DEPTH - 2):
+        payload = [payload]
+    # `siblings` adds opening brackets without adding depth. Without them the
+    # message has exactly MAX_NESTING_DEPTH openers, the count short-circuit
+    # answers before the scan runs, and this test cannot see the comparison it
+    # exists to pin.
+    line = json.dumps(
+        {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "ping",
+            "params": {"deep": payload, "siblings": [[], [], []]},
+        }
+    )
+
+    # A boundary test that drifts off the boundary passes for free, so the line
+    # is made to prove it sits exactly on the limit before it is sent.
+    assert not _exceeds_nesting_depth(line, MAX_NESTING_DEPTH)
+    assert _exceeds_nesting_depth(line, MAX_NESTING_DEPTH - 1), (
+        "fixture is shallower than the limit — it would pass with the check inverted"
+    )
+
+    response = server.handle_line(line)
+
+    assert response is not None
+    assert "error" not in response, (
+        f"depth {MAX_NESTING_DEPTH} was refused by a {MAX_NESTING_DEPTH}-level limit: {response}"
+    )
+
+
+def test_the_scan_tracks_escapes_and_closes() -> None:
+    """Unit-level, because the interesting cases are ones a JSON-RPC fixture
+    cannot reach: a quote that does not end its string, and siblings that close
+    before the next one opens."""
+    limit = 3
+
+    assert not _exceeds_nesting_depth("[[[]]]", limit)
+    assert _exceeds_nesting_depth("[[[[]]]]", limit)
+    # Siblings are not cumulative depth.
+    assert not _exceeds_nesting_depth("[[],[],[],[],[],[],[],[]]", limit)
+    # The escaped quote does not end the string, so the brackets stay content.
+    assert not _exceeds_nesting_depth(r'["a\"[[[[[[[[", "b"]', limit)
+    # An unbalanced tail cannot be talked past the limit by closing early.
+    assert _exceeds_nesting_depth("]]]]" + "[" * (limit + 1), limit)

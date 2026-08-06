@@ -56,6 +56,18 @@ PREFERRED_PROTOCOL_VERSION: Final = SUPPORTED_PROTOCOL_VERSIONS[0]
 #: more than the tool call it pretends to be.
 MAX_MESSAGE_BYTES: Final = 1024 * 1024
 
+#: Nesting cap, checked before parsing, because the interpreter's own limit is
+#: not a limit we control. Until CPython 3.14.7, ``json.loads`` raised
+#: ``RecursionError`` on a deeply nested line and :meth:`McpServer.handle_line`
+#: turned that into a parse error; 3.14.7 on Linux parses 100k-deep input
+#: without overflowing, so the same line became a *list* and fell through to
+#: "message is not an object". Two interpreters disagreeing about which error an
+#: attacker's input earns is a bound that isn't one. Legitimate MCP traffic is a
+#: request object wrapping ``params`` wrapping ``arguments`` — depth 3 or 4;
+#: 100 is far above anything the protocol asks for and far below where any
+#: parser is in trouble.
+MAX_NESTING_DEPTH: Final = 100
+
 #: Typed queries ask for this multiple of the caller's limit before filtering.
 #: ``memory_types`` is a ranking nudge inside the engine, not a hard filter, so
 #: without headroom records of other types fill the result slots and the filter
@@ -103,6 +115,50 @@ def _text_result(
     if structured is not None:
         result["structuredContent"] = structured
     return result
+
+
+def _exceeds_nesting_depth(text: str, limit: int = MAX_NESTING_DEPTH) -> bool:
+    """Whether ``text`` nests structures deeper than ``limit``.
+
+    Answers the question the caller actually has — "is this too deep?" — rather
+    than measuring the true depth, so an adversarial line stops being scanned at
+    the point it is already disqualified.
+
+    Brackets inside string literals are not structure: ``{"note": "[[[["}`` is
+    depth 1, and counting its characters would reject stored content for looking
+    like an attack. Escapes are tracked for the same reason — the string in
+    ``"a\\""`` does not end at that quote.
+    """
+    # Depth cannot exceed the number of opening brackets, and str.count runs in
+    # C. Ordinary traffic — a handful of brackets — never enters the loop below.
+    if text.count("[") + text.count("{") <= limit:
+        return False
+
+    depth = 0
+    in_string = False
+    escaped = False
+    for char in text:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+        elif char == '"':
+            in_string = True
+        elif char in "[{":
+            depth += 1
+            if depth > limit:
+                return True
+        elif char in "]}" and depth > 0:
+            # Clamped, not decremented: unmatched closers would otherwise drive
+            # the count negative and buy an attacker that much headroom before
+            # the limit bites. Such a line is not valid JSON and the parser
+            # would refuse it anyway — but the bound should hold on its own
+            # terms rather than on that argument.
+            depth -= 1
+    return False
 
 
 class McpServer:
@@ -178,14 +234,26 @@ class McpServer:
                 f"message is {size} bytes, over the {MAX_MESSAGE_BYTES}-byte limit",
             )
 
+        if _exceeds_nesting_depth(text):
+            # Checked here rather than left to the parser: whether over-deep
+            # input is a parse error must not depend on which interpreter is
+            # running (see MAX_NESTING_DEPTH).
+            return self._error(
+                None,
+                PARSE_ERROR,
+                f"message nests deeper than the {MAX_NESTING_DEPTH}-level limit",
+            )
+
         try:
             message = json.loads(text)
         except (json.JSONDecodeError, RecursionError) as exc:
-            # RecursionError, not only JSONDecodeError: deeply nested JSON blows
-            # the interpreter stack inside `json.loads`, and it is a *parse*
-            # failure like any other. Letting it escape would turn one malformed
-            # line into the end of the session, which the module docstring
-            # promises it is not.
+            # RecursionError, not only JSONDecodeError: on interpreters that do
+            # overflow, deeply nested JSON blows the stack inside `json.loads`,
+            # and it is a *parse* failure like any other. The depth check above
+            # gets there first now, but a client can still find the stack some
+            # other way, and letting it escape would turn one malformed line
+            # into the end of the session, which the module docstring promises
+            # it is not.
             return self._error(None, PARSE_ERROR, f"invalid JSON: {exc}")
 
         if not isinstance(message, dict):
