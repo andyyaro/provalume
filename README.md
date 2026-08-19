@@ -1,5 +1,11 @@
 # Provalume
 
+[![CI](https://github.com/andyyaro/provalume/actions/workflows/ci.yml/badge.svg)](https://github.com/andyyaro/provalume/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/andyyaro/provalume/actions/workflows/codeql.yml/badge.svg)](https://github.com/andyyaro/provalume/actions/workflows/codeql.yml)
+[![PyPI](https://img.shields.io/pypi/v/provalume.svg)](https://pypi.org/project/provalume/)
+[![Python](https://img.shields.io/pypi/pyversions/provalume.svg)](https://pypi.org/project/provalume/)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+
 **Facts your agents proved, not things they said.**
 
 Your coding agents rediscover the same broken approach every week. One agent
