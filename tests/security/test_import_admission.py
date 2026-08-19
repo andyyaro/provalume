@@ -2,7 +2,7 @@
 
 Found by dogfooding. ``import_records`` appended straight to the journal, so a
 hand-written ``events.jsonl`` reached disk without redaction, without a poisoning
-scan, and without the size caps — and its own ``redaction`` / ``integrity``
+scan, and without the size caps - and its own ``redaction`` / ``integrity``
 blocks were adopted verbatim, as if Provalume had produced them. The suite
 missed it because every import test but two passed ``apply=False``, which never
 reaches the journal at all.

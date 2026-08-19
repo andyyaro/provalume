@@ -5,7 +5,7 @@
 ## Context
 
 Coding facts churn. "The project uses `pip`" becomes false the day someone lands
-`uv`. The obvious implementation — `UPDATE memories SET text = …` — destroys the
+`uv`. The obvious implementation - `UPDATE memories SET text = …` - destroys the
 answer to "what did we believe at commit X?", which is a feature, and to "when did
 this change, and on what evidence?", which is the audit trail.
 
@@ -31,11 +31,11 @@ then?" or "what did we know then?".
 
 ### Invalidation versus supersession
 
-**Invalidation** — the fact stopped being true and no replacement is asserted.
+**Invalidation** - the fact stopped being true and no replacement is asserted.
 `invalid_at` set, `trust_state → invalidated`. Retained; retrievable for historical
 queries.
 
-**Supersession** — a specific newer record replaces it. The new record's
+**Supersession** - a specific newer record replaces it. The new record's
 `supersedes_id` points at the old one; the old one's `trust_state → superseded`.
 Both persist and the chain is walkable in both directions.
 
@@ -70,7 +70,7 @@ subject with differing content, both current, are marked as a contradiction pair
 Effects: a ranking penalty (`p_contradiction`), a digest warning, and an `audit`
 report entry.
 
-Deliberately conservative — subject matching is on a normalised subject key, not
+Deliberately conservative - subject matching is on a normalised subject key, not
 semantic similarity, so it misses paraphrased contradictions. Detecting *more* would
 mean interpreting text, which means an LLM in the read path, which is
 [ADR-0007](ADR-0007-deterministic-writers.md) territory. A missed contradiction is
@@ -79,7 +79,7 @@ a lower-ranked warning; a *fabricated* contradiction would demote a correct fact
 ### The narrow re-validation path
 
 An `invalidated` record can return to a ladder state if fresh deterministic
-evidence shows the fact holds again — a reverted revert, a restored dependency. It
+evidence shows the fact holds again - a reverted revert, a restored dependency. It
 requires a new transition row with rule `revalidate.invalidated.fresh_evidence`.
 
 `superseded` and `rejected` have no such path: supersession is resolved by writing a
@@ -96,7 +96,7 @@ resolved.
 Acceptable for text-sized records; growth is measured in
 [`PERFORMANCE.md`](../reference/PERFORMANCE.md).
 
-**Bad.** Queries are more complex — every current-truth path filters `invalid_at`
+**Bad.** Queries are more complex - every current-truth path filters `invalid_at`
 and terminal states. Centralised in the retrieval layer so no caller can forget.
 
 **Also bad.** No hard deletion. Combined with the append-only journal, this makes
@@ -106,7 +106,7 @@ the database or to export-filter-reimport.
 
 ## Alternatives rejected
 
-**Overwrite in place.** Destroys the audit trail and historical queries — the two
+**Overwrite in place.** Destroys the audit trail and historical queries - the two
 things the append-only journal exists to provide.
 
 **Soft delete with a `deleted` boolean.** Cannot distinguish "no longer true" from

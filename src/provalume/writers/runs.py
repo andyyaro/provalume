@@ -1,7 +1,7 @@
 """Run outcomes into performance memory.
 
 Performance memory answers "which agent profile actually succeeds at which kind
-of task?" — deterministically aggregated from outcome events, never from an
+of task?" - deterministically aggregated from outcome events, never from an
 agent's self-assessment.
 
 The aggregate is keyed on ``(agent_profile, adapter, model, task_category)``
@@ -162,7 +162,7 @@ def merge_performance(stored: Memory, fresh: Memory) -> Memory | None:
     """Fold a freshly accumulated bucket into the aggregate already on disk.
 
     The live write path projects one event at a time, so ``fresh`` holds one
-    event's counts. Upserting it as-is — which is what a plain write does —
+    event's counts. Upserting it as-is - which is what a plain write does -
     replaces "9 of 10 succeeded" with "1 of 1 succeeded", and the stored
     aggregate then permanently disagrees with a rebuild from the same journal.
     A statistic is about a series, so it has to accumulate across writes.
@@ -170,9 +170,9 @@ def merge_performance(stored: Memory, fresh: Memory) -> Memory | None:
     Returns ``None`` when there is nothing new to fold. Every event that
     contributed is named in ``source_event_ids``, so re-projecting an event that
     is already counted cannot inflate the numbers. Callers only ever offer a
-    bucket that is wholly new or wholly already counted — ``apply`` projects a
+    bucket that is wholly new or wholly already counted - ``apply`` projects a
     single event, ``catch_up`` starts past the watermark, and ``rebuild`` drops
-    the projections first — which is what makes that check exact.
+    the projections first - which is what makes that check exact.
     """
     already = set(stored.source_event_ids)
     if set(fresh.source_event_ids) <= already:
@@ -214,7 +214,7 @@ def _dominant_source(source_event_ids: tuple[str, ...]) -> Any:
     """Performance aggregates are derived by Provalume itself from kernel events.
 
     Marked ``kernel`` because the aggregation is deterministic arithmetic over
-    trusted outcome events, not an agent's claim about its own record — which is
+    trusted outcome events, not an agent's claim about its own record - which is
     exactly the thing that must never be self-reported.
     """
     from provalume.schemas.trust import Source
@@ -281,10 +281,10 @@ class PerformanceAccumulator:
         """Materialise the aggregates.
 
         Sorted by key so output order is deterministic regardless of dict
-        insertion order — required for byte-identical rebuilds.
+        insertion order - required for byte-identical rebuilds.
 
         A bucket is materialised whenever it counted anything. Requiring an
-        attempt or a verification dropped reviewer agents entirely — a profile
+        attempt or a verification dropped reviewer agents entirely - a profile
         that only ever approves other agents' work produces approvals and nothing
         else, so review reliability was aggregated for no one.
         """

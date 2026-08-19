@@ -9,7 +9,7 @@ can hold contradictory, simultaneously-correct beliefs: one migrated the project
 `uv` on its branch, the other still uses `pip` on `main`. Both are right, in scope.
 
 No reviewed memory system models this. The closest, claude-mem's
-`adopt --branch`, stamps merged worktrees into the parent project after the fact —
+`adopt --branch`, stamps merged worktrees into the parent project after the fact -
 a reconciliation step, not a validity model. In every system reviewed, a fact
 recorded on a branch that was later abandoned is just a fact.
 
@@ -59,9 +59,9 @@ Evaluation, in order:
 2. If `commit_sha` is an ancestor of X (or equal), the record is potentially valid
    at X.
 3. If `commit_sha` is *not* an ancestor of X, the record is **not** current truth at
-   X. It may still be returned as historical or cross-branch context — labelled.
-4. If ancestry cannot be determined — no repository available, a bare checkout, a
-   pruned or garbage-collected commit — applicability is
+   X. It may still be returned as historical or cross-branch context - labelled.
+4. If ancestry cannot be determined - no repository available, a bare checkout, a
+   pruned or garbage-collected commit - applicability is
    **`uncertain`**, never assumed valid.
 
 ### Never fabricate certainty from topology
@@ -71,8 +71,8 @@ fact have been true here?"*, not *"is this fact true here?"*. A file the fact
 described may have been rewritten by an unrelated commit; a cherry-pick creates a
 different SHA for the same change; a rebase rewrites history wholesale.
 
-So `applicability` is a reported field with four values — `current`,
-`historical`, `cross_scope`, `uncertain` — and `uncertain` is used freely rather
+So `applicability` is a reported field with four values - `current`,
+`historical`, `cross_scope`, `uncertain` - and `uncertain` is used freely rather
 than resolved by guessing. Where topology is genuinely ambiguous, the digest says
 so and the retrieval explanation says why.
 
@@ -107,11 +107,11 @@ project truth. Concurrent worktrees are representable rather than a corruption.
 Historical queries actually work.
 
 **Bad.** Ancestry checks cost subprocess calls. Mitigated by caching per query and
-by only checking candidates that survive other filters — measured in
+by only checking candidates that survive other filters - measured in
 [`PERFORMANCE.md`](../reference/PERFORMANCE.md).
 
 **Bad.** Rebase and cherry-pick degrade to `uncertain`, which will read as a
-regression to users who rebase constantly. The alternative — guessing — is worse.
+regression to users who rebase constantly. The alternative - guessing - is worse.
 Content-level equivalence is roadmap work.
 
 **Also bad.** Without a repository present, a genuine capability is lost, not just

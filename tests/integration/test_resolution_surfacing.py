@@ -1,7 +1,7 @@
 """What a resolved gotcha actually tells the reader.
 
 Found by dogfooding round 2: after a real fix, the warning read "What later
-worked: `<the exact command that failed>`" — true, and useless. The command was
+worked: `<the exact command that failed>`" - true, and useless. The command was
 never what changed. The datum that answers "what worked" was already recorded in
 `resolution.commit_sha`, and was surfaced nowhere: not in the gotcha text, not in
 `PreflightMatch`, not in the rendered warning.

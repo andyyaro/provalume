@@ -32,7 +32,7 @@ $EDITOR pyproject.toml CHANGELOG.md
 git commit -am "release: v0.1.0"
 
 # 2. Annotated tag. Never lightweight, never moved, never reused.
-git tag -a v0.1.0 -m "provalume v0.1.0 — verified, git-aware memory for agents"
+git tag -a v0.1.0 -m "provalume v0.1.0 - verified, git-aware memory for agents"
 
 # 3. Verify the distributions before pushing anything
 uv build

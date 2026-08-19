@@ -11,9 +11,8 @@ those files is the obvious way to reach an agent that Provalume cannot otherwise
 influence.
 
 Two problems. First, the research report flagged two facts as resting on secondary
-sources — Antigravity's native `AGENTS.md` support, and the effect of the Claude
-adapter's `--setting-sources user` flag on `CLAUDE.md` auto-loading inside worktrees
-— and recommended verifying both before building on them. **Neither was verified**
+sources - Antigravity's native `AGENTS.md` support, and the effect of the Claude
+adapter's `--setting-sources user` flag on `CLAUDE.md` auto-loading inside worktrees and recommended verifying both before building on them. **Neither was verified**
 (see [`RESEARCH_VALIDATION.md`](../research/RESEARCH_VALIDATION.md) §2), because
 verifying them requires invoking real vendor CLIs against a real worktree.
 
@@ -29,7 +28,7 @@ deterministic rather than `.gitignore`-dependent.**
 ### Prompt splice is primary
 
 The digest reaches agents through the task brief
-([ADR-0014](ADR-0014-orkestra-integration-boundary.md)) — one choke point, every
+([ADR-0014](ADR-0014-orkestra-integration-boundary.md)) - one choke point, every
 adapter, no per-vendor behaviour, and **no dependency on either unverified fact.**
 Provalume 0.1.0 is fully functional with materialization never enabled.
 
@@ -47,7 +46,7 @@ with materialized(digest, worktree, vendors=…) as paths:  # cleanup guaranteed
 Rules that make this safe:
 
 1. **`materialize` returns the exact paths it wrote.** Cleanup operates on that list,
-   never on a glob — a glob would delete a user's real `CLAUDE.md`.
+   never on a glob - a glob would delete a user's real `CLAUDE.md`.
 2. **A pre-existing file is never overwritten.** If `CLAUDE.md` already exists,
    materialization **skips** it and reports the skip. Overwriting a user's committed
    context file is destructive and silent.
@@ -64,14 +63,14 @@ Rules that make this safe:
    leave a file behind for `git add -A`.
 7. **Paths are confined to the worktree root.** Traversal outside is rejected (threat
    T21).
-8. **Content is size-capped per vendor** — 32 KB for `AGENTS.md`, matching Codex's
+8. **Content is size-capped per vendor** - 32 KB for `AGENTS.md`, matching Codex's
    documented cap, so truncation is Provalume's explicit decision rather than a
    silent vendor one.
 
 `tests/integration/test_materialization.py` asserts: a written file is removed
 before staging; a pre-existing file is preserved; a missing sentinel prevents
-deletion; an exception mid-task still cleans up; and — the regression test that
-matters — **a simulated `git add -A` after cleanup stages no generated file.**
+deletion; an exception mid-task still cleans up; and - the regression test that
+matters - **a simulated `git add -A` after cleanup stages no generated file.**
 
 ### Unverified vendor behaviour is documented as unverified
 
@@ -90,7 +89,7 @@ unverified facts. Cleanup is verified against the actual failure mode. A user's 
 context files are safe.
 
 **Bad.** Opt-in means most users never use it, so it will get less real-world
-exercise than the brief splice. Accepted — the alternative is a default that can
+exercise than the brief splice. Accepted - the alternative is a default that can
 pollute commits.
 
 **Bad.** Without vendor verification, users must test pickup themselves. Documented
@@ -104,7 +103,7 @@ the user's file wins.
 
 **Materialize by default.** Any bug in cleanup pollutes commits and reviewer diffs.
 
-**Rely on `.gitignore`.** `git add -A` respects `.gitignore` — until someone
+**Rely on `.gitignore`.** `git add -A` respects `.gitignore` - until someone
 force-adds, or the worktree has a different ignore configuration, or a nested
 repository shadows it. Deterministic removal does not depend on that.
 

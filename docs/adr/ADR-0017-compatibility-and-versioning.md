@@ -23,7 +23,7 @@ schema, the interchange format, and the event schema.**
 
 ### Package version
 
-Standard semver. Pre-1.0, so `0.x` minor bumps may break the SDK — stated plainly
+Standard semver. Pre-1.0, so `0.x` minor bumps may break the SDK - stated plainly
 rather than implied. The rule from 1.0 onward: breaking SDK changes need a major
 bump.
 
@@ -42,7 +42,7 @@ A monotonic integer in `schema_version`. Linear, forward-only migrations
 | Database version = code | Open |
 | Database version > code | **Refuse to open**, with a message naming both versions and saying to upgrade |
 
-Refusing is not unhelpfulness — operating on a schema whose semantics you do not
+Refusing is not unhelpfulness - operating on a schema whose semantics you do not
 know is how data gets corrupted quietly.
 
 ### Event schema version

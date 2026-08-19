@@ -66,10 +66,10 @@ proportionate.
 | Web search, `"Provalume"` exact | **No exact-match results.** Search engines substituted `Provalus`, `Provalis`, and unrelated chemistry terms ("volumetric flask", "volume of distribution"), which is the signature of a term with no established presence. |
 | Web search, `"Provalume" software OR company OR trademark` | No exact-match results; returned the adjacent marks in §2. |
 | `provalume.com` | **Registered and live.** Created 2026-07-22 via XServer Inc. (JP registrar), Caddy + Next.js site. |
-| `provalume.dev` | no DNS — appears unregistered |
-| `provalume.io` | no DNS — appears unregistered |
-| `provalume.org` | no DNS — appears unregistered |
-| `provalume.ai` | no DNS — appears unregistered |
+| `provalume.dev` | no DNS - appears unregistered |
+| `provalume.io` | no DNS - appears unregistered |
+| `provalume.org` | no DNS - appears unregistered |
+| `provalume.ai` | no DNS - appears unregistered |
 
 ### On `provalume.com`
 
@@ -84,16 +84,16 @@ comparison guide to HYROX-compatible gyms in Japan, with competition guides and
 news.
 
 It is a Japanese-language **fitness-gym directory** for HYROX competitions,
-registered three days before this check. Applying the standing rule — replace the
+registered three days before this check. Applying the standing rule - replace the
 name only for an exact or materially confusing collision *in software, memory, AI,
-developer tooling, provenance, verification, evidence, or automation* — this is
+developer tooling, provenance, verification, evidence, or automation* - this is
 not a collision. There is no overlap in category, audience, distribution channel,
 or search intent between a Japanese gym directory and a Python library for agent
 memory provenance.
 
 Practical consequence: the `.com` is unavailable for project use. This is a
 branding inconvenience, not a naming blocker. `provalume.dev` is the natural home
-if a documentation site is ever wanted, and v0.1.0 ships without one — the
+if a documentation site is ever wanted, and v0.1.0 ships without one - the
 canonical URL is the GitHub repository.
 
 ## 4. Confusing-similarity screen against this project's own field
@@ -106,7 +106,7 @@ memory / AI developer tooling, were screened directly. None is close:
 `mempalace`, `sqlite-vec`, `model2vec`, `fastembed`.
 
 No project in the category uses the `Prova-` stem. The category's naming
-convention clusters around `mem*`/`memory*`, which Provalume deliberately avoids —
+convention clusters around `mem*`/`memory*`, which Provalume deliberately avoids -
 see [ADR-0001](../adr/ADR-0001-identity-and-scope.md).
 
 ## 5. Reproducing this check

@@ -26,7 +26,7 @@ Verify what you took:
 provalume audit --db /path/to/backup.db
 ```
 
-If that passes, the backup is internally consistent — chain intact, projections
+If that passes, the backup is internally consistent - chain intact, projections
 matching, pragmas as expected, no known credential patterns.
 
 ## Restoring
@@ -62,7 +62,7 @@ provalume rebuild
 
 **Trust does not survive this round trip intact.** Imported records arrive
 `quarantined` and their trust is re-derived from evidence that also imported.
-That is correct — trust is local — and it surprises people, so plan for it. If
+That is correct - trust is local - and it surprises people, so plan for it. If
 you need trust states preserved exactly, back up the database file.
 
 ## Upgrading Provalume
@@ -90,7 +90,7 @@ Refusing is the safe behaviour. Down-migrations that have to un-invent a
 supersession chain cannot be written correctly, which is why there are none.
 
 To downgrade: restore a backup taken before the upgrade, or export from the new
-version and import into a fresh database on the old one — accepting the trust
+version and import into a fresh database on the old one - accepting the trust
 reset described above.
 
 ## Moving between machines
@@ -100,8 +100,8 @@ stored little-endian explicitly so a copied file reads correctly on either
 endianness.
 
 Note that `worktree` paths and `repository_id` are recorded as they were on the
-original machine. Retrieval degrades gracefully — commit validity falls back to
-`uncertain` where a repository is absent — but paths in the record will refer to
+original machine. Retrieval degrades gracefully - commit validity falls back to
+`uncertain` where a repository is absent - but paths in the record will refer to
 the old layout.
 
 ## If something is wrong
@@ -112,7 +112,7 @@ provalume rebuild                # rebuild every projection from the journal
 provalume audit                  # confirm
 ```
 
-`rebuild` fixes projection-level corruption. It cannot fix a damaged journal —
+`rebuild` fixes projection-level corruption. It cannot fix a damaged journal -
 that is what backups are for.
 
 A `sqlite integrity_check` failure means file-level damage. Restore from backup;

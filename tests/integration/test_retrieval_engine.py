@@ -91,7 +91,7 @@ def test_type_filter_is_a_nudge_not_an_exclusion(seeded: Provalume) -> None:
     kinds = {r.memory_type for r in results}
     assert MemoryType.GOTCHA in kinds, "the requested type was not returned"
     assert kinds - {MemoryType.GOTCHA}, (
-        "no other type survived — the type filter excluded rather than nudged"
+        "no other type survived - the type filter excluded rather than nudged"
     )
 
     # The nudge is visible in the score components even where it does not decide
@@ -191,7 +191,7 @@ def test_provenance_of_an_unknown_memory_is_none(pv: Provalume) -> None:
 
 def test_missing_evidence_events_read_as_broken(pv: Provalume) -> None:
     """A record citing an event that does not exist is the forged-provenance
-    signature (threat T15) — not merely unresolvable."""
+    signature (threat T15) - not merely unresolvable."""
     pv.record_verification(command="pytest", passed=True, purpose="x")
     memory = pv.memory_records(memory_types=[MemoryType.PROCEDURAL])[0]
     with pv.db.tx() as conn:

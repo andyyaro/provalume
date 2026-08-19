@@ -6,7 +6,7 @@ Orkestra; see docs/integration/ORKESTRA.md.
 
 Three things this demonstrates:
 
-  1. Provalume is optional — `is_available()` gates everything.
+  1. Provalume is optional - `is_available()` gates everything.
   2. Retrieval fails open; a memory outage is not a run outage.
   3. Generated context files never reach a commit.
 """
@@ -109,7 +109,7 @@ async def run_task(memory: OrkestraAdapter | None, task: Any, workspace: Any,
 
 
 def after_verification(memory: OrkestraAdapter | None, task: Any, outcome: Any) -> None:
-    """Record the verification result — the evidence everything else needs."""
+    """Record the verification result - the evidence everything else needs."""
     if memory is None:
         return
     for command in task.spec.acceptance or []:

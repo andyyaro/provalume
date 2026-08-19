@@ -9,7 +9,7 @@ Include: what you can do, what an attacker gains, and a reproduction if you have
 one. You will get an acknowledgement within a few days.
 
 This is a solo-maintained project. There is no bug bounty and no guaranteed
-response time — that is stated so you can calibrate rather than guess.
+response time - that is stated so you can calibrate rather than guess.
 
 ## Supported versions
 
@@ -65,5 +65,5 @@ These are asserted by tests, so a change that breaks one fails CI:
 - Redaction runs before every durable write, and hashing after it.
 - Events are append-only, enforced by database triggers.
 
-Full analysis: [`THREAT_MODEL.md`](docs/security/THREAT_MODEL.md) — 26 threats
+Full analysis: [`THREAT_MODEL.md`](docs/security/THREAT_MODEL.md) - 26 threats
 with their controls, and a residual-risk section that does not pretend.

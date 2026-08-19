@@ -18,15 +18,15 @@ would quietly re-open the channel has something concrete to violate.
 **Poisoning resistance is an architectural property, not a filter.** Three tiers,
 in order of how much weight each carries.
 
-### Tier 1 — architecture (carries the load)
+### Tier 1 - architecture (carries the load)
 
 These are the controls that actually work, because they do not depend on
 recognising hostile text:
 
 1. **Deterministic evidence is the only promotion path.** A claim without
    qualifying evidence cannot become trusted, regardless of how well written it is.
-   This single property defeats the hardest case — the confident, clean, false
-   statement — which no heuristic can catch.
+   This single property defeats the hardest case - the confident, clean, false
+   statement - which no heuristic can catch.
 2. **`source` is structural.** Assigned by the code path that created the event,
    never derived from content. A payload claiming `"verified": true` is payload.
 3. **Agents never promote.** Producer and truster are always different parties.
@@ -39,7 +39,7 @@ recognising hostile text:
 7. **Rejection is terminal.** No laundering path.
 8. **Retrieved memory is data.** Banner, per-item trust labels, provenance inline.
 
-### Tier 2 — heuristics (reduce exposure earlier)
+### Tier 2 - heuristics (reduce exposure earlier)
 
 A bounded `poisoning_risk` score in `[0, 1]`, computed at admission from pattern
 families: instruction override, AI-directed address, self-asserted trust,
@@ -60,7 +60,7 @@ the same text always scores the same, which is required for the eval harness.
 **These are heuristics and are treated as such.** They have false positives, they
 miss novel phrasings, and they are never the only control on any path.
 
-### Tier 3 — containment (limits damage after a miss)
+### Tier 3 - containment (limits damage after a miss)
 
 Hard digest budget · result and candidate caps · size caps at admission · MCP rate
 limiting · full transition auditability including refusals · rebuildable journal ·
@@ -104,7 +104,7 @@ point.
 **Also bad.** The residual instruction-following risk (T4) is not eliminated.
 Provalume cannot force a model to honour the untrusted-data banner. Stated in the
 threat model §7, in the poisoning document §2.4, and in
-[`LIMITATIONS.md`](../reference/LIMITATIONS.md) — three places, because it is the
+[`LIMITATIONS.md`](../reference/LIMITATIONS.md) - three places, because it is the
 weakest point and a reader deserves to find it without digging.
 
 ## Alternatives rejected
@@ -114,7 +114,7 @@ race against phrasing, losable by one novel formulation. Heuristics are Tier 2 f
 reason.
 
 **An LLM classifier to detect poisoning.** Asks a model to judge attacker-controlled
-text — the attack surface, again, one layer up. Also non-deterministic, so the same
+text - the attack surface, again, one layer up. Also non-deterministic, so the same
 record could be admitted on Tuesday and rejected on Wednesday.
 
 **Trusting structured input.** Structure is not evidence.

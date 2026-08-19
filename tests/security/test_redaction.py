@@ -75,7 +75,7 @@ def test_key_casing_and_spacing_survive_redaction() -> None:
     ],
 )
 def test_benign_values_are_not_over_redacted(benign: str) -> None:
-    """False positives are acceptable but not free — this rule set would redact
+    """False positives are acceptable but not free - this rule set would redact
     half of every log line without the placeholder and status-word lookahead."""
     out, report = redact.redact_text(benign)
     assert not report.applied, f"over-redacted a benign value: {benign!r} -> {out!r}"

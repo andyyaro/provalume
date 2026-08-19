@@ -10,7 +10,7 @@ proxy breaks `pip` but not `uv`". A per-project store rediscovers all of it in e
 new project.
 
 Against that: **cross-project leakage is threat T9, rated Critical.** Project A's
-memory reaching project B does not just produce a wrong answer — it can carry
+memory reaching project B does not just produce a wrong answer - it can carry
 internal hostnames, customer names in test fixtures, and secrets that redaction
 missed, out of the context where the operator expected them to stay.
 
@@ -30,7 +30,7 @@ Concretely:
 - Databases are project-local. Two projects cannot see each other's memory because
   they are separate files.
 - `project_id` is `NOT NULL` on events and memories, and filtered on **every**
-  retrieval path — always, with no bypass flag.
+  retrieval path - always, with no bypass flag.
 - `global` exists as a scope value so the schema does not need a migration later,
   and **no promotion rule targets it.** Attempting to promote to global raises, and
   `tests/security/test_scope_isolation.py` asserts it.
@@ -52,26 +52,26 @@ than from convenience:
 1. A separate database at `~/.provalume/global.db`, never the project database.
    Physical separation makes leakage a bug that has to cross a file boundary.
 2. Promotion to global requires **explicit human approval, per record.** Not a
-   config flag, not a batch operation — an operator looking at one record.
+   config flag, not a batch operation - an operator looking at one record.
 3. A stricter redaction pass on promotion, plus a mandatory audit gate.
 4. Retrieval from global is opt-in per query, and global results are labelled
    distinctly in digests so their origin is never ambiguous.
 5. No project identifiers, worktree paths, branch names, or commit SHAs cross the
-   boundary — a global fact is about the *machine* or the *team*, never about
+   boundary - a global fact is about the *machine* or the *team*, never about
    another project.
 
 ### What replaces it in 0.1.0
 
 The JSONL interchange ([ADR-0011](ADR-0011-jsonl-interchange.md)). A user who wants
 a fact in another project can export it, review the plaintext diff, and import it
-deliberately. Manual, auditable, and impossible to do by accident — which for a
+deliberately. Manual, auditable, and impossible to do by accident - which for a
 Critical-severity leakage path is the right ergonomics.
 
 ## Consequences
 
 **Good.** The Critical leakage threat is closed by construction rather than by
 policy: the capability does not exist. Every new project starts clean, which is also
-the correct default for a system whose records carry provenance claims — a fact
+the correct default for a system whose records carry provenance claims - a fact
 proved in project A was not proved in project B.
 
 **Bad.** Real duplicated effort. Machine-level environment gotchas are rediscovered
@@ -88,7 +88,7 @@ reserved scope value and the recorded intended shape are the mitigations.
 
 **Ship global memory in 0.1.0.** The riskiest feature in the system, designed
 without data, gated by a policy written in a hurry. The failure mode is a secret
-crossing a project boundary — not something to iterate on in public.
+crossing a project boundary - not something to iterate on in public.
 
 **A global store with an allow-list of "safe" fact types.** Requires deciding in
 advance which facts are safe to leak, which is the judgement that needs the data

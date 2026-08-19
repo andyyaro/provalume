@@ -10,7 +10,7 @@ a command passed in one worktree, versus a reviewer approved it, versus it lande
 in `main`. Those are three different amounts of trust and they license three
 different presentations.
 
-Meanwhile a record can be *withdrawn* — invalidated, superseded, or rejected — and
+Meanwhile a record can be *withdrawn* - invalidated, superseded, or rejected - and
 withdrawal is not a lower rung on the same ladder. Asking "is `rejected` more
 trusted than `observed`?" is a category error.
 
@@ -46,7 +46,7 @@ orchestrated workflow:
 
 | Rung | The artifact |
 |---|---|
-| `quarantined` | none — admitted but unsupported, or flagged |
+| `quarantined` | none - admitted but unsupported, or flagged |
 | `observed` | a structured report tied to a real run |
 | `verified` | a verification result (exit code) |
 | `reviewed` | an independent verdict from a non-author |
@@ -65,7 +65,7 @@ Three orthogonal fields sit alongside: `verification_state`
 (`none`/`integrated_run`/`accepted_user`/`reverted`).
 
 The gotcha case forces this: `trust_state=verified` with
-`verification_state=failed` is coherent and common — the evidence is real, and the
+`verification_state=failed` is coherent and common - the evidence is real, and the
 evidence is a failure. One collapsed field cannot say it.
 
 ### Rungs are never skipped

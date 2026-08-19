@@ -19,7 +19,7 @@ Orkestra ──optionally──▶ Provalume
 ```
 
 **Provalume's core imports nothing from Orkestra**, and the adapter imports
-nothing from Orkestra either — it accepts plain dictionaries shaped like
+nothing from Orkestra either - it accepts plain dictionaries shaped like
 Orkestra's records. A test asserts both.
 
 That makes the adapter testable with fixtures alone, and it means Orkestra takes
@@ -51,7 +51,7 @@ if is_available():
 ## What to record
 
 Structured records, never prose scraping. An adapter that parsed agent output
-would be doing extraction — interpretation of possibly-hostile text — which is
+would be doing extraction - interpretation of possibly-hostile text - which is
 the poisoning primitive this design refuses.
 
 | Orkestra produces | Call | Why it matters |
@@ -68,7 +68,7 @@ the poisoning primitive this design refuses.
 
 ### Review verdicts need an explicit call
 
-Orkestra keeps verdicts inside `attempts.result` JSON — there is no `reviews`
+Orkestra keeps verdicts inside `attempts.result` JSON - there is no `reviews`
 table (verified by reading its schema at v0.4.4). So the adapter takes verdicts
 as an explicit call at the point the verdict is produced, rather than reading a
 table that does not exist.
@@ -78,7 +78,7 @@ self-review never promotes.
 
 ## Where to inject
 
-### The task brief — the primary path
+### The task brief - the primary path
 
 `Orchestrator._render_brief()` in `src/orkestra/kernel/scheduler.py` builds the
 single instructions string every adapter receives. **One splice there reaches
@@ -156,18 +156,18 @@ with self._remember() as mem:      # contextlib.suppress(Exception) around a yie
 ```
 
 **Swallowing errors hides your own defects too.** The reference integration
-closed memory in a `finally`, which fires before the code following the `try` —
+closed memory in a `finally`, which fires before the code following the `try` -
 so the run-completion write went to a closed client, got swallowed, and never
 recorded. Nothing failed; the data was simply never there.
 
 Fail-open is still the right policy. But it means the wiring needs tests that
 assert a write **happened**, not merely that nothing raised. Verify such a test
-by reintroducing the bug and confirming it fails — a regression test that passes
+by reintroducing the bug and confirming it fails - a regression test that passes
 against the broken code is worse than none.
 
 ## The generated-file trap
 
-`WorkspaceManager.commit_workspace()` calls `add_all_and_commit()` — a
+`WorkspaceManager.commit_workspace()` calls `add_all_and_commit()` - a
 `git add -A` over the whole worktree, **verified at `workspace/worktrees.py:100`**.
 Any file written there lands in the agent's commit, the reviewer's diff, and the
 integration branch.
@@ -188,7 +188,7 @@ await workspace_manager.commit_workspace(workspace, message)
 The contract:
 
 1. `materialize` returns **exactly** the paths it wrote; cleanup uses that list,
-   never a glob — a glob would delete a user's real `CLAUDE.md`.
+   never a glob - a glob would delete a user's real `CLAUDE.md`.
 2. A pre-existing file is **skipped, never overwritten**. A crash between
    overwrite and restore would lose their content outright.
 3. Written files carry a sentinel header, and cleanup **refuses** to delete a file
@@ -206,7 +206,7 @@ staged.
 Provalume claims only that files are written where asked and removed before
 staging. It does **not** claim that any particular CLI reads them.
 
-Two facts were flagged as resting on secondary sources — Antigravity's native
+Two facts were flagged as resting on secondary sources - Antigravity's native
 `AGENTS.md` support, and the effect of the Claude adapter's `--setting-sources
 user` flag on `CLAUDE.md` auto-loading inside worktrees. Neither was verified, so
 neither is depended on. The brief splice needs neither
@@ -222,7 +222,7 @@ Verified against Orkestra v0.4.4:
 | mypy strict | same |
 | Apache-2.0 | same |
 | stdlib `sqlite3`, WAL, no ORM | same |
-| Redaction at write | its own implementation — the core must not import a host |
+| Redaction at write | its own implementation - the core must not import a host |
 | Small dependency footprint | three runtime dependencies |
 
 Provalume implements its own redaction rather than importing `orkestra.redact`.
@@ -234,7 +234,7 @@ drift; Provalume's are tested independently.
 
 - **Not merged.** A draft PR only.
 - **No Orkestra release** is published from this work.
-- **Not dogfooded.** Fixture-tested, not production-proven — which is the first
+- **Not dogfooded.** Fixture-tested, not production-proven - which is the first
   item in [`LIMITATIONS.md`](../reference/LIMITATIONS.md).
 - **Vendor context-file pickup untested**, as above.
 

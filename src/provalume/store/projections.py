@@ -14,8 +14,8 @@ this file may be edited:
   state is materialised in sorted order.
 
 Promotion is applied here too, but never invented: each candidate is offered to
-:mod:`provalume.policy.promotion`, which decides, and every decision — including
-refusals — is recorded as a transition.
+:mod:`provalume.policy.promotion`, which decides, and every decision - including
+refusals - is recorded as a transition.
 """
 
 from __future__ import annotations
@@ -59,7 +59,7 @@ _EPISODIC_EVENTS = frozenset(
 )
 
 
-#: Sources permitted to withdraw an existing memory — to invalidate it, or to
+#: Sources permitted to withdraw an existing memory - to invalidate it, or to
 #: reject it along with its branch. Withdrawal is the mirror image of promotion
 #: and needs the same structural gate: `rejected` is terminal, with no
 #: revalidation path (:data:`provalume.policy.promotion.REFUSE_REJECTED`), so an
@@ -321,18 +321,18 @@ class Projector:
 
         Inference needs a real link, not merely co-occurrence. Two count: the
         same command now passing, and a *different* command declaring the same
-        ``purpose`` — a fix is often a different command that achieved the same
+        ``purpose`` - a fix is often a different command that achieved the same
         end, which is why purpose is carried on the gotcha at all.
 
-        Scope alone is not a link. Under an orchestrator every gate in a task —
-        lint, types, tests — shares a ``task_id``, so a bare scope match wrote
+        Scope alone is not a link. Under an orchestrator every gate in a task -
+        lint, types, tests - shares a ``task_id``, so a bare scope match wrote
         the first success into *every* open gotcha as "what later worked". That
         sentence is false, it is hashed into ``content_hash``, and it cannot be
         corrected later, because the signature is marked resolved at the same
         moment and the genuine fix is then refused.
 
-        Several genuine matches are possible — one command can fail twice with
-        different errors, and one success resolves both — so this does not stop
+        Several genuine matches are possible - one command can fail twice with
+        different errors, and one success resolves both - so this does not stop
         at the first.
         """
         scope_id = event.task_id or event.run_id
@@ -377,8 +377,8 @@ class Projector:
         The declared path reaches across runs, where inference cannot, and it
         needs the same two properties as the inferred one. A resolution already
         recorded is never overwritten: a second success naming the same signature
-        would otherwise replace the real fix in ``content["resolution"]`` — which
-        is what the preflight gate serves as ``what_later_worked`` — while the
+        would otherwise replace the real fix in ``content["resolution"]`` - which
+        is what the preflight gate serves as ``what_later_worked`` - while the
         rendered text went on naming the first, and the signature row would be
         repointed at the wrong event. And the fix is linked to the failure, so
         the record that documents what worked says so.
@@ -523,7 +523,7 @@ class Projector:
         for memory in self._memories_for_landing(event):
             # Promotion is branch-wide; re-anchoring is not. A landing makes
             # every claim on that branch promotable, but only the records of
-            # *this* task were carried by *this* commit — and matching on task
+            # *this* task were carried by *this* commit - and matching on task
             # or branch means each successive landing would otherwise re-stamp
             # them all, leaving every record wearing the last commit to land.
             # A record with no commit at all still takes one: it is on the
@@ -538,7 +538,7 @@ class Projector:
             if landed_here or not memory.commit_sha:
                 # `commit_sha` is what currency is judged against ("still true
                 # at this commit?"), and a record that has landed is true of
-                # what landed — not of the base its worktree branched from,
+                # what landed - not of the base its worktree branched from,
                 # which is only where the verification that observed it ran.
                 # The observation stays recoverable through `source_event_ids`.
                 update["commit_sha"] = event.commit_sha or memory.commit_sha
@@ -684,9 +684,9 @@ class Projector:
         if memory is None:
             return None
         # `get` resolves an identifier, not a project. `project_id` is the
-        # isolation boundary (threat T9), so a database holding two projects —
+        # isolation boundary (threat T9), so a database holding two projects -
         # reachable through a second `Provalume(db, project_id=...)` or an
-        # `allow_foreign_project` import — must not let one withdraw the
+        # `allow_foreign_project` import - must not let one withdraw the
         # other's records.
         if memory.scope.project_id != event.project_id:
             stats.notes.append(
@@ -900,14 +900,14 @@ class Projector:
         """Stamp a review verdict onto the records it actually concerns.
 
         Only claim types (semantic, procedural, decision) are stamped by attempt
-        association. A record type — a gotcha, an episode, a statistic — is
+        association. A record type - a gotcha, an episode, a statistic - is
         stamped only when the reviewer named its subject, because approving a fix
         is not approving the failure that prompted it.
 
         Every verdict is linked, not only the first one to change the state. An
         earlier self-approval already sets ``review_state`` to ``approved``, so
         skipping on that alone dropped the later *independent* approval from
-        ``source_event_ids`` — and `_to_reviewed`, which reads its evidence from
+        ``source_event_ids`` - and `_to_reviewed`, which reads its evidence from
         exactly that list, then refused the promotion as a self-review. An agent
         could cap its own work at ``verified`` by approving it first.
         """
@@ -952,7 +952,7 @@ class Projector:
         if event.task_id:
             return self.repository.find(MemoryFilter(task_id=event.task_id, **base))
 
-        # No attempt or task was named — the common case when Provalume is driven
+        # No attempt or task was named - the common case when Provalume is driven
         # directly rather than by an orchestrator. Fall back to the branch, and
         # only to claim types, so a verdict lands on assertions about the codebase
         # rather than on every episode recorded that day.
@@ -968,7 +968,7 @@ class Projector:
         """Records that a landed integration makes promotable.
 
         Restricted to claim types. What lands in a commit is an assertion about
-        the codebase — a procedure, a fact, a decision. A gotcha's value does not
+        the codebase - a procedure, a fact, a decision. A gotcha's value does not
         depend on a merge, and marking one ``integrated`` would say the failure
         landed when what landed was the fix.
         """
@@ -999,7 +999,7 @@ class Projector:
         """Lessons whose subject is the one a reviewer named.
 
         A lesson's ``subject_key`` covers the subject *and* the finding together,
-        so it can never equal a key built from the subject alone — which is why
+        so it can never equal a key built from the subject alone - which is why
         an exact-key lookup attached a resolution to bare rejections only, and
         never to the ones that said what was wrong. The stated subject is
         compared instead, over the recent lessons plus whatever the exact key
@@ -1107,7 +1107,7 @@ def _names_subject(memory: Memory, key: str) -> bool:
 
     One subject can produce two keys. A record's ``subject_key`` is derived from
     whatever text identifies it, and for a lesson that is the subject and the
-    finding together — a key no lookup built from the subject alone can
+    finding together - a key no lookup built from the subject alone can
     reconstruct. Where a record also carries the subject it was filed under, that
     is compared as well, which is what lets a reviewer's verdict reach it.
     """

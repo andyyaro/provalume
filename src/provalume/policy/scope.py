@@ -2,10 +2,10 @@
 
 Two unrelated jobs live here because both are containment boundaries:
 
-1. **Scope widening** — moving a record from branch to repository to project is a
+1. **Scope widening** - moving a record from branch to repository to project is a
    promotion with its own evidence requirements (ADR-0005). Global is unreachable
    (ADR-0016).
-2. **Path confinement** — resolving a caller-supplied path and refusing anything
+2. **Path confinement** - resolving a caller-supplied path and refusing anything
    outside its permitted root (threat T21).
 """
 
@@ -93,12 +93,12 @@ def confine(candidate: Path | str, root: Path | str) -> Path:
     """Resolve ``candidate`` and refuse anything outside ``root`` (threat T21).
 
     Resolution happens before comparison so ``../``, symlinks, and absolute paths
-    are all normalised first — a string-prefix check on an unresolved path is the
+    are all normalised first - a string-prefix check on an unresolved path is the
     classic bypass.
 
     ``~`` is expanded before the check. Without expansion, ``~/.ssh/id_rsa``
     joins to ``<root>/~/.ssh/id_rsa`` and passes confinement as an oddly-named
-    subdirectory — technically contained, and not what the caller asked for. A
+    subdirectory - technically contained, and not what the caller asked for. A
     caller writing ``~`` means the home directory, so expanding and *then*
     refusing is the honest answer.
     """

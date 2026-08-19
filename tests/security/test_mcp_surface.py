@@ -281,7 +281,7 @@ def test_calls_are_audited_including_refusals(server: McpServer) -> None:
     assert "promote" in tools
     refusals = server.audit.refusals
     assert any(entry.tool == "promote" for entry in refusals), (
-        "a refused call was not audited — a vanished refusal is what an attacker wants"
+        "a refused call was not audited - a vanished refusal is what an attacker wants"
     )
 
 

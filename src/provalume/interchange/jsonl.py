@@ -8,7 +8,7 @@ byte-identical files, so a diff shows what changed rather than how the dictionar
 happened to iterate.
 
 The import rules exist because **an imported record is untrusted input** (threat
-T17). Its claimed trust state carries no weight — trust is re-derived locally from
+T17). Its claimed trust state carries no weight - trust is re-derived locally from
 evidence that also imported and also validated. A record from the future is
 rejected rather than partially interpreted, and a duplicate ID with different
 content is a conflict rather than an overwrite, because overwriting is how forged
@@ -280,7 +280,7 @@ class ImportResult:
         """Records that will actually be stored, which is events and only events.
 
         Memory and transition records are parsed, validated, and checked for
-        divergent supersession — but a memory is a projection of events (ADR-0002)
+        divergent supersession - but a memory is a projection of events (ADR-0002)
         and the target rebuilds its own from the events it just accepted, so
         nothing here persists them. Counting them as accepted asserted a
         durability that does not exist: a memories-only file reported "accepted:
@@ -375,8 +375,8 @@ def record_to_event(record: dict[str, Any]) -> Event:
         source=Source.IMPORT,
         payload=dict(record.get("payload", {})),
         # The file's `redaction` and `integrity` blocks are dropped rather than
-        # copied. Both are claims *about* Provalume's own processing — "this was
-        # redacted", "this scored 0.0 for poisoning" — and adopting them verbatim
+        # copied. Both are claims *about* Provalume's own processing - "this was
+        # redacted", "this scored 0.0 for poisoning" - and adopting them verbatim
         # would let a hand-written file assert that a scan it never ran came back
         # clean. `_landing_state` and the promotion gate read
         # `integrity.poisoning.risk`, so a forged 0.0 there disables both.
@@ -476,8 +476,8 @@ def import_directory(
     record came from, and a record that fails admission has to be reportable as
     an :class:`ImportIssue` rather than an exception that aborts the file.
 
-    ``result.memories`` and ``result.transitions`` are parsed for inspection —
-    :func:`_detect_supersession_conflicts` reads them — not for storage. A memory
+    ``result.memories`` and ``result.transitions`` are parsed for inspection -
+    :func:`_detect_supersession_conflicts` reads them - not for storage. A memory
     is a projection of events, and an importer rebuilds its own from the events it
     accepted, which is why they do not count towards ``accepted``.
 
@@ -591,7 +591,7 @@ def import_directory(
                                 filename,
                                 "declared payload_hash does not match the payload "
                                 f"(declared {claimed_hash[:19]}…, actual "
-                                f"{actual_hash[:19]}…) — the record was altered in "
+                                f"{actual_hash[:19]}…) - the record was altered in "
                                 "transit or is forged",
                                 record_id,
                             )
@@ -614,7 +614,7 @@ def import_directory(
                             )
                         continue
                     # Admission, on the same terms as a locally recorded
-                    # event: validate, cap, redact, scan — then hash. Skipping
+                    # event: validate, cap, redact, scan - then hash. Skipping
                     # it here would put an unredacted credential on disk and
                     # have the chain attest to it (threat T11), and would let
                     # the file's own poisoning score stand in for one Provalume

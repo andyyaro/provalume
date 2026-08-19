@@ -4,8 +4,8 @@ Two mechanisms that the docstrings describe and the code did not deliver:
 
 * the declared cross-run path (``resolves_signature``) overwrote a resolution
   that was already recorded, so a later unrelated success became the answer the
-  preflight gate serves as ``what_later_worked`` — while the rendered text went
-  on naming the real fix — and it never wrote the link that
+  preflight gate serves as ``what_later_worked`` - while the rendered text went
+  on naming the real fix - and it never wrote the link that
   ``Provenance.resolves_gotcha_id`` is read from;
 * a reviewer's later approval of the same subject never reached a lesson,
   because a lesson keys on subject *and* finding together while the lookup was

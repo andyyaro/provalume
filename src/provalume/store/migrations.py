@@ -19,7 +19,7 @@ from __future__ import annotations
 from typing import Final
 
 # ---------------------------------------------------------------------------
-# 001 — the journal, memories, transitions, and full-text search
+# 001 - the journal, memories, transitions, and full-text search
 # ---------------------------------------------------------------------------
 #
 # Two things here are load-bearing and easy to miss:

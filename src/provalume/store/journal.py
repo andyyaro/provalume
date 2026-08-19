@@ -76,7 +76,7 @@ class AppendResult:
     """What an append did.
 
     ``inserted=False`` with no error means the event was already present with
-    identical content — idempotent re-ingestion, which import relies on.
+    identical content - idempotent re-ingestion, which import relies on.
     """
 
     __slots__ = ("event", "inserted", "seq")
@@ -102,8 +102,8 @@ class Journal:
     def head(self) -> tuple[str, int, int]:
         """``(event_hash, seq, event_count)`` of the chain head.
 
-        Exposed so an operator can pin it externally — in a commit, or a signed
-        export — which is the only real defence against a rollback attack (T16).
+        Exposed so an operator can pin it externally - in a commit, or a signed
+        export - which is the only real defence against a rollback attack (T16).
         Provalume makes that possible; it does not do it for you.
         """
         row = self.db.query_one(
@@ -260,7 +260,7 @@ class Journal:
         """Every project id present in the journal, ascending.
 
         Exists so a caller that finds nothing can tell the difference between an
-        empty database and a query aimed at the wrong project — a distinction
+        empty database and a query aimed at the wrong project - a distinction
         that is invisible when an empty result is simply printed as nothing.
         """
         rows = self.db.query("SELECT DISTINCT project_id FROM events ORDER BY project_id")
@@ -287,11 +287,11 @@ class Journal:
             if event.payload_hash != expected_payload:
                 problems.append(
                     f"event {event.event_id} (seq {event.seq}): payload hash mismatch "
-                    f"— stored {event.payload_hash}, recomputed {expected_payload}"
+                    f"- stored {event.payload_hash}, recomputed {expected_payload}"
                 )
             if event.prev_event_hash != prev_hash:
                 problems.append(
-                    f"event {event.event_id} (seq {event.seq}): chain break — "
+                    f"event {event.event_id} (seq {event.seq}): chain break - "
                     f"prev_event_hash is {event.prev_event_hash or '(empty)'}, "
                     f"expected {prev_hash or '(empty)'}"
                 )
@@ -303,7 +303,7 @@ class Journal:
             if event.event_hash != expected_event_hash:
                 problems.append(
                     f"event {event.event_id} (seq {event.seq}): envelope hash mismatch "
-                    f"— stored {event.event_hash}, recomputed {expected_event_hash}"
+                    f"- stored {event.event_hash}, recomputed {expected_event_hash}"
                 )
             prev_hash = event.event_hash
             if limit is not None and checked >= limit:
@@ -314,7 +314,7 @@ class Journal:
         if stored_count != actual_count:
             problems.append(
                 f"journal_head records {stored_count} events but the table holds "
-                f"{actual_count} — rows were removed or inserted out of band"
+                f"{actual_count} - rows were removed or inserted out of band"
             )
         if actual_count and stored_head != prev_hash:
             problems.append(
@@ -330,7 +330,7 @@ class Journal:
     def duplicate_payloads(self, *, project_id: str | None = None) -> list[tuple[str, int]]:
         """``(payload_hash, count)`` for payloads appearing more than once.
 
-        Not an error — a command genuinely failing twice produces identical
+        Not an error - a command genuinely failing twice produces identical
         payloads. Surfaced because it is also the signature of a re-imported
         export, which is worth noticing.
         """

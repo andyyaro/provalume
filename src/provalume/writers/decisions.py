@@ -2,7 +2,7 @@
 
 Decisions are the one category whose authority is a person rather than a test. A
 human decision *is* project truth because a human made it, so it reaches
-``integrated`` on authority (ADR-0004) — but only when ``source=human``.
+``integrated`` on authority (ADR-0004) - but only when ``source=human``.
 Agent-*proposed* decision records start ``quarantined`` like anything else.
 
 The rejected alternatives are the reusable part. A decision record that says only

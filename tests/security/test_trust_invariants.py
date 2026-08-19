@@ -111,7 +111,7 @@ def test_sdk_refuses_agent_promotion_and_records_the_refusal(pv: Provalume) -> N
 
     transitions = pv.memories.transitions_for(target.memory_id)
     refusals = [t for t in transitions if not t["allowed"]]
-    assert refusals, "the refusal was not recorded — a vanished attempt is what an "
+    assert refusals, "the refusal was not recorded - a vanished attempt is what an "
     "attacker wants"
     assert refusals[0]["policy_rule"] == promotion.REFUSE_AGENT_ACTOR
 

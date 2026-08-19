@@ -26,7 +26,7 @@ from provalume.writers import failures
 
 #: A pattern is linear enough if a 20k-character adversarial string matches in
 #: well under a second. The exponential version took 1.5s at *24* characters, so
-#: the gap between pass and fail is many orders of magnitude — there is no risk
+#: the gap between pass and fail is many orders of magnitude - there is no risk
 #: of this being flaky on a slow runner.
 BUDGET_S = 2.0
 LENGTH = 20_000
@@ -228,7 +228,7 @@ def test_the_audit_scan_is_linear(probe: str) -> None:
     ],
 )
 def test_poisoning_heuristics_are_linear(probe: str) -> None:
-    """These run at admission on agent-supplied text — the most hostile input
+    """These run at admission on agent-supplied text - the most hostile input
     Provalume accepts."""
     assert elapsed(poisoning.assess, probe) < BUDGET_S
 
@@ -270,7 +270,7 @@ def _class_members(spec: str) -> set[str]:
     return members
 
 
-#: `(?:[HEAD][TAIL]*)+` — a repeated group whose body is an anchor class
+#: `(?:[HEAD][TAIL]*)+` - a repeated group whose body is an anchor class
 #: followed by an unbounded class. Ambiguous *only* if the two classes overlap,
 #: because then one input can be split more than one way.
 _NESTED = re.compile(r"\(\?:\[(?P<head>[^\]]*)\]\[(?P<tail>[^\]]*)\][*+]\)[*+]")
@@ -279,7 +279,7 @@ _NESTED = re.compile(r"\(\?:\[(?P<head>[^\]]*)\]\[(?P<tail>[^\]]*)\][*+]\)[*+]")
 def test_no_pattern_nests_an_unbounded_quantifier_ambiguously() -> None:
     """Structural tripwire for the shape that caused the original bug.
 
-    ``(?:[A][B]*)+`` is safe when A and B are disjoint — each iteration is then
+    ``(?:[A][B]*)+`` is safe when A and B are disjoint - each iteration is then
     anchored to exactly one character that cannot appear in the tail, so there is
     only one way to split any input. It is exponential when they overlap, which
     is exactly what ``[A-Z][a-zA-Z0-9]*`` did: an uppercase letter could belong

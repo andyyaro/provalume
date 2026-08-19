@@ -19,7 +19,7 @@
 ## Does this touch a standing commitment?
 
 Six architectural commitments hold the security model together
-([CONTRIBUTING.md](../blob/main/CONTRIBUTING.md)). Tick any that apply — each
+([CONTRIBUTING.md](../blob/main/CONTRIBUTING.md)). Tick any that apply - each
 needs an ADR and a security review.
 
 - [ ] Language model in the write path
@@ -33,5 +33,5 @@ needs an ADR and a security review.
 
 - [ ] New constants are documented where they are decided, not only in code
 - [ ] Refusal cases are tested, not just success cases
-- [ ] Determinism preserved — `provalume rebuild` still reproduces projections
+- [ ] Determinism preserved - `provalume rebuild` still reproduces projections
 - [ ] `CHANGELOG.md` updated if user-visible

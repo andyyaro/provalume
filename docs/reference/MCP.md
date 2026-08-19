@@ -19,7 +19,7 @@ Decision record: [ADR-0012](../adr/ADR-0012-mcp-permissions.md).
 **An MCP client is driven by a model that reads attacker-controlled repository
 content.** Whatever it can call, an attacker can eventually reach.
 
-So the dangerous operations are not gated — they are **absent**:
+So the dangerous operations are not gated - they are **absent**:
 
 > no `promote` · no `invalidate` · no `supersede` · no `reject` · no `delete` ·
 > no scope movement · no `rebuild` · no `import` · no `export` · no `audit` ·
@@ -36,7 +36,7 @@ the caller is the operator.
 
 ## Tools
 
-### Read — always available
+### Read - always available
 
 | Tool | Returns |
 |---|---|
@@ -54,7 +54,7 @@ while prior failures sit in the store.
 | `query_provenance` | The evidence chain for one memory |
 | `preflight` | The pre-action warning gate |
 
-### Write — enabled by default, all landing `quarantined`
+### Write - enabled by default, all landing `quarantined`
 
 | Tool | Effect |
 |---|---|
@@ -64,7 +64,7 @@ while prior failures sit in the store.
 | `report_outcome` | Report how a task ended |
 
 **Nothing a client writes is ever trusted.** The trust state comes from `source`,
-which the server assigns structurally — a payload claiming
+which the server assigns structurally - a payload claiming
 `{"verified": true, "confidence": "high"}` is payload.
 
 ## Profiles
@@ -72,7 +72,7 @@ which the server assigns structurally — a payload claiming
 | Profile | Read | Write |
 |---|---|---|
 | `default` | yes | `propose` and structured reports |
-| `read-only` | yes | none — recommended for shared environments |
+| `read-only` | yes | none - recommended for shared environments |
 
 Chosen by the operator at launch. **A client cannot change its own profile**;
 there is no tool to do so, and `clientInfo` is recorded for the audit log but
@@ -90,7 +90,7 @@ never used for authorisation.
 | Max message | 1 MB |
 
 The rate limit is consulted **before** the permission profile, so every inbound
-call spends budget — including one naming a tool that does not exist. The message
+call spends budget - including one naming a tool that does not exist. The message
 cap is checked before parsing, because parsing is itself work a client can ask
 for: a megabyte of nested brackets costs more than the tool call it imitates.
 
@@ -129,14 +129,14 @@ Sent at initialisation, so a connecting model knows the rules:
 > 'observed' records as claims rather than facts.
 >
 > You can propose memories, but you cannot make them trusted. Proposals land
-> quarantined. Trust is granted only by deterministic evidence — a command that
-> returned, a reviewer who was not the author, a commit that landed — and only
+> quarantined. Trust is granted only by deterministic evidence - a command that
+> returned, a reviewer who was not the author, a commit that landed - and only
 > through the operator's CLI. There is no promotion tool here by design.
 
 ## Auditing
 
 Every call is recorded as an `mcp.call` or `mcp.refused` event, **including
-refusals** — a refused call is a security signal, and a silently-dropped one is
+refusals** - a refused call is a security signal, and a silently-dropped one is
 what an attacker wants.
 
 ```sh
@@ -147,14 +147,14 @@ One exception, and it is deliberate: a client that keeps calling after it has be
 rate-limited gets **one `mcp.refused` event when the burst starts and one summary
 when it ends**, carrying a `suppressed` count. The in-memory audit still holds
 every call. Journalling each rate-limited call individually would hand an ignored
-limit exactly the unbounded durable write the limit exists to prevent — and the
+limit exactly the unbounded durable write the limit exists to prevent - and the
 rate limit is checked before the permission profile, so a forbidden tool name in a
 loop is bounded too.
 
 ## Why no SDK
 
 The official Python SDK pulls starlette, uvicorn, httpx, pyjwt, jsonschema, and
-more — for a stdio server. That would put an HTTP stack into a project whose
+more - for a stdio server. That would put an HTTP stack into a project whose
 privacy claim is "no network code", and that claim needs to stay literally true
 and testable (`tests/security/test_no_network.py`).
 

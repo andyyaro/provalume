@@ -1,4 +1,4 @@
-"""``provalume demo`` — the whole product in under a minute.
+"""``provalume demo`` - the whole product in under a minute.
 
 Constraints, all of them deliberate: no API key, no agent CLI, no network, a
 temporary project that is cleaned up, and **the real storage, policy, retrieval,
@@ -90,7 +90,7 @@ def run_demo(
 
         out.print("[pv.heading]Provalume demo[/]")
         out.print(f"[pv.muted]temporary project at {workdir}[/]")
-        out.print("[pv.muted]no API key, no agent CLI, no network — real engine[/]")
+        out.print("[pv.muted]no API key, no agent CLI, no network - real engine[/]")
 
         # 1-2 -----------------------------------------------------------
         _beat(out, 1, "Agent A attempts the integration suite in parallel")
@@ -108,7 +108,7 @@ def run_demo(
             task_id="task-1",
             attempt_id="attempt-1",
         )
-        out.print("     [pv.error]exit 1[/] — TimeoutError: deadlock in db fixture teardown")
+        out.print("     [pv.error]exit 1[/] - TimeoutError: deadlock in db fixture teardown")
 
         # 3 -------------------------------------------------------------
         _beat(out, 3, "A gotcha is recorded, keyed on a deterministic failure signature")
@@ -116,7 +116,7 @@ def run_demo(
         gotcha = gotchas[0]
         out.print(f"     [pv.trust.verified]{gotcha.trust_state}[/] {gotcha.text[:96]}")
         out.print(
-            f"     [pv.muted]signature {gotcha.content['failure_signature'][7:19]} — "
+            f"     [pv.muted]signature {gotcha.content['failure_signature'][7:19]} - "
             f"paths, timings, and PIDs normalised away[/]"
         )
 
@@ -133,7 +133,7 @@ def run_demo(
             attempt_id="attempt-2",
         )
         out.print(
-            "     [pv.muted]agent-B hits it too — folded into one record, occurrences now 2[/]"
+            "     [pv.muted]agent-B hits it too - folded into one record, occurrences now 2[/]"
         )
 
         # 4 -------------------------------------------------------------
@@ -160,7 +160,7 @@ def run_demo(
             task_id="task-2",
             attempt_id="attempt-3",
         )
-        out.print("     [pv.success]exit 0[/] — 43 passed")
+        out.print("     [pv.success]exit 0[/] - 43 passed")
         procedures = pv.memory_records(memory_types=("procedural",), limit=5)
         procedure = procedures[0]
         out.print(
@@ -214,7 +214,7 @@ def run_demo(
             marker = "superseded" if fact.trust_state is TrustState.SUPERSEDED else "current"
             style = "pv.trust.superseded" if marker == "superseded" else "pv.trust.observed"
             out.print(f"     [{style}]{marker:<11}[/] {fact.text[:76]}")
-        out.print("     [pv.muted]history survives — the old fact is retained, not deleted[/]")
+        out.print("     [pv.muted]history survives - the old fact is retained, not deleted[/]")
 
         # 11-12 ---------------------------------------------------------
         _beat(out, 11, "A later task retrieves the verified memory with provenance")
@@ -263,7 +263,7 @@ def run_demo(
         out.print(f"  [pv.provenance]chain head {report.chain_head[:26]}[/]")
 
         elapsed = time.monotonic() - started
-        out.print(f"\n[pv.success]Done[/] in {elapsed:.1f}s — no API key, no network.")
+        out.print(f"\n[pv.success]Done[/] in {elapsed:.1f}s - no API key, no network.")
         out.print(
             "[pv.muted]Every line above came from the real engine: same storage, "
             "same policy, same retrieval.[/]"
@@ -300,7 +300,7 @@ def run_demo(
 def _render_html(pv: Any, digest_text: str, report: Any, summary: dict[str, Any]) -> str:
     """Render a light-themed HTML report.
 
-    Light-first per ADR-0018 — white and beige backgrounds, black text, green for
+    Light-first per ADR-0018 - white and beige backgrounds, black text, green for
     action, mauve for lineage, gold reserved for attested states. Gold appears
     only as a badge border on white, never as body text and never on beige, which
     is what the measured contrast ratios permit.

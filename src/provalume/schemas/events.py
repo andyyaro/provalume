@@ -44,7 +44,7 @@ class EventType(StrEnum):
 
     Closed deliberately. Deterministic writers map event types to memory
     candidates (ADR-0007), so an open-ended type would mean an event nothing knows
-    how to project — stored, and silently inert.
+    how to project - stored, and silently inert.
     """
 
     # --- Run and task lifecycle ------------------------------------------

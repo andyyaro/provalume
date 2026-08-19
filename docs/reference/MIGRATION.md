@@ -49,7 +49,7 @@ correctly.
 Options, in order of preference:
 
 1. Restore a backup from before the upgrade.
-2. Export from the new version, import into a fresh database on the old one —
+2. Export from the new version, import into a fresh database on the old one -
    accepting that imported records arrive `quarantined` and re-derive trust
    locally.
 

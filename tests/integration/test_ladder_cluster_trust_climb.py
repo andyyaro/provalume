@@ -4,11 +4,11 @@ Three defects lived here at once and none of them had a test, because every
 existing assertion about promotion either hand-built a record already in the
 state under test or stopped at ``verified``:
 
-* semantic memory could never pass ``observed`` — nothing attaches a
+* semantic memory could never pass ``observed`` - nothing attaches a
   *verification* event to a fact, so the one category that exists to state
   current truth could never be presented as current truth;
 * a self-approval recorded before an independent one hid the independent one
-  from the evidence list, capping the record at ``verified`` — a promotion
+  from the evidence list, capping the record at ``verified`` - a promotion
   denial an agent could trigger against its own work;
 * the review verdict is stamped by *attempt*, and disabling that scope stalled
   every claim at ``verified`` while the whole suite and all eval scenarios

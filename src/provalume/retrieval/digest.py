@@ -1,16 +1,16 @@
-"""The budgeted digest — working memory, composed at query time.
+"""The budgeted digest - working memory, composed at query time.
 
 This is what an agent actually reads, which makes it the live channel from
 Provalume into a model with tool access. Two properties are therefore
 non-negotiable:
 
 **The banner is always first and always present.** Fixed wording, not a
-suggestion — it is the control for threat T4 (instruction replay). It is
+suggestion - it is the control for threat T4 (instruction replay). It is
 mitigation, not prevention: Provalume cannot force a model to honour it.
 
 **The budget is a hard ceiling enforced by construction.** Items are measured
-before inclusion — against the footer that will actually be rendered, not a fixed
-guess at its size — and the digest is never assembled and then trimmed, because a
+before inclusion - against the footer that will actually be rendered, not a fixed
+guess at its size - and the digest is never assembled and then trimmed, because a
 post-hoc trim can cut mid-item and leave a memory's claim without its trust
 label, or cut the warnings line that says the claim is contested at all. That is
 exactly how an untrusted record starts reading like a fact.
@@ -39,7 +39,7 @@ from provalume.schemas.trust import TrustState
 #: notice always fits. The reserve actually applied while admitting items is
 #: computed from the footer that will be rendered (see :func:`compose`), because
 #: a fixed reserve smaller than the real footer is precisely how a digest ends up
-#: assembled and then trimmed — the thing this module promises never to do.
+#: assembled and then trimmed - the thing this module promises never to do.
 _FOOTER_RESERVE = 160
 
 #: Per-item warnings rolled up to one digest-level line each. Keyed on a stable
@@ -87,8 +87,8 @@ def _dedupe_key(result: RecallResult) -> tuple[str, str]:
 def _rollup_tags(result: RecallResult) -> set[str]:
     """Which digest-level rollup lines this result would contribute.
 
-    An upper bound rather than an exact set — every matching needle counts, where
-    the emitter stops at the first — because this drives the footer reserve, and
+    An upper bound rather than an exact set - every matching needle counts, where
+    the emitter stops at the first - because this drives the footer reserve, and
     a reserve may be too generous but never too small.
     """
     return {
@@ -133,7 +133,7 @@ def render_item(result: RecallResult, *, include_reasons: bool) -> str:
     """Render one digest entry.
 
     Every entry carries its trust label and provenance inline rather than in a
-    legend. A reader — human or model — encountering a claim mid-digest must be
+    legend. A reader - human or model - encountering a claim mid-digest must be
     able to see its standing without scrolling back, because that is precisely
     the moment a poisoned record would otherwise pass as fact.
     """
@@ -146,7 +146,7 @@ def render_item(result: RecallResult, *, include_reasons: bool) -> str:
         if result.explanation.applicability is Applicability.UNCERTAIN:
             lines.append("  applicability: UNCERTAIN at the queried commit")
         elif result.explanation.applicability is Applicability.HISTORICAL:
-            lines.append("  applicability: HISTORICAL — from another line of history")
+            lines.append("  applicability: HISTORICAL - from another line of history")
         elif result.memory_type is MemoryType.SEMANTIC:
             lines.append("  applicability: NOT established project truth (has not landed)")
 
@@ -175,7 +175,7 @@ def compose(
     """Compose a digest within a hard budget.
 
     Exactly one of ``char_budget`` or ``token_budget`` should be given. A token
-    budget is converted using a documented characters-per-token estimate — an
+    budget is converted using a documented characters-per-token estimate - an
     estimate, because the true ratio is model-specific and Provalume will not add
     a tokenizer dependency to approximate a number it cannot make exact. Callers
     needing precision should pass a character budget.

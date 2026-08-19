@@ -13,8 +13,8 @@ cannot reproduce is a marketing asset rather than evidence.
 ## What is measured
 
 A replayable harness of **twenty scenarios**. Each builds a fresh in-memory
-database, drives the **real** engine — same storage, same policy, same
-retrieval, same projections — and asserts on what comes out. Nothing is mocked
+database, drives the **real** engine - same storage, same policy, same
+retrieval, same projections - and asserts on what comes out. Nothing is mocked
 and nothing is estimated.
 
 ```sh
@@ -58,7 +58,7 @@ Recorded on 2026-07-25 from a full run, committed at
 
 | Metric | Result | Target |
 |---|---|---|
-| Poisoning success rate | **0/5 (0%)** | **0** — a non-zero result is a bug, not a tuning parameter |
+| Poisoning success rate | **0/5 (0%)** | **0** - a non-zero result is a bug, not a tuning parameter |
 | Cross-scope leakage | **0/3 (0%)** | 0 |
 | Stale-memory rate | **0/1 (0%)** | 0 |
 | False warnings | **0/5 (0%)** | as low as possible |
@@ -66,13 +66,13 @@ Recorded on 2026-07-25 from a full run, committed at
 | Recall coverage | 1/1 (100%) | higher is better |
 | Procedure reuse | 1/1 (100%) | higher is better |
 | Repeated-error rate | 0/1 (0%) | lower is better |
-| Retrieval latency | p95 **1.7 ms** | — |
-| Write latency | see results file | — |
-| Rebuild latency | see results file | — |
+| Retrieval latency | p95 **1.7 ms** | - |
+| Write latency | see results file | - |
+| Rebuild latency | see results file | - |
 
 ### Read the denominators
 
-Every rate above is reported with its denominator, and several are small — five
+Every rate above is reported with its denominator, and several are small - five
 adversarial records, three cross-scope checks, one stale-fact check. These are
 **targeted scenarios, not a corpus.** "0% poisoning success over five adversarial
 records" is a meaningful regression guard and a weak statistical claim. It is
@@ -81,7 +81,7 @@ reported this way so nobody mistakes one for the other.
 Metrics whose scenarios did not run report a zero denominator rather than a
 fabricated zero rate, so an unrun measurement is visibly unrun rather than
 looking like a perfect score. `task_completion`, `verification_improvement`, and
-`review_cycle_reduction` currently read `n/a (0 observations)` — they need
+`review_cycle_reduction` currently read `n/a (0 observations)` - they need
 production trajectories that 0.1.0 does not have.
 
 ## What is deliberately not used
@@ -91,7 +91,7 @@ gameable, and both major vendors' headline numbers on it were corrected downward
 after a third-party audit found problems including corrupted answer keys.
 
 **No LongMemEval-V2 score is claimed.** LongMemEval-V2 is the right benchmark for
-this space — agent trajectories at real scale — and Provalume 0.1.0 does not run
+this space - agent trajectories at real scale - and Provalume 0.1.0 does not run
 it. What ships is a LongMemEval-V2-*style* harness over software-agent task
 trajectories: own scenarios, own fixtures, own metrics, committed and
 re-runnable. Saying "LongMemEval-V2-style" is a description of the *shape*, not a
@@ -107,8 +107,8 @@ retrieval quality.
 
 The built-in `HashingEmbedder` is a hashing-trick projection with no semantic
 content: it captures exact token overlap and nothing else. It exists so the
-vector code path — fusion, fallback, rebuild, and the guarantee that vectors
-cannot bypass governance — is exercised by CI on every commit without requiring
+vector code path - fusion, fallback, rebuild, and the guarantee that vectors
+cannot bypass governance - is exercised by CI on every commit without requiring
 an optional dependency.
 
 So scenario 20 proves the *plumbing*: that reciprocal rank fusion runs, and that
@@ -118,7 +118,7 @@ answers than lexical retrieval.
 
 **A real lexical-versus-hybrid comparison needs a corpus large enough for the
 difference to be measurable, and it has not been run.** When it is, it will be
-published with its methodology, its corpus, and its denominators — and it will
+published with its methodology, its corpus, and its denominators - and it will
 still be Provalume against Provalume.
 
 ## Reproducing
@@ -138,6 +138,6 @@ metrics (poisoning, leakage, staleness) should not.
 ## What would make these numbers meaningful
 
 Production trajectories. Until Provalume has run against real agent fleets, these
-scenarios verify that the mechanisms work as designed — which is worth having and
+scenarios verify that the mechanisms work as designed - which is worth having and
 is not the same as knowing they matter. That gap is the first item in
 [`LIMITATIONS.md`](LIMITATIONS.md).

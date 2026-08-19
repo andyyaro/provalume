@@ -20,18 +20,18 @@ is a projection ([ADR-0002](../adr/ADR-0002-immutable-event-journal.md)).
 | `project_id` | str | **yes** | The isolation boundary. `NOT NULL`, filtered on every query path, no bypass. |
 | `repository_id` | str | no | Remote URL where available; stable across clones |
 | `run_id` / `task_id` / `attempt_id` | str | no | Orchestration provenance |
-| `agent_profile` | str | no | Who acted — used for independence checks |
+| `agent_profile` | str | no | Who acted - used for independence checks |
 | `adapter` / `model` / `effort` | str | no | Which tooling produced it |
 | `branch` | str | no | Branch scope |
 | `worktree` | str | no | Distinguishes concurrent contradictory worktrees |
 | `base_commit` / `commit_sha` | hex | no | Commit validity. Validated as hexadecimal: a non-SHA cannot be resolved, so accepting one would produce provenance that looks checkable and is not. |
-| `causal_parent_event_id` | ULID | no | Causal chain — e.g. an outcome linked to the warning that preceded it |
+| `causal_parent_event_id` | ULID | no | Causal chain - e.g. an outcome linked to the warning that preceded it |
 | `source` | enum | yes | **Structural.** Assigned by the code path, never read from content. |
 | `payload` | JSON | yes | The evidence itself |
 | `payload_hash` | `sha256:…` | assigned | **Globally stable.** Same payload, same hash, any machine. |
 | `event_hash` | `sha256:…` | assigned | **Locally chained.** Tamper-evident within this database. |
 | `prev_event_hash` | `sha256:…` | assigned | The chain link |
-| `redaction` | JSON | assigned | What fired — never the secret itself |
+| `redaction` | JSON | assigned | What fired - never the secret itself |
 | `integrity` | JSON | assigned | Poisoning risk, signature metadata |
 
 ### Why two hashes
@@ -56,7 +56,7 @@ database's own sequence, so the chain is deliberately **not** a global ledger.
 
 ## Memories
 
-Projections. Mutable and rebuildable — which is why they carry a `content_hash`:
+Projections. Mutable and rebuildable - which is why they carry a `content_hash`:
 unlike events there is no trigger stopping a direct edit, and the hash is what
 makes one visible to `audit`.
 
@@ -94,13 +94,13 @@ and would make a rendering change invisible to the rebuild-determinism tests.
 | Type | Contents | Write trigger | Ceiling without landed history |
 |---|---|---|---|
 | `episodic` | Attempts, failures, repairs, reviews, run outcomes | Deterministic projection | `verified` |
-| `semantic` | Current repository facts, environment, conventions, architecture | Landed integration, or human decision | `reviewed` — **needs `integrated` to be current truth** |
+| `semantic` | Current repository facts, environment, conventions, architecture | Landed integration, or human decision | `reviewed` - **needs `integrated` to be current truth** |
 | `procedural` | Verified commands, runbooks, repair/test/release procedures | One passing run of the *exact* command | `verified` |
 | `decision` | Selected option, rejected alternatives, rationale, authority | A human decision event | `integrated` when `source=human` |
-| `gotcha` | Failed approach, failure signature, context, later resolution | A verification-failure event | `verified` — **never promoted to semantic truth** |
+| `gotcha` | Failed approach, failure signature, context, later resolution | A verification-failure event | `verified` - **never promoted to semantic truth** |
 | `performance` | Agent/profile evidence per task category | Deterministic aggregation | `verified` |
 
-Working memory is not stored. It is the digest, composed at query time — a stored
+Working memory is not stored. It is the digest, composed at query time - a stored
 copy would be a second, staler source of truth and a second thing to poison.
 
 ### Which category?
@@ -127,8 +127,8 @@ The ambiguous case is common enough to have a rule:
 | **Record** | `episodic`, `gotcha`, `performance` | Record an occurrence. Review and integration verdicts do **not** attach by attempt association. |
 
 This distinction matters more than it looks. Without it, a review approving a fix
-gets stamped onto every record sharing the attempt — including the failure that
-prompted the fix — so a gotcha ends up reading "approved by reviewer-2" and, once
+gets stamped onto every record sharing the attempt - including the failure that
+prompted the fix - so a gotcha ends up reading "approved by reviewer-2" and, once
 the branch merges, "integrated". Both are false: the reviewer approved the fix,
 and what landed was the fix. A reviewer can still confirm a finding by naming its
 subject explicitly.
@@ -155,7 +155,7 @@ most often reported as a bug.
 
 ## Transitions
 
-No memory changes state without a row here — the pairing is written in one
+No memory changes state without a row here - the pairing is written in one
 transaction, so a promoted record with no audit trail is not representable.
 
 | Field | Purpose |
@@ -172,7 +172,7 @@ transaction, so a promoted record with no audit trail is not representable.
 
 | Table | Purpose |
 |---|---|
-| `journal_head` | Chain head, seq, count — appending needs no scan, and rollback is detectable if you pinned the head |
+| `journal_head` | Chain head, seq, count - appending needs no scan, and rollback is detectable if you pinned the head |
 | `failure_signatures` | Signature → occurrence count → resolution. Repetition is what turns a note into a warning. |
 | `contradictions` | Detected pairs. Never auto-resolved: recency is not correctness, and the newer record may be the poisoned one. |
 | `memory_links` | Gotcha ↔ resolution, supersession edges |
@@ -188,7 +188,7 @@ project → repository → branch → run → task → attempt → agent
 
 Widening is a promotion with its own evidence: branch → repository needs landed
 integration, repository → project needs human approval, and `global` is
-**unreachable** — the value is reserved so adding it later is a policy change
+**unreachable** - the value is reserved so adding it later is a policy change
 rather than a migration, and no rule targets it
 ([ADR-0016](../adr/ADR-0016-global-memory-deferral.md)).
 
@@ -201,8 +201,8 @@ Reported per result, never guessed:
 | `current` | Valid at the queried commit and scope |
 | `historical` | Introduced on another line of history |
 | `cross_scope` | From a different branch or repository |
-| `uncertain` | Ancestry could not be determined — rebased, cherry-picked, garbage-collected, or no repository |
+| `uncertain` | Ancestry could not be determined - rebased, cherry-picked, garbage-collected, or no repository |
 
 `uncertain` is used freely and is not a failure. Git ancestry answers "could this
-have been true here?", not "is this true here?" — and a labelled uncertainty beats
+have been true here?", not "is this true here?" - and a labelled uncertainty beats
 a confident wrong answer.

@@ -87,7 +87,7 @@ def main() -> int:
         )
     elif gold_ww < AA_LARGE:
         failures.append(
-            f"gold on warm-white is {gold_ww:.2f}:1 — below the {AA_LARGE}:1 large-text "
+            f"gold on warm-white is {gold_ww:.2f}:1 - below the {AA_LARGE}:1 large-text "
             f"floor, so gold is unusable even for badges"
         )
 
@@ -107,7 +107,7 @@ def main() -> int:
             ratio = contrast(color[fg], color[bg])
             if ratio < AA_NORMAL:
                 failures.append(
-                    f"{fg} on {bg} is {ratio:.2f}:1, below AA for normal text — "
+                    f"{fg} on {bg} is {ratio:.2f}:1, below AA for normal text - "
                     f"ADR-0018 claims black/green/mauve are unconstrained"
                 )
 

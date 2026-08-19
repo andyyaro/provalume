@@ -1,8 +1,8 @@
 """MCP server over stdio, implemented against the published specification.
 
 No SDK dependency (ADR-0012). MCP stdio transport is newline-delimited JSON-RPC
-2.0, and the parts Provalume needs — ``initialize``,
-``notifications/initialized``, ``tools/list``, ``tools/call``, ``ping`` — are a
+2.0, and the parts Provalume needs - ``initialize``,
+``notifications/initialized``, ``tools/list``, ``tools/call``, ``ping`` - are a
 few hundred lines of standard library. The official Python SDK would pull
 starlette, uvicorn, httpx, pyjwt, and six more packages into a project whose
 privacy claim is "no network code", and that claim needs to stay literally true
@@ -63,7 +63,7 @@ MAX_MESSAGE_BYTES: Final = 1024 * 1024
 #: without overflowing, so the same line became a *list* and fell through to
 #: "message is not an object". Two interpreters disagreeing about which error an
 #: attacker's input earns is a bound that isn't one. Legitimate MCP traffic is a
-#: request object wrapping ``params`` wrapping ``arguments`` — depth 3 or 4;
+#: request object wrapping ``params`` wrapping ``arguments`` - depth 3 or 4;
 #: 100 is far above anything the protocol asks for and far below where any
 #: parser is in trouble.
 MAX_NESTING_DEPTH: Final = 100
@@ -71,7 +71,7 @@ MAX_NESTING_DEPTH: Final = 100
 #: Typed queries ask for this multiple of the caller's limit before filtering.
 #: ``memory_types`` is a ranking nudge inside the engine, not a hard filter, so
 #: without headroom records of other types fill the result slots and the filter
-#: in :meth:`McpServer._typed_query` empties the list — reporting "no prior
+#: in :meth:`McpServer._typed_query` empties the list - reporting "no prior
 #: failures" to a client while prior failures sit in the store.
 TYPED_QUERY_OVERFETCH: Final = 10
 
@@ -93,8 +93,8 @@ SERVER_INSTRUCTIONS: Final = (
     "record carries a trust state and its provenance; treat 'quarantined' and "
     "'observed' records as claims rather than facts.\n\n"
     "You can propose memories, but you cannot make them trusted. Proposals land "
-    "quarantined. Trust is granted only by deterministic evidence — a command "
-    "that returned, a reviewer who was not the author, a commit that landed — and "
+    "quarantined. Trust is granted only by deterministic evidence - a command "
+    "that returned, a reviewer who was not the author, a commit that landed - and "
     "only through the operator's CLI. There is no promotion tool here by design."
 )
 
@@ -120,17 +120,17 @@ def _text_result(
 def _exceeds_nesting_depth(text: str, limit: int = MAX_NESTING_DEPTH) -> bool:
     """Whether ``text`` nests structures deeper than ``limit``.
 
-    Answers the question the caller actually has — "is this too deep?" — rather
+    Answers the question the caller actually has - "is this too deep?" - rather
     than measuring the true depth, so an adversarial line stops being scanned at
     the point it is already disqualified.
 
     Brackets inside string literals are not structure: ``{"note": "[[[["}`` is
     depth 1, and counting its characters would reject stored content for looking
-    like an attack. Escapes are tracked for the same reason — the string in
+    like an attack. Escapes are tracked for the same reason - the string in
     ``"a\\""`` does not end at that quote.
     """
     # Depth cannot exceed the number of opening brackets, and str.count runs in
-    # C. Ordinary traffic — a handful of brackets — never enters the loop below.
+    # C. Ordinary traffic - a handful of brackets - never enters the loop below.
     if text.count("[") + text.count("{") <= limit:
         return False
 
@@ -155,7 +155,7 @@ def _exceeds_nesting_depth(text: str, limit: int = MAX_NESTING_DEPTH) -> bool:
             # Clamped, not decremented: unmatched closers would otherwise drive
             # the count negative and buy an attacker that much headroom before
             # the limit bites. Such a line is not valid JSON and the parser
-            # would refuse it anyway — but the bound should hold on its own
+            # would refuse it anyway - but the bound should hold on its own
             # terms rather than on that argument.
             depth -= 1
     return False
@@ -343,7 +343,7 @@ class McpServer:
         started = time.monotonic()
 
         # Budget first, profile second. Checking the profile first left the one
-        # call shape an attacker controls for free — a forbidden tool name — outside
+        # call shape an attacker controls for free - a forbidden tool name - outside
         # the limit entirely, so a loop on `promote` wrote an unbounded number of
         # `mcp.refused` events while the limiter never moved (threat T24).
         if not self.limiter.check():
@@ -409,7 +409,7 @@ class McpServer:
     def _record_throttled(self, tool: str, *, reason: str, started: float) -> None:
         """Record a rate-limited call without one journal write per call.
 
-        The in-memory audit keeps every one — it is capped, so it cannot grow
+        The in-memory audit keeps every one - it is capped, so it cannot grow
         without bound. The journal is not capped, so a burst gets one event when
         it starts and one summary when it ends. Recording each rate-limited call
         durably would hand an ignored limit the very write amplification the limit
@@ -553,7 +553,7 @@ class McpServer:
             f"  verification {provenance.verification_state}",
             f"  review       {provenance.review_state}",
             f"  integration  {provenance.integration_state}",
-            f"  provenance   {provenance.resolution} — {provenance.resolution_detail}",
+            f"  provenance   {provenance.resolution} - {provenance.resolution_detail}",
         ]
         for verification in provenance.verifications:
             outcome = "passed" if verification.passed else "FAILED"

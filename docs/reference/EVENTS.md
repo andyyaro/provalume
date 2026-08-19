@@ -10,7 +10,7 @@ the event types and what each one produces.
 ## The type set is closed
 
 Deliberately. Deterministic writers map event types to memory candidates, so an
-open-ended type would mean an event nothing knows how to project — stored, and
+open-ended type would mean an event nothing knows how to project - stored, and
 silently inert.
 
 Adding a type means adding its writer and its tests. That friction is the point.
@@ -19,11 +19,11 @@ Adding a type means adding its writer and its tests. That friction is the point.
 
 | Type | Projects into |
 |---|---|
-| `run.started` | — |
+| `run.started` | - |
 | `run.completed` | episodic |
-| `task.started` | — |
+| `task.started` | - |
 | `task.completed` | episodic, performance |
-| `attempt.started` | — |
+| `attempt.started` | - |
 | `attempt.completed` | episodic, performance |
 
 ## Deterministic evidence
@@ -56,7 +56,7 @@ promotes, and the refusal is recorded.
 
 A review verdict attaches by attempt or task association to **claim types**
 (semantic, procedural, decision) only. To attach it to a gotcha or an episode, the
-reviewer must name that record's `subject` — because approving a fix is not
+reviewer must name that record's `subject` - because approving a fix is not
 approving the failure that prompted it.
 
 ## Human authority
@@ -72,7 +72,7 @@ approving the failure that prompted it.
 re-proposing what was already turned down.
 
 A decision has no command to verify, so the human decision event is its evidence
-at every rung. The rungs are still walked and still recorded — what differs is
+at every rung. The rungs are still walked and still recorded - what differs is
 what counts as evidence, not whether evidence is required.
 
 ## Git
@@ -81,7 +81,7 @@ what counts as evidence, not whether evidence is required.
 |---|---|---|
 | `integration.landed` | Marks claim-type records landed; enables `integrated` | `target` (`run` or `user`), `branch`; `commit_sha` on the envelope |
 | `integration.reverted` | Invalidates what it landed | `branch` |
-| `commit.recorded` | Records a commit | — |
+| `commit.recorded` | Records a commit | - |
 | `branch.rejected` | **Rejects every record on that branch, permanently** | `branch` |
 
 `branch.rejected` is how abandoned work stops being truth while remaining
@@ -97,7 +97,7 @@ available as negative experience.
 `fact.changed` supersedes rather than overwrites. Without `replaces`, the
 predecessor is found by matching `subject_key`.
 
-## Agent-sourced — always untrusted
+## Agent-sourced - always untrusted
 
 | Type | Projects into |
 |---|---|
@@ -107,7 +107,7 @@ predecessor is found by matching `subject_key`.
 | `agent.outcome_report` | quarantined episodic |
 
 `source=agent` and the trust ceiling is `observed`; the landing state is
-`quarantined`. Nothing in the payload changes that — a payload claiming
+`quarantined`. Nothing in the payload changes that - a payload claiming
 `{"verified": true, "confidence": "high"}` is payload.
 
 ## Warning feedback
@@ -154,5 +154,5 @@ pv.record_event(EventType.RUN_COMPLETED, source=Source.KERNEL,
 ```
 
 `record_event` is the only path into the journal, and it runs the full admission
-pipeline — validation, size caps, redaction, poisoning scan — before anything
+pipeline - validation, size caps, redaction, poisoning scan - before anything
 durable happens. `Event.create` alone cannot persist.

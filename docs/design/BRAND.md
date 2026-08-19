@@ -4,7 +4,7 @@ Provalume looks like an archive, not a dashboard.
 
 The category defaults to dark backgrounds, neon accents, and a glowing brain
 icon. That aesthetic says *speed and novelty*. Provalume's proposition is the
-opposite — records, evidence, lineage, things that hold up over time — and a
+opposite - records, evidence, lineage, things that hold up over time - and a
 verification-provenance system that looks like a cyberpunk console is arguing
 against itself.
 
@@ -27,7 +27,7 @@ Machine-readable tokens: [`tokens.json`](tokens.json), [`tokens.css`](tokens.css
 | `--pv-gold` | `#B28A45` | Verified, promoted, attested, trusted |
 
 White and beige dominate. Black carries the text. Green is the working accent.
-Mauve marks lineage. **Gold is scarce on purpose** — if everything is gold,
+Mauve marks lineage. **Gold is scarce on purpose** - if everything is gold,
 nothing is verified.
 
 ## Two hard accessibility rules
@@ -45,7 +45,7 @@ and fails on drift.
 1. **Gold never sets normal-size body text.** At 3.04:1 it clears the 3.0:1 bar
    for large text and non-text elements only.
 2. **Gold never appears on beige.** 2.70:1 on `--pv-beige-light` and 2.40:1 on
-   `--pv-beige-soft` — below even the non-text threshold, so it fails as a border
+   `--pv-beige-soft` - below even the non-text threshold, so it fails as a border
    there too.
 
 Consequence: **the verified state is a gold-bordered badge on white with a black
@@ -91,7 +91,7 @@ something*.
 
 Plain, specific, and willing to say what does not work.
 
-- "Facts your agents proved, not things they said." — the tagline, everywhere.
+- "Facts your agents proved, not things they said." - the tagline, everywhere.
 - Name evidence, not adjectives: "verified by `pytest -q`" beats "high
   confidence".
 - State costs. Every ADR lists what its decision makes worse; the limitations
@@ -107,8 +107,8 @@ screenshots, social previews, and documentation default to it.
 
 ## Using the name
 
-- **Provalume** — display. Capital P, one word.
-- **provalume** — the package, the CLI, the import, the MCP server name.
+- **Provalume** - display. Capital P, one word.
+- **provalume** - the package, the CLI, the import, the MCP server name.
 - Pronounced **PROV-uh-loom**.
 
 Not "ProValume", "Prova Lume", or "PV". Apache-2.0 permits use of the code; please

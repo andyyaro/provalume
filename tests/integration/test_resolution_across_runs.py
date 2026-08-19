@@ -1,10 +1,10 @@
 """Resolution linking when the fix lands in a later run.
 
 Found by dogfooding. Orkestra's real recovery path is to block a task, escalate
-to a human, and do the work in a *new* run — so the failure and its fix land in
+to a human, and do the work in a *new* run - so the failure and its fix land in
 different runs with different task ids. Inference scoped to a single task or run
-therefore never fires on the path that matters, and `resolves_signature` — the
-mechanism that does work across runs — had no writer at all: the projector read
+therefore never fires on the path that matters, and `resolves_signature` - the
+mechanism that does work across runs - had no writer at all: the projector read
 it and nothing in the SDK could set it.
 """
 
@@ -44,7 +44,7 @@ def test_a_success_in_a_later_run_resolves_the_failure(tmp_path: Path) -> None:
     signature = _gotcha(pv)["failure_signature"]
     assert signature, "the failure produced no signature"
 
-    # A different run, a different task — as Orkestra actually behaves.
+    # A different run, a different task - as Orkestra actually behaves.
     pv.record_verification(
         command=COMMAND, passed=True, task_id="task-B", resolves_signature=signature
     )
@@ -64,7 +64,7 @@ def test_without_the_signature_a_later_run_does_not_link(tmp_path: Path) -> None
     pv.record_verification(command=COMMAND, passed=True, task_id="task-B")
 
     assert _gotcha(pv)["resolution"] is None, (
-        "cross-run inference now works without an explicit signature — if this is "
+        "cross-run inference now works without an explicit signature - if this is "
         "intended, the integration no longer needs to supply one"
     )
     pv.close()
@@ -128,8 +128,8 @@ def test_a_lookup_can_consult_the_gate_without_recording_a_warning(tmp_path: Pat
 def test_a_warning_labels_the_command_output_it_quotes(tmp_path: Path) -> None:
     """The gate quotes captured stderr verbatim into a later agent's prompt.
 
-    That text is the most attacker-influenceable in the system — any test,
-    linter or build tool writes it freely — and it is replayed to an agent that
+    That text is the most attacker-influenceable in the system - any test,
+    linter or build tool writes it freely - and it is replayed to an agent that
     never ran the command. The digest has carried an untrusted-data banner since
     0.1.0 (threat T4); this channel is the same threat and had none.
     """
@@ -140,7 +140,7 @@ def test_a_warning_labels_the_command_output_it_quotes(tmp_path: Path) -> None:
     pv.record_verification(command=COMMAND, passed=False, excerpt=hostile, task_id="task-A")
 
     summary = pv.preflight(command=COMMAND, record=False).summary
-    assert hostile in summary, "the evidence never reached the warning — test would be vacuous"
+    assert hostile in summary, "the evidence never reached the warning - test would be vacuous"
     assert PREFLIGHT_BANNER.splitlines()[0] in summary, "the warning carries no untrusted label"
     assert summary.index("untrusted") < summary.index(hostile), (
         "the label follows the payload it is meant to qualify"
@@ -161,7 +161,7 @@ def test_a_pass_that_never_landed_does_not_resolve_anything(tmp_path: Path) -> N
     pv.record_verification(command=COMMAND, passed=False, excerpt=FAILURE, task_id="task-A")
     signature = _gotcha(pv)["failure_signature"]
 
-    # The same command passes in a later run — but nothing lands.
+    # The same command passes in a later run - but nothing lands.
     pv.record_verification(command=COMMAND, passed=True, task_id="task-B")
     assert _gotcha(pv)["resolution"] is None, (
         "a pass with no landing behind it was accepted as what later worked"
@@ -179,7 +179,7 @@ def test_each_landing_anchors_only_the_records_it_carried(tmp_path: Path) -> Non
     """A landing promotes branch-wide, but it did not carry the whole branch.
 
     `_memories_for_landing` matches on task *or* branch, so successive landings
-    on one integration branch used to re-stamp every record on it — leaving them
+    on one integration branch used to re-stamp every record on it - leaving them
     all wearing the last commit to land, whichever task produced it. Promotion is
     branch-wide because a landing does make the branch's claims promotable;
     re-anchoring is not, because `commit_sha` says which commit a record is true

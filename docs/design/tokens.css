@@ -1,4 +1,4 @@
-/* Provalume design tokens — light-first.
+/* Provalume design tokens - light-first.
  *
  * Generated from tokens.json, which is the source of truth. See ADR-0018.
  *
@@ -6,7 +6,7 @@
  * docs/design/contrast_check.py in CI:
  *
  *   1. --pv-gold never sets normal-size body text (3.04:1 on warm white).
- *   2. --pv-gold never appears on either beige (2.70:1 / 2.40:1 — below even
+ *   2. --pv-gold never appears on either beige (2.70:1 / 2.40:1 - below even
  *      the 3:1 non-text threshold).
  *
  * The verified state therefore renders as a gold-bordered badge on white with a
@@ -192,7 +192,7 @@ th {
 }
 
 /* An evidence seal: the strongest "this was attested" mark in the system.
- * Gold on white at 3.17:1 — permitted as a non-text border. */
+ * Gold on white at 3.17:1 - permitted as a non-text border. */
 .pv-seal {
   display: inline-block;
   border: var(--pv-border-seal) solid var(--pv-gold);
@@ -208,7 +208,7 @@ th {
   color: var(--pv-text);
 }
 
-/* The untrusted-data banner that opens every digest. Deliberately plain —
+/* The untrusted-data banner that opens every digest. Deliberately plain -
  * it is a warning, not decoration. */
 .pv-untrusted-banner {
   background: var(--pv-beige-light);

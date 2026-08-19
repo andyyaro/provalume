@@ -159,7 +159,7 @@ jobs:
     needs: package
     runs-on: ubuntu-latest
     # The release pipeline hands distributions between jobs through the
-    # artifact store, and it only runs on a tag — so an upload/download-artifact
+    # artifact store, and it only runs on a tag - so an upload/download-artifact
     # major bump was previously unverifiable until a release used it, and a
     # break would surface as a failed publish. This runs the same hand-off on
     # every push: same artifact name and path as publish-to-pypi.yml, then

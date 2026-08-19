@@ -65,7 +65,7 @@ reasoning, not only in the code. An architectural change needs an ADR before the
 implementation.
 
 **Honest about its cost.** Every ADR has a "Consequences" section listing what the
-decision makes worse. Follow that pattern — a change with no downside usually
+decision makes worse. Follow that pattern - a change with no downside usually
 means the downside was not looked for.
 
 **Tested for the failure, not just the success.** The interesting tests here are
@@ -78,7 +78,7 @@ be presented as truth.
 2. Add the type to `schemas/memories.py`, including its ceiling, its recency
    half-life, and whether it is a claim type or a record type.
 3. Add the promotion rule to `policy/promotion.py` with a **named** rule constant.
-   The name is stored in every transition and is what makes the model auditable —
+   The name is stored in every transition and is what makes the model auditable -
    renaming one makes historical transitions unreadable.
 4. Add the writer.
 5. Add tests, including the refusal cases.
@@ -87,7 +87,7 @@ be presented as truth.
 ## Adding a dependency
 
 Three mandatory runtime dependencies: pydantic, typer, rich. Adding a fourth
-needs a strong argument and a check for network capability —
+needs a strong argument and a check for network capability -
 `tests/security/test_no_network.py` will fail otherwise. Heavy or optional things
 go in an extra.
 
@@ -111,4 +111,4 @@ doctor`.
 
 Feature requests are most useful when they name the failure they would have
 prevented. Several items in [`LIMITATIONS.md`](docs/reference/LIMITATIONS.md) are
-known gaps — knowing which ones bite in practice is exactly the data 0.1.0 lacks.
+known gaps - knowing which ones bite in practice is exactly the data 0.1.0 lacks.

@@ -3,7 +3,7 @@
 Found by dogfooding. `_resolve_matching_failures` claimed to match on purpose
 but read neither the command nor the purpose: it attached a success to *every*
 unresolved gotcha sharing a task or run. Under the Orkestra adapter every gate
-in a task — lint, types, tests — carries the same ``task_id``, so the first
+in a task - lint, types, tests - carries the same ``task_id``, so the first
 green gate was written into the others as "What later worked", a false sentence
 that is hashed into ``content_hash`` and cannot be corrected, because the
 signature is marked resolved at the same moment and the genuine fix is then
@@ -132,7 +132,7 @@ def test_a_different_command_with_the_same_purpose_resolves(pv: Provalume) -> No
 
 
 def test_one_success_may_resolve_two_failures_of_the_same_command(pv: Provalume) -> None:
-    """One command, two distinct errors, two signatures — one fix for both."""
+    """One command, two distinct errors, two signatures - one fix for both."""
     pv.record_verification(
         command=PARALLEL,
         passed=False,

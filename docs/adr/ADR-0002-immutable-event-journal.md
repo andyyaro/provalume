@@ -42,11 +42,11 @@ convention does not.
 
 ### Hashing, and what the chain does and does not prove
 
-- `payload_hash` = SHA-256 of the canonical JSON payload. **Globally stable** —
+- `payload_hash` = SHA-256 of the canonical JSON payload. **Globally stable** -
   the same payload hashes identically on any machine, which is what makes
   cross-machine duplicate detection possible.
 - `event_hash` = SHA-256 over the canonical envelope including `payload_hash` and
-  `prev_event_hash`. **Locally chained** — tamper-evident within one database.
+  `prev_event_hash`. **Locally chained** - tamper-evident within one database.
 
 The chain is deliberately *local*. Events imported from elsewhere are appended in
 arrival order and chained into the receiving database's sequence; the chain is not
@@ -64,13 +64,13 @@ recompute the chain. Said plainly in [`THREAT_MODEL.md`](../security/THREAT_MODE
 
 One serialisation, used for hashing, export, and comparison: UTF-8, sorted keys,
 `(",", ":")` separators, no NaN or Infinity, integers not floats where integral,
-RFC 3339 UTC timestamps with explicit precision. Determinism is not cosmetic here —
+RFC 3339 UTC timestamps with explicit precision. Determinism is not cosmetic here -
 a hash that varies by dict ordering makes every downstream claim unverifiable.
 
 ### Idempotent ingestion
 
 `INSERT … ON CONFLICT(event_id) DO NOTHING`. Re-ingesting the same `event_id` with
-*different* content is an error, detected by comparing `event_hash` — silently
+*different* content is an error, detected by comparing `event_hash` - silently
 accepting it would let an importer rewrite history through the append-only path.
 
 ### Redaction before the durable write
@@ -88,7 +88,7 @@ whose promotion decisions can be trusted.
 
 **Bad.** The database grows monotonically; nothing is ever reclaimed by normal
 operation. Two writes per logical change (event + projection). Rebuild time scales
-with journal size — measured and reported by `provalume audit`. Bugs in projection
+with journal size - measured and reported by `provalume audit`. Bugs in projection
 logic require a rebuild rather than a row fix.
 
 **Also bad.** Hard deletion is not supported. This makes Provalume a poor fit for

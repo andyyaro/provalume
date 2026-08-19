@@ -15,7 +15,7 @@ implementation, each with:
 
 - the context that forced it,
 - the decision,
-- **what it costs** — every ADR has a Consequences section listing what the
+- **what it costs** - every ADR has a Consequences section listing what the
   decision makes worse,
 - the alternatives rejected, and why.
 
@@ -39,7 +39,7 @@ Listed in [`CONTRIBUTING.md`](CONTRIBUTING.md) so contributors meet them early.
 
 ## Licensing
 
-Apache-2.0. **No CLA** — contributors keep their copyright, and the project
+Apache-2.0. **No CLA** - contributors keep their copyright, and the project
 cannot be unilaterally relicensed. That is deliberate: this project reviewed
 competitors partly on their CLA and dependency risk, and inheriting the same
 problem would be inconsistent.
@@ -51,7 +51,7 @@ DCO sign-off (`git commit -s`) is welcome but optional.
 See [`docs/RELEASE.md`](docs/RELEASE.md). Semantic versioning; pre-1.0 minor
 bumps may break the SDK, stated plainly rather than implied. Tags are annotated,
 immutable, and never moved or reused. Publication runs through PyPI Trusted
-Publishing over OIDC — there is no long-lived API token to leak.
+Publishing over OIDC - there is no long-lived API token to leak.
 
 ## If this project is abandoned
 

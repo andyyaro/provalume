@@ -10,7 +10,7 @@ Canonical form:
 
 * UTF-8, emitted as real characters rather than ``\\uXXXX`` escapes
 * object keys sorted by Unicode code point
-* no insignificant whitespace — separators are ``(",", ":")``
+* no insignificant whitespace - separators are ``(",", ":")``
 * integral floats collapse to integers, so ``1.0`` and ``1`` hash identically
 * ``NaN``, ``Infinity``, and ``-Infinity`` are rejected: they are not valid JSON
   and every parser disagrees about them
@@ -19,13 +19,13 @@ Canonical form:
 Two hashes are produced, and the distinction is load-bearing (ADR-0002):
 
 ``payload_hash``
-    Over the payload alone. **Globally stable** — the same payload hashes
+    Over the payload alone. **Globally stable** - the same payload hashes
     identically on every machine, which is what makes cross-machine duplicate
     detection possible.
 
 ``event_hash``
     Over the event envelope, including ``payload_hash`` and the predecessor's
-    ``event_hash``. **Locally chained** — tamper-evident within one database, and
+    ``event_hash``. **Locally chained** - tamper-evident within one database, and
     deliberately not a global ledger.
 """
 
@@ -117,7 +117,7 @@ def canonical_json(value: Any) -> str:
 
 
 def canonical_bytes(value: Any) -> bytes:
-    """Canonical JSON as UTF-8 bytes — what actually gets hashed."""
+    """Canonical JSON as UTF-8 bytes - what actually gets hashed."""
     return canonical_json(value).encode("utf-8")
 
 
@@ -161,8 +161,7 @@ def hash_content(content: dict[str, Any], text: str) -> str:
 
     Covers both the structured ``content`` and the rendered ``text``, because the
     two are stored separately (ADR-0004) and a projection that changed only the
-    rendering while leaving the structure alone would otherwise appear unchanged
-    — which would make ``rebuild`` determinism tests pass while the digest output
+    rendering while leaving the structure alone would otherwise appear unchanged which would make ``rebuild`` determinism tests pass while the digest output
     silently differed.
     """
     return hash_value({"content": content, "text": text})

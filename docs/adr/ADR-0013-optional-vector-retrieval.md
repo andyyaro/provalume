@@ -12,7 +12,7 @@ Adding embeddings by default would cost more than it buys: `fastembed` pulls
 onnxruntime; the agentmemory trial installed **1.0 GB** with vendored ONNX runtimes
 for three platforms. A memory library that installs a machine-learning runtime by
 default has misjudged its own weight class. And `sqlite-vec` is pre-1.0 with a small
-maintainer base — a hard dependency on it is a Kuzu-shaped risk.
+maintainer base - a hard dependency on it is a Kuzu-shaped risk.
 
 ## Decision
 
@@ -32,7 +32,7 @@ Three implementations:
 
 | Embedder | Requires | Purpose |
 |---|---|---|
-| `HashingEmbedder` | **nothing** — stdlib only | Deterministic hashing-trick projection. A **non-semantic baseline for testing**, not a quality embedder. Makes the entire vector code path testable in CI with zero dependencies. |
+| `HashingEmbedder` | **nothing** - stdlib only | Deterministic hashing-trick projection. A **non-semantic baseline for testing**, not a quality embedder. Makes the entire vector code path testable in CI with zero dependencies. |
 | `Model2VecEmbedder` | `provalume[model2vec]` | Static embeddings, MIT, CPU, ~30 MB, no torch in the base install |
 | `FastEmbedEmbedder` | `provalume[fastembed]` | ONNX models; heavier |
 
@@ -47,7 +47,7 @@ that sends text to a remote service.
 
 ### Storage
 
-`memory_vectors(memory_id, model_id, dimensions, vector BLOB)` — float32,
+`memory_vectors(memory_id, model_id, dimensions, vector BLOB)` - float32,
 little-endian, fixed width.
 
 Search uses `sqlite-vec` where it loads safely, otherwise brute-force cosine in
@@ -81,7 +81,7 @@ record.**
 Every vector result passes, afterwards, through the identical filters as a lexical
 result: `project_id`, trust floor, scope applicability, commit validity,
 invalidation, terminal-state exclusion, poisoning threshold, redaction. There is one
-filter implementation and both paths call it — not two implementations that must be
+filter implementation and both paths call it - not two implementations that must be
 kept in step.
 
 That is what makes threat T6 (poisoned vector index) survivable: an adversarial
@@ -116,7 +116,7 @@ but modest, and Provalume will not oversell them. Marked experimental in 0.1.0.
 ## Alternatives rejected
 
 **Vectors by default.** Would install an ML runtime for a memory library, and would
-make embeddings the retrieval gate — threat T6.
+make embeddings the retrieval gate - threat T6.
 
 **Vectors only.** Loses exact-match precision, which for commands, file paths, and
 error strings is exactly what matters.

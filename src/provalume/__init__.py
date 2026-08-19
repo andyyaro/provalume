@@ -1,11 +1,11 @@
-"""Provalume — verified, git-aware memory for autonomous software agents.
+"""Provalume - verified, git-aware memory for autonomous software agents.
 
     Facts your agents proved, not things they said.
 
 Provalume records what agents did and which evidence proved it, then re-injects a
 bounded, labelled digest of that record into future prompts. Trust is granted by
-deterministic evidence — a command that returned, a reviewer who was not the
-author, a commit that landed — never by assertion.
+deterministic evidence - a command that returned, a reviewer who was not the
+author, a commit that landed - never by assertion.
 
     from provalume import Provalume
 
@@ -25,9 +25,9 @@ author, a commit that landed — never by assertion.
     print(digest.text)      # always banner-first, always within budget
 
 What this module re-exports is the public API, stable within a minor release
-series. Everything else — ``provalume.store``, ``provalume.policy``,
+series. Everything else - ``provalume.store``, ``provalume.policy``,
 ``provalume.writers``, ``provalume.retrieval``, ``provalume.interchange``, and
-the ``provalume.mcp`` internals — is internal and may change without notice
+the ``provalume.mcp`` internals - is internal and may change without notice
 (ADR-0017).
 """
 

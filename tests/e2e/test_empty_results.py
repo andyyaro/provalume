@@ -1,7 +1,7 @@
 """An empty listing must say why it is empty.
 
-An empty result has two very different causes — the database is empty, or the
-query is aimed at a project it does not hold — and printed as nothing they are
+An empty result has two very different causes - the database is empty, or the
+query is aimed at a project it does not hold - and printed as nothing they are
 indistinguishable. The second reads as "the integration recorded nothing", which
 is both wrong and expensive to chase. This was found by dogfooding, after a long
 misdiagnosis of exactly that kind.

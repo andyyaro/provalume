@@ -5,7 +5,7 @@ and ``demo`` are enough to be useful, and the lifecycle commands sit underneath
 for when they are needed.
 
 Every command that produces data supports ``--json``, whose shape is a stability
-contract (ADR-0017) — integrations parse it, so changing a key is a breaking
+contract (ADR-0017) - integrations parse it, so changing a key is a breaking
 change even though no Python signature moved.
 """
 
@@ -61,7 +61,7 @@ def _report_empty(pv: Any, noun: str) -> None:
     An empty listing has two very different causes: the database really is
     empty, or the query is aimed at a project the database does not hold. Printed
     as nothing they are indistinguishable, and the second one reads as "the
-    integration recorded nothing" — a wrong and expensive conclusion.
+    integration recorded nothing" - a wrong and expensive conclusion.
     """
     present = pv.journal.project_ids()
     if not present:
@@ -105,7 +105,7 @@ def _key_material(raw: bytes) -> bytes:
     other file is taken verbatim, minus the trailing newline an editor adds. Hex
     is offered because a raw 32-byte key is not something a person can keep in a
     file they occasionally look at, and an HMAC secret is whatever the two sides
-    agreed on — reinterpreting it would break the agreement.
+    agreed on - reinterpreting it would break the agreement.
     """
     stripped = raw.strip()
     if len(stripped) == 64:
@@ -185,7 +185,7 @@ def init(
     if status["git_available"]:
         console.print(f"  branch     {status['branch']}")
     else:
-        console.print("  git        [pv.muted]not available — commit validity is disabled[/]")
+        console.print("  git        [pv.muted]not available - commit validity is disabled[/]")
     console.print()
     console.print(
         "Next: [pv.action]provalume demo[/] to see it work, "
@@ -226,7 +226,7 @@ def doctor(db: DbOption = None, project: ProjectOption = None, json: JsonOption 
 
         add("vectors.numpy", True, "numpy available (fast vector path)")
     except ImportError:
-        add("vectors.numpy", True, "numpy absent — pure-Python vector fallback in use")
+        add("vectors.numpy", True, "numpy absent - pure-Python vector fallback in use")
 
     try:
         from provalume.interchange.signatures import ed25519_available
@@ -234,7 +234,7 @@ def doctor(db: DbOption = None, project: ProjectOption = None, json: JsonOption 
         add(
             "signatures.ed25519",
             True,
-            "available" if ed25519_available() else "absent — signed imports quarantine",
+            "available" if ed25519_available() else "absent - signed imports quarantine",
         )
     except ImportError as exc:  # pragma: no cover
         add("signatures.ed25519", False, str(exc))
@@ -247,7 +247,7 @@ def doctor(db: DbOption = None, project: ProjectOption = None, json: JsonOption 
         True,
         f"branch {status['branch']}"
         if status["git_available"]
-        else "no repository — commit validity degrades to 'uncertain'",
+        else "no repository - commit validity degrades to 'uncertain'",
     )
     pragma_problems = pv.db.check_pragmas()
     add("pragmas", not pragma_problems, "; ".join(pragma_problems) or "as expected")
@@ -408,7 +408,7 @@ def explain_command(
     console.print(f"  integration    {provenance.integration_state}")
     console.print(
         f"  provenance     [pv.provenance]{provenance.resolution}[/] "
-        f"— {provenance.resolution_detail}"
+        f"- {provenance.resolution_detail}"
     )
 
     for verification in provenance.verifications:
@@ -427,7 +427,7 @@ def explain_command(
     for integration in provenance.integrations:
         console.print(
             f"\n  [pv.heading]integration {integration.state}[/] "
-            f"{integration.commit_sha[:12]} — {integration.resolution}"
+            f"{integration.commit_sha[:12]} - {integration.resolution}"
         )
 
     for decision in provenance.decisions:
@@ -742,7 +742,7 @@ def import_command(
     Signatures are checked against keys pinned here and nowhere else, and the
     check fails closed: a record signed by an unknown key, with an unsupported
     scheme, or with a signature that does not verify is quarantined rather than
-    imported. Without a pinned key no signature is examined at all — verifying
+    imported. Without a pinned key no signature is examined at all - verifying
     against a key the file supplied would verify nothing.
     """
     from provalume.interchange.jsonl import summarize
@@ -771,8 +771,8 @@ def import_command(
     if _emit(
         {
             # `accepted` is events stored. Memory and transition records are
-            # read and checked, never stored — projections are rebuilt from the
-            # events — so they are reported separately rather than folded into a
+            # read and checked, never stored - projections are rebuilt from the
+            # events - so they are reported separately rather than folded into a
             # count that reads as durability.
             "accepted": result.accepted,
             "memories_read": len(result.memories),
@@ -962,7 +962,7 @@ def serve_mcp(
     """Serve Provalume over MCP on stdio.
 
     Read tools plus propose. There is no promotion, invalidation, supersession,
-    or delete tool on the MCP surface — not disabled, absent (ADR-0012).
+    or delete tool on the MCP surface - not disabled, absent (ADR-0012).
     """
     from provalume.mcp.permissions import PermissionProfile
     from provalume.mcp.server import McpServer

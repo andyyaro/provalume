@@ -3,7 +3,7 @@
 The CLI runner lives here as a fixture rather than in a test module. Importing
 across test modules (`from tests.e2e.test_cli import run`) only works when the
 repository root happens to be on `sys.path`, which is true when running locally
-from the root and false on CI — where it fails with `No module named 'tests'`.
+from the root and false on CI - where it fails with `No module named 'tests'`.
 A fixture is injected by pytest, so it needs no import path at all.
 """
 

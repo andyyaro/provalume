@@ -196,7 +196,7 @@ class Auditor:
     def _check_projections(self, report: AuditReport, *, project_id: str | None) -> None:
         """Verify that stored memories match what their content hashes to.
 
-        A mismatch means a memory row was edited directly — memories are mutable
+        A mismatch means a memory row was edited directly - memories are mutable
         (they are projections), so unlike events there is no trigger stopping it.
         The content hash is what makes such an edit visible.
         """
@@ -288,7 +288,7 @@ class Auditor:
         """Re-scan stored content for known credential patterns.
 
         A hit means redaction failed and is a hard error. A clean result is
-        **not** proof of no secrets — it proves no *known pattern* matched. A
+        **not** proof of no secrets - it proves no *known pattern* matched. A
         credential with no recognisable shape may survive, which is why
         ``PRIVACY_MODEL.md`` §3 tells users to rotate rather than to trust a clean
         audit.

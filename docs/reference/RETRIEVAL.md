@@ -56,7 +56,7 @@ score = w_lex           * lexical
 ```
 
 Every component is normalised to `[0, 1]`. **The score is not.** Its maximum is
-the sum of the positive weights — 2.70 at defaults — and scores are comparable
+the sum of the positive weights - 2.70 at defaults - and scores are comparable
 *within one query only*. A 0-to-1-looking number would invite being read as a
 probability, which it is not.
 
@@ -88,7 +88,7 @@ exactly the records the preflight gate needs. Only `unknown` scores zero.
 | `w_trust` | 0.50 | Half of lexical, so a strongly-matching `verified` record beats a weakly-matching `integrated` one. |
 | `w_evidence` | 0.30 | Rewards evidence beyond what the trust rung already captures. |
 | `w_recency` | 0.25 | Matters, but a two-year-old verified procedure is often still correct. |
-| `w_usage` | 0.15 | Weak deliberately — usage is self-reinforcing and would otherwise ossify the ranking. |
+| `w_usage` | 0.15 | Weak deliberately - usage is self-reinforcing and would otherwise ossify the ranking. |
 | `w_type` | 0.20 | A nudge, not a filter. |
 | `w_scope` | 0.30 | Local relevance is real signal. |
 | `p_contradiction` | 0.40 | Demote, do not hide. A contested fact should be visible and marked. |
@@ -139,7 +139,7 @@ rather than argued.
 ```
 
 The same database and query produce the same order, every time. Ties break on
-recency, then on identifier — both data, rather than accidents of dict iteration
+recency, then on identifier - both data, rather than accidents of dict iteration
 or floating-point comparison. Required for the eval harness to mean anything.
 
 ## Explanations
@@ -159,7 +159,7 @@ on every result as `result.explanation.breakdown`; `provalume demo` renders it.
 why: matched the query text (relevance 1.00)
 why: same project (my-app)
 why: recorded on this branch (main)
-why: current here — a1b2c3d4e5f6 is an ancestor of f9e8d7c6b5a4
+why: current here - a1b2c3d4e5f6 is an ancestor of f9e8d7c6b5a4
 why: failed `pytest -n auto tests/integration`; seen 2 times
 why: linked to what later worked
 
@@ -172,7 +172,7 @@ scope           1.000 x weight = +0.300
 TOTAL           2.170
 ```
 
-Rows whose component and contribution are both zero are not printed — `usage` is
+Rows whose component and contribution are both zero are not printed - `usage` is
 absent above because this record had not been retrieved before. Every non-zero
 row is shown, so the arithmetic closes.
 
@@ -183,14 +183,14 @@ components always sum to the total; a test asserts it.
 
 User text never reaches FTS5 as query syntax. It is tokenised and rebuilt as
 double-quoted terms, and FTS5 operators, column filters, and prefix wildcards are
-**stripped rather than escaped** — escaping invites a bypass, stripping does not.
+**stripped rather than escaped** - escaping invites a bypass, stripping does not.
 
 Terms preserve the punctuation that appears inside real identifiers, because this
 corpus is mostly commands and paths: `src/main.py:42`, `pytest-xdist`,
 `no:xdist`, and `c++` all survive as single terms.
 
 Bounds: 32 terms, 64 characters per term, 4096 characters per query. Over-long
-queries are truncated rather than rejected — a long query is a paste, not an
+queries are truncated rather than rejected - a long query is a paste, not an
 attack.
 
 The cost: you cannot write FTS queries. No `NEAR`, no boolean operators, no column
@@ -203,21 +203,21 @@ injection-shaped surface.
 digest = pv.recall("integration tests").digest(char_budget=2000)
 ```
 
-- **The banner is always first and always present.** Fixed wording — it is the
+- **The banner is always first and always present.** Fixed wording - it is the
   control for instruction replay.
 - **The budget is a hard ceiling enforced by construction.** Items are measured
-  before inclusion — against the footer that will actually be rendered, not a
-  fixed guess at its size — so the digest is never assembled and then trimmed. A
+  before inclusion - against the footer that will actually be rendered, not a
+  fixed guess at its size - so the digest is never assembled and then trimmed. A
   post-hoc trim can cut mid-item and leave a claim without its trust label, and
   the first thing it cuts is the warnings line.
 - Failures are ordered first. An agent about to repeat a mistake needs that before
   general facts.
 - Near-duplicates are suppressed on `(type, text)`.
 - Omitted records are counted and reported. `omitted_count` means *budget
-  overflow only* — records a larger budget would have admitted. Near-duplicates
+  overflow only* - records a larger budget would have admitted. Near-duplicates
   are reported separately as `suppressed_duplicates`, because raising the budget
   will not bring those back.
-- A token budget converts at 4 characters per token — a documented **estimate**,
+- A token budget converts at 4 characters per token - a documented **estimate**,
   because the true ratio is model-specific. Pass a character budget for exactness.
 
 ## Optional vectors
@@ -227,8 +227,8 @@ digest = pv.recall("integration tests").digest(char_budget=2000)
 vector, so `memory_vectors` stays empty and every retrieval is lexical. Setting
 the flag changes nothing.
 
-What ships is the machinery — `VectorIndex`, `HashingEmbedder` and
-`reciprocal_rank_fusion` in `provalume.retrieval.vectors` — exercised directly by
+What ships is the machinery - `VectorIndex`, `HashingEmbedder` and
+`reciprocal_rank_fusion` in `provalume.retrieval.vectors` - exercised directly by
 eval scenario 20 and by `provalume doctor`, not by the read path. Scenario 20
 fuses a lexical result list by hand and measures *plumbing*: that fusion runs, and
 that a vector hit cannot authorise a record the filters excluded. It is not a

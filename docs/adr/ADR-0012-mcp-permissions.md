@@ -9,8 +9,8 @@ also the highest-risk interface in the system, because **an MCP client is driven
 model that reads attacker-controlled repository content.**
 
 The hands-on trial of `@agentmemory/mcp` made this concrete: its 7-tool surface
-includes `memory_save` — an unrestricted write — and `memory_governance_delete` — a
-destructive delete — both callable by any connected client with no tier, no review,
+includes `memory_save` - an unrestricted write - and `memory_governance_delete` - a
+destructive delete - both callable by any connected client with no tier, no review,
 and no separate confirmation. That is a memory-poisoning primitive with a delete
 button next to it.
 
@@ -28,8 +28,8 @@ promotion tool at all.**
 
 ### No SDK dependency
 
-MCP stdio transport is newline-delimited JSON-RPC 2.0. The parts needed —
-`initialize`, `notifications/initialized`, `tools/list`, `tools/call`, `ping` — are
+MCP stdio transport is newline-delimited JSON-RPC 2.0. The parts needed -
+`initialize`, `notifications/initialized`, `tools/list`, `tools/call`, `ping` - are
 implementable in `json` and `sys.stdin`/`stdout`.
 
 Verified against the specification rather than recalled: the current protocol
@@ -41,7 +41,7 @@ dependencies total, no HTTP stack, and a testable `no_network` assertion.
 
 ### The tool surface
 
-**Read tools** — always available:
+**Read tools** - always available:
 
 | Tool | Returns |
 |---|---|
@@ -54,7 +54,7 @@ dependencies total, no HTTP stack, and a testable `no_network` assertion.
 | `query_provenance` | The evidence chain for one memory |
 | `preflight` | The pre-action warning gate |
 
-**Write tools** — enabled by default, gated, all landing at `quarantined`:
+**Write tools** - enabled by default, gated, all landing at `quarantined`:
 
 | Tool | Effect |
 |---|---|
@@ -63,7 +63,7 @@ dependencies total, no HTTP stack, and a testable `no_network` assertion.
 | `report_failure` | A structured failure with a computed signature |
 | `report_outcome` | A structured task outcome |
 
-**Absent — not disabled, not gated, absent:**
+**Absent - not disabled, not gated, absent:**
 
 `promote` · `invalidate` · `supersede` · `reject` · any scope-movement tool ·
 `rebuild` · `import` · `export` · `audit` · anything taking a filesystem path
@@ -85,7 +85,7 @@ caller is the operator.
 | `default` | yes | `propose` and structured reports | Single-operator local use |
 
 Selected at launch by the operator via `provalume serve-mcp --read-only`. **A client
-cannot change its own profile** — there is no tool to do so.
+cannot change its own profile** - there is no tool to do so.
 
 ### Project scoping
 
@@ -104,7 +104,7 @@ project's database, traverse the filesystem, or discover what other projects exi
 | Max input field size | 8 KB | Oversized-input rejection (threat T25) |
 
 Exceeding a bound returns a tool execution error (`isError: true`) with an actionable
-reason, per the specification's distinction between protocol errors and tool errors —
+reason, per the specification's distinction between protocol errors and tool errors -
 so a model can correct itself rather than seeing an opaque transport failure.
 
 ### Audit logging

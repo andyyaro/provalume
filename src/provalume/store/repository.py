@@ -1,6 +1,6 @@
 """Memory, transition, link, and signature storage.
 
-Memories are projections, so unlike events they may be updated and deleted — that
+Memories are projections, so unlike events they may be updated and deleted - that
 is what makes ``provalume rebuild`` possible. What may *not* happen is a memory
 changing state without a transition row recording why; that pairing is enforced by
 :meth:`MemoryRepository.transition`, which writes both in one transaction.

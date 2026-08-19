@@ -7,7 +7,7 @@
 SQLite is the right operational store and the wrong sharing format: a binary file
 conflicts irreconcilably in Git and cannot be reviewed in a diff.
 
-Beads (25.6k stars, verified) demonstrates the working pattern — JSONL committed to
+Beads (25.6k stars, verified) demonstrates the working pattern - JSONL committed to
 the repository, the database as a rebuildable cache, hash IDs so multiple agents and
 machines merge without conflicts. The research report recommended deciding
 single-machine versus team scope *before* v0, since the merge semantics are cheaper
@@ -27,7 +27,7 @@ Merge semantics are designed now; team workflows are documented, not automated.*
   transitions.jsonl   one lifecycle transition per line
 ```
 
-No header line. A header would conflict on every concurrent export — precisely the
+No header line. A header would conflict on every concurrent export - precisely the
 Git-merge pain the format exists to avoid. Each record self-describes with `rv`
 (record version) and `kind`.
 
@@ -55,7 +55,7 @@ would invite an importer to treat a foreign chain as its own.
 | Situation | Behaviour |
 |---|---|
 | Duplicate `event_id`, identical content | Skipped. Idempotent. |
-| Duplicate `event_id`, **different** content | **Rejected** as a conflict. Never silently overwritten — this is the forgery path. |
+| Duplicate `event_id`, **different** content | **Rejected** as a conflict. Never silently overwritten - this is the forgery path. |
 | Unknown `rv` newer than supported | Rejected with a clear message, or quarantined with `--quarantine-unknown` |
 | Unknown `rv` older than supported | Migrated forward if a migration exists, else rejected |
 | Foreign `project_id` | Rejected unless `--allow-foreign-project` |
@@ -67,13 +67,13 @@ would invite an importer to treat a foreign chain as its own.
 | Malformed JSON | Line rejected and reported; import continues |
 
 **Only events are stored.** Memory and transition records in a file are parsed and
-checked — divergent supersession is detected there — and then dropped: a memory is
+checked - divergent supersession is detected there - and then dropped: a memory is
 a projection of events ([ADR-0002](ADR-0002-immutable-event-journal.md)), and the
 importer rebuilds its own from the events it accepted. `provalume import` counts
 and reports them separately for that reason.
 
 **Imported records never arrive trusted.** `source=import`, ceiling `observed`
-([ADR-0005](ADR-0005-trust-lifecycle.md)) — a record's *claimed* trust state in a
+([ADR-0005](ADR-0005-trust-lifecycle.md)) - a record's *claimed* trust state in a
 file carries no weight. Trust is re-derived locally from evidence that also imported
 and also validated.
 
@@ -99,11 +99,11 @@ provalume import ./export --hmac-key team=./team.key   # --require-signature to
 ```
 
 `--hmac-key` and `--ed25519-key` are repeatable. Pin nothing and no signature is
-examined at all — verifying a record against a key that record supplied would
+examined at all - verifying a record against a key that record supplied would
 verify nothing.
 
 **A valid signature proves origin, not truthfulness.** A signed lie is a
-verified-origin lie. Signatures raise confidence about *who*, never about *what* —
+verified-origin lie. Signatures raise confidence about *who*, never about *what* -
 stated here because the opposite assumption is the natural one.
 
 ### Team scope
@@ -122,12 +122,12 @@ now, ship single-machine, avoid retrofitting identity later.
 never the only copy. Diffs are human-readable, so a poisoned import is visible in
 review. Deterministic export makes round-trip testable.
 
-**Bad.** Verbose — JSONL of a large journal is much larger than the database.
+**Bad.** Verbose - JSONL of a large journal is much larger than the database.
 Export is a full serialisation, not incremental, in 0.1.0.
 
 **Bad.** Import cannot fully reconstruct trust, because trust depends on local
 evidence. Two teammates importing each other's exports may legitimately reach
-different trust states for the same record. Correct — trust is local — and
+different trust states for the same record. Correct - trust is local - and
 surprising, so it is documented in [`JSONL.md`](../reference/JSONL.md).
 
 **Also bad.** No confidentiality. JSONL is plaintext; exports carry command strings,
@@ -148,5 +148,5 @@ selective import awkward, and every export touches one file.
 for the same content, so exports are not comparable.
 
 **Automatic bidirectional sync.** Requires conflict resolution Provalume cannot do
-safely — auto-resolving a semantic contradiction is auto-deciding which of two
+safely - auto-resolving a semantic contradiction is auto-deciding which of two
 agents was right.

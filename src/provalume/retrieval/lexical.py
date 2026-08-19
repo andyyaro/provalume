@@ -3,7 +3,7 @@
 Boundary 3 of the threat model. The order is a security property, not an
 optimisation:
 
-1. **Hard filters** authorise a candidate set — project, trust floor, terminal
+1. **Hard filters** authorise a candidate set - project, trust floor, terminal
    exclusion, validity, scope, commit validity.
 2. **Scoring** reorders that set.
 
@@ -63,7 +63,7 @@ class RetrievalEngine:
 
         Two paths. With query text, FTS5 supplies both the candidate set and BM25
         scores. Without it, structured filtering supplies the candidates and every
-        lexical score is 0.0 — a browse, not a search, and the other components
+        lexical score is 0.0 - a browse, not a search, and the other components
         do the ordering.
         """
         expression = fts.build_query(query.query)

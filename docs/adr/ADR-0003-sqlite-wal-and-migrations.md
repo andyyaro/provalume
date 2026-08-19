@@ -24,9 +24,9 @@ migrations.**
 | `journal_mode` | `WAL` | Readers do not block the writer. An orchestrator writes while agents read. |
 | `foreign_keys` | `ON` | Provenance links must not dangle. |
 | `busy_timeout` | `5000` ms | Concurrent access retries instead of failing immediately. |
-| `synchronous` | `NORMAL` | With WAL, durable across process crashes — the failure mode that matters. `FULL` costs an fsync per commit to also survive OS crashes; not worth it for a rebuildable cache over an append-only journal. |
+| `synchronous` | `NORMAL` | With WAL, durable across process crashes - the failure mode that matters. `FULL` costs an fsync per commit to also survive OS crashes; not worth it for a rebuildable cache over an append-only journal. |
 | `trusted_schema` | `OFF` | Defence against a tampered schema executing something on open. |
-| `foreign_keys` check at open | — | Verified by `doctor` and `audit`. |
+| `foreign_keys` check at open | - | Verified by `doctor` and `audit`. |
 
 Pragmas are asserted by `provalume audit`, so a database opened by other tooling
 with different settings is detectable.
@@ -36,7 +36,7 @@ with different settings is detectable.
 Hand-written SQL with bound parameters. The reasons are specific, not stylistic:
 FTS5 and its `bm25()` ranking function are not well served by ORM abstractions; the
 append-only trigger discipline is easier to reason about in plain DDL; and it keeps
-mandatory dependencies at three. Every value is bound — no caller-controlled value
+mandatory dependencies at three. Every value is bound - no caller-controlled value
 is ever interpolated (threat T23).
 
 ### Migrations
@@ -52,7 +52,7 @@ Rules:
   has an append-only journal that makes them near-impossible to write correctly.
 - **A database newer than the code is refused**, with a message saying to upgrade.
   Silently operating on a schema you do not understand corrupts data.
-- **Idempotent at the boundaries** — re-running the chain on a current database is
+- **Idempotent at the boundaries** - re-running the chain on a current database is
   a no-op.
 - **Migrations never destroy journal rows.** A migration may rebuild projections.
 
@@ -66,12 +66,12 @@ rather than failing at first query.
 
 **Good.** Zero-install storage. One file to back up, copy, or delete. Transactional
 integrity, `PRAGMA integrity_check`, and battle-tested durability. No license
-encumbrance and no maintainer-abandonment risk that matters — SQLite outlives its
+encumbrance and no maintainer-abandonment risk that matters - SQLite outlives its
 dependents.
 
 **Bad.** Single-writer. Provalume assumes one writing process; concurrent writers
 serialise on the busy timeout, and the SDK documents single-writer discipline.
-No network access — a shared team database is not possible, which is what JSONL
+No network access - a shared team database is not possible, which is what JSONL
 interchange ([ADR-0011](ADR-0011-jsonl-interchange.md)) exists to answer.
 Hand-written SQL is more code than an ORM and its correctness rests on tests.
 

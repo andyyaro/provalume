@@ -8,7 +8,7 @@ practice**. 0.1.0 ships without that data, which is why it is the first item.
 
 ---
 
-## Next — closing the evidence gap
+## Next - closing the evidence gap
 
 **Requirements mining from real runs.** Query real orchestrator event and ledger
 data to rank which memory failures actually recur: repeated failed fixes,
@@ -24,12 +24,12 @@ against real work is what produces the data above.
 lexical-versus-hybrid comparison to mean anything. Until then, scenario 20 tests
 the plumbing and says so.
 
-## Likely — the gaps users will hit first
+## Likely - the gaps users will hit first
 
 **Global cross-project memory** ([ADR-0016](docs/adr/ADR-0016-global-memory-deferral.md)).
 The most-requested missing feature and the riskiest to build: cross-project
 leakage is the one Critical-rated confidentiality threat. The intended shape is
-already recorded — a separate `~/.provalume/global.db`, per-record human
+already recorded - a separate `~/.provalume/global.db`, per-record human
 approval, stricter redaction, distinct labelling in digests. It ships when that
 can be done carefully, not sooner.
 
@@ -44,7 +44,7 @@ stay fine.
 structured events rather than prose scraping, which is work on the integrator's
 side as much as here.
 
-## Considered — needs a reason, not just enthusiasm
+## Considered - needs a reason, not just enthusiasm
 
 **LLM-optional idle-time distillation.** Would produce *additional* summary
 records, clearly marked as model-derived and capped at `observed`, never on the
@@ -58,7 +58,7 @@ activation at read time. Cheap to add; unproven that it helps here.
 answers the question; a UI would answer it more pleasantly.
 
 **Team synchronisation.** JSONL merge semantics are designed for it. Automating
-it needs conflict resolution that cannot be done safely today — auto-resolving a
+it needs conflict resolution that cannot be done safely today - auto-resolving a
 semantic contradiction is auto-deciding which of two contributors was right.
 
 ## Not planned

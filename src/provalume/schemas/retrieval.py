@@ -3,7 +3,7 @@
 The ranking policy is **data, not code** (ADR-0008). Every weight has a documented
 default and a stated reason, and changing one does not mean editing scoring logic.
 That matters because these defaults are a reasoned starting position, not a fitted
-optimum — no production corpus exists yet — so they must be cheap to revise once
+optimum - no production corpus exists yet - so they must be cheap to revise once
 the eval harness can measure the effect.
 """
 
@@ -34,11 +34,11 @@ __all__ = [
 ]
 
 #: The banner that opens every digest. Required wording, not a suggestion: it is
-#: the control for threat T4 (instruction replay). Mitigation, not prevention —
+#: the control for threat T4 (instruction replay). Mitigation, not prevention -
 #: Provalume cannot force a model to honour it.
 #: The banner that opens every pre-action warning. The warning quotes captured
 #: stderr verbatim in its "Failure evidence" row, which makes it the most
-#: attacker-influenceable text Provalume serves — any test, linter or build tool
+#: attacker-influenceable text Provalume serves - any test, linter or build tool
 #: can write whatever it likes there, and it is replayed into a later agent's
 #: prompt. The digest has carried this label since 0.1.0; the gate is the same
 #: threat (T4) through a different channel and needs the same control.
@@ -84,7 +84,7 @@ class RankingPolicy(BaseModel):
     w_recency: float = Field(default=0.25, ge=0.0)
 
     w_usage: float = Field(default=0.15, ge=0.0)
-    """Weak deliberately — usage is a popularity signal and self-reinforcing."""
+    """Weak deliberately - usage is a popularity signal and self-reinforcing."""
 
     w_type: float = Field(default=0.20, ge=0.0)
     """A nudge, not a filter: requesting gotchas must not hide a decisive fact."""
@@ -169,8 +169,8 @@ class RecallQuery(BaseModel):
     What ships is the machinery, not the path: ``retrieval.vectors`` provides an
     index, a hashing embedder and reciprocal rank fusion, exercised directly by
     the eval harness and by ``provalume doctor``. The field is kept so the opt-in
-    stays opt-in — vectors reorder an authorised candidate set and never
-    authorise (ADR-0013) — but until the index is populated on the write path,
+    stays opt-in - vectors reorder an authorised candidate set and never
+    authorise (ADR-0013) - but until the index is populated on the write path,
     treat retrieval as lexical only."""
 
     as_of: str | None = None
@@ -178,8 +178,8 @@ class RecallQuery(BaseModel):
     queries and eval replay deterministic.
 
     Validity is *not* re-evaluated against it. Currency is decided by
-    ``Memory.is_current``, which is deliberately time-independent — an
-    ``invalid_at`` in the future is still a closed record — so a record withdrawn
+    ``Memory.is_current``, which is deliberately time-independent - an
+    ``invalid_at`` in the future is still a closed record - so a record withdrawn
     after ``as_of`` stays out. Pass ``include_terminal=True`` to see withdrawn
     records at all."""
 
@@ -188,7 +188,7 @@ class ScoreBreakdown(BaseModel):
     """Every component that produced a score, and its weighted contribution.
 
     Recorded per result. If a result cannot explain itself, that is a bug, not a
-    cosmetic gap — explainability is a stated differentiator, so this type is part
+    cosmetic gap - explainability is a stated differentiator, so this type is part
     of the product rather than a debug aid.
     """
 
@@ -286,7 +286,7 @@ class DigestItem(BaseModel):
 
 
 class Digest(BaseModel):
-    """A budgeted working-memory digest — the thing agents actually read.
+    """A budgeted working-memory digest - the thing agents actually read.
 
     Not persisted. Composing it at query time keeps one source of truth and
     avoids a second, staler thing to poison.
@@ -303,7 +303,7 @@ class Digest(BaseModel):
     chars_used: int = 0
     omitted_count: int = 0
     """How many qualifying records did not fit the budget. Reported rather than
-    hidden: a caller needs to know their budget is the binding constraint —
+    hidden: a caller needs to know their budget is the binding constraint -
     which means it must count only records a larger budget would have admitted.
     Near-duplicates are counted separately, in ``suppressed_duplicates``."""
 
@@ -333,7 +333,7 @@ class PreflightMatch(BaseModel):
     previous_attempt: str = ""
     failure_evidence: str = ""
     what_later_worked: str = ""
-    """Empty when nothing is linked yet — an unresolved trap, which is worth
+    """Empty when nothing is linked yet - an unresolved trap, which is worth
     saying out loud rather than leaving blank. When the resolving command is the
     command that failed, this states the commit rather than repeating the command
     back, because the command is not what changed."""

@@ -10,7 +10,7 @@ The one rule this module exists to serve:
 
 And the one rule it exists to *avoid* breaking: never fabricate certainty from
 topology. Git ancestry answers "could this fact have been true here?", not "is
-this fact true here?" — a file the fact described may have been rewritten by an
+this fact true here?" - a file the fact described may have been rewritten by an
 unrelated commit, a cherry-pick creates a different SHA for the same change, and
 a rebase rewrites history wholesale. So when ancestry cannot be established the
 answer is :attr:`Applicability.UNCERTAIN`, freely and without embarrassment.
@@ -138,7 +138,7 @@ class GitInfo:
         """Whether a commit object is present.
 
         A garbage-collected or never-fetched commit returns ``False``, which is
-        not evidence of forgery — only of absence. Callers must treat it as
+        not evidence of forgery - only of absence. Callers must treat it as
         unresolvable rather than as a failed check (threat T15).
         """
         if not self.available or not sha:
@@ -157,7 +157,7 @@ class GitInfo:
         """Whether ``ancestor`` is reachable from ``descendant``.
 
         Returns ``True``/``False`` when the question could be answered, and
-        ``None`` when it could not — either commit missing, no repository, or a
+        ``None`` when it could not - either commit missing, no repository, or a
         git failure. The tri-state is the point: collapsing ``None`` into
         ``False`` would silently turn "I cannot tell" into "definitely not",
         which after any rebase would make memory go quiet exactly when it is
@@ -217,11 +217,11 @@ def applicability_at(
 
     The ordering below is the rule from ADR-0006, in code:
 
-    1. no ``commit_sha`` on the record — not commit-anchored, judge by scope;
-    2. no ``commit_sha`` on the query — nothing to compare against;
-    3. ancestor of the query commit — potentially valid here;
-    4. *not* an ancestor — introduced elsewhere or later, so not current truth;
-    5. ancestry unanswerable — ``UNCERTAIN``, never assumed valid.
+    1. no ``commit_sha`` on the record - not commit-anchored, judge by scope;
+    2. no ``commit_sha`` on the query - nothing to compare against;
+    3. ancestor of the query commit - potentially valid here;
+    4. *not* an ancestor - introduced elsewhere or later, so not current truth;
+    5. ancestry unanswerable - ``UNCERTAIN``, never assumed valid.
     """
     if not record_commit:
         return scope_applicability, "record is not anchored to a commit"
@@ -256,6 +256,6 @@ def applicability_at(
     return (
         Applicability.UNCERTAIN,
         f"ancestry between {record_commit[:12]} and {query_commit[:12]} could not be "
-        "determined — the commit may have been rebased, cherry-picked, or "
+        "determined - the commit may have been rebased, cherry-picked, or "
         "garbage-collected",
     )

@@ -4,7 +4,7 @@ The design constraint, stated once: **an MCP client is driven by a model that
 reads attacker-controlled repository content.** Whatever it can call, an attacker
 can eventually reach.
 
-So the dangerous operations are not gated — they are **absent**. There is no
+So the dangerous operations are not gated - they are **absent**. There is no
 promote tool, no invalidate tool, no supersede tool, no delete tool, no
 scope-movement tool, no rebuild, no import, no path parameter of any kind. A
 disabled tool is one misconfiguration away from enabled; a tool that does not
@@ -88,7 +88,7 @@ MAX_INPUT_FIELD_CHARS: Final = 8 * 1024
 class PermissionProfile:
     """What a connected MCP client may do.
 
-    Chosen by the operator at launch. **A client cannot change its own profile** —
+    Chosen by the operator at launch. **A client cannot change its own profile** -
     there is no tool to do so, which is why this is a frozen dataclass built
     before the server starts rather than state the protocol can touch.
     """

@@ -2,7 +2,7 @@
 
 Every error Provalume raises deliberately derives from :class:`ProvalumeError`, so
 an embedding application can catch one type. Integrations are expected to catch
-this and degrade rather than fail a run — see ADR-0014 for which failures should
+this and degrade rather than fail a run - see ADR-0014 for which failures should
 fail open and which must fail closed.
 """
 

@@ -4,8 +4,8 @@
 
 ## Context
 
-Every memory engine reviewed — Mem0, Letta, Zep/Graphiti, Cognee, MemOS, LangMem,
-claude-mem — puts a language model in the write path. Text goes in, a model extracts
+Every memory engine reviewed - Mem0, Letta, Zep/Graphiti, Cognee, MemOS, LangMem,
+claude-mem - puts a language model in the write path. Text goes in, a model extracts
 or compresses, and the result is stored.
 
 For Provalume that is disqualifying, for a reason specific to its claim rather than
@@ -75,7 +75,7 @@ Strictly optional, additive, and never on the canonical path:
 
 - Idle-time distillation that produces *additional* summary records, clearly marked
   as LLM-derived and capped at `observed`. Roadmap, not 0.1.0.
-- A user asking an agent to draft a proposal — which then enters `quarantined` like
+- A user asking an agent to draft a proposal - which then enters `quarantined` like
   any other agent input.
 
 If a distillation pass never runs, nothing breaks. That is the test for whether an
@@ -91,7 +91,7 @@ assertions instead of tolerance windows. Hostile text is never interpreted, only
 recorded.
 
 **Bad.** Provalume cannot distil prose into a fact. If evidence arrives only as an
-agent's paragraph, the paragraph is what gets stored — `quarantined`, unpromotable.
+agent's paragraph, the paragraph is what gets stored - `quarantined`, unpromotable.
 This is a real capability gap versus LLM-extraction engines, and it is the correct
 side of the trade for a system whose claim is provenance.
 
@@ -106,7 +106,7 @@ rate. Measured, not hidden.
 ## Alternatives rejected
 
 **LLM extraction with a deterministic fallback.** The fallback becomes the untested
-path, and stored content varies by whether a model was available — so two databases
+path, and stored content varies by whether a model was available - so two databases
 from identical runs disagree.
 
 **LLM extraction gated behind an opt-in flag, writing to the same tier.** Same

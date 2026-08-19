@@ -6,14 +6,14 @@
 
 The CoALA taxonomy (working / episodic / semantic / procedural) is the field's
 standard. It is useful as a schema-design tool because each type wants a different
-write policy, retention policy, and retrieval treatment — not because the names are
+write policy, retention policy, and retrieval treatment - not because the names are
 important.
 
 Applied to software agents, four types leave two things homeless. **Decisions**
 ("we chose Typer over Click because…") are neither facts about the code nor
 procedures; their authority is human, and collapsing them into semantic memory
 loses the rejected alternatives, which are the useful part. **Failed approaches**
-are the highest-value memory an agent can have and the one most systems discard —
+are the highest-value memory an agent can have and the one most systems discard -
 they are not "episodic events" in any useful sense, because what matters is the
 reusable *signature*, not the incident.
 
@@ -27,10 +27,10 @@ actually succeeds at which task category.
 | Category | Contents | Write trigger | Promotion ceiling without landed history |
 |---|---|---|---|
 | **`episodic`** | Attempts, failures, repairs, reviews, run outcomes | Deterministic projection of events | `verified` |
-| **`semantic`** | Current repository facts, environment requirements, conventions, architecture, constraints | Landed integration, or human decision | `reviewed` — **needs `integrated` to be current truth** |
+| **`semantic`** | Current repository facts, environment requirements, conventions, architecture, constraints | Landed integration, or human decision | `reviewed` - **needs `integrated` to be current truth** |
 | **`procedural`** | Verified commands, runbooks, repair/test/release procedures | One passing verification of the *exact* command | `verified` |
 | **`decision`** | Selected option, rejected alternatives, rationale, authority, consequences | A human decision event | `integrated` when `source=human` |
-| **`gotcha`** | Failed approach, failure signature, context, later resolution, continued applicability | A verification-failure event | `verified` — **never promoted to semantic truth** |
+| **`gotcha`** | Failed approach, failure signature, context, later resolution, continued applicability | A verification-failure event | `verified` - **never promoted to semantic truth** |
 | **`performance`** | Agent/profile evidence per task category: success, review approval, verification, fallback outcome | Deterministic aggregation of outcome events | `verified` |
 
 **Working memory is not stored.** It is the bounded digest composed at query time
@@ -45,11 +45,11 @@ The promotion ceilings differ because the evidence that would justify them diffe
   A test passing in one worktree does not change the project. Landed history does.
 - **Gotcha is grounded in failure**, which means `trust_state=verified` alongside
   `verification_state=failed`. Both true; one field could not express it. A gotcha
-  can never be promoted to semantic truth — it describes what failed, not what is.
+  can never be promoted to semantic truth - it describes what failed, not what is.
 - **Decision derives authority from a human**, not from a test. Human decisions are
   project truth by authority. Agent-*proposed* decisions start `quarantined` like
   anything else.
-- **Performance is a statistic.** `integrated` is meaningless for it — an aggregate
+- **Performance is a statistic.** `integrated` is meaningless for it - an aggregate
   does not land in a commit.
 
 ### Shared fields
@@ -69,7 +69,7 @@ the other at read time would make ranking depend on formatting.
 ## Consequences
 
 **Good.** Each category gets the write and promotion policy it actually needs.
-Retrieval can weight by category — a preflight check wants gotchas, planning wants
+Retrieval can weight by category - a preflight check wants gotchas, planning wants
 decisions and semantic facts. Failed attempts are a first-class asset rather than
 noise. `performance` gives cross-agent learning a home.
 
@@ -77,7 +77,7 @@ noise. `performance` gives cross-agent learning a home.
 more for a user to learn. Mitigated by the CLI defaulting to sensible category sets
 per command rather than making the user choose.
 
-**Also bad.** Category boundaries are occasionally genuinely ambiguous — is "the
+**Also bad.** Category boundaries are occasionally genuinely ambiguous - is "the
 integration suite is flaky under parallelism" a semantic fact or a gotcha? The
 resolution rule: if it describes something that *failed*, it is a gotcha; if it
 describes what *is*, it is semantic. Documented in

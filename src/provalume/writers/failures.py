@@ -17,7 +17,7 @@ directions:
 
 Every rule below is individually tested, and the false-positive rate is an eval
 metric (scenario 19) rather than an assumption. Two failures with the same
-signature are *probably* the same failure — never certainly.
+signature are *probably* the same failure - never certainly.
 """
 
 from __future__ import annotations
@@ -81,8 +81,8 @@ _NORMALIZERS: Final[tuple[tuple[re.Pattern[str], str], ...]] = (
 )
 
 #: Command normalisation is separate and much more conservative. Flags and
-#: arguments are meaningful — `pytest -n auto` and `pytest -p no:xdist` are
-#: different procedures — so only whitespace and temp paths are normalised.
+#: arguments are meaningful - `pytest -n auto` and `pytest -p no:xdist` are
+#: different procedures - so only whitespace and temp paths are normalised.
 _COMMAND_NORMALIZERS: Final[tuple[tuple[re.Pattern[str], str], ...]] = (
     (re.compile(r"/(?:private/)?(?:tmp|var/folders)/[^\s]*"), "<TMP>"),
     (re.compile(r"\s+"), " "),
@@ -132,11 +132,11 @@ def normalize_command(command: str) -> str:
 
 #: Strong signal: a line that *declares* an error. Three shapes, because
 #: ecosystems disagree about what an error line looks like:
-#:   - a name containing error/exception/panic/fault, colon-terminated —
+#:   - a name containing error/exception/panic/fault, colon-terminated -
 #:     `ValueError: bad input`, `E   TimeoutError: deadlock`,
 #:     `error[E0308]: mismatched types`
-#:   - a fatal-class keyword — `FATAL: ...`, `Segmentation fault`
-#:   - a bare CamelCase identifier, colon-terminated — `PoolExhausted: ...`,
+#:   - a fatal-class keyword - `FATAL: ...`, `Segmentation fault`
+#:   - a bare CamelCase identifier, colon-terminated - `PoolExhausted: ...`,
 #:     which is how custom exceptions are named in most languages and which the
 #:     first shape misses entirely
 #:
@@ -144,7 +144,7 @@ def normalize_command(command: str) -> str:
 #: inside the repeated group. That is a **ReDoS fix, not a style choice**: with
 #: uppercase allowed in the tail, ``AB`` could match as one iteration or two, and
 #: a long run of mixed-case letters with no closing colon backtracked
-#: exponentially — roughly 4x per two added characters, measured. Since this
+#: exponentially - roughly 4x per two added characters, measured. Since this
 #: pattern parses error text that ultimately comes from whatever a failing
 #: command printed, that was a denial-of-service reachable from hostile input
 #: (threat T24). Anchoring each iteration to exactly one uppercase letter makes
@@ -152,7 +152,7 @@ def normalize_command(command: str) -> str:
 #: Both unbounded prefixes are bounded to 64 characters, and both bounds are
 #: ReDoS fixes rather than tidiness. ``[a-z_.]*`` before the keyword alternation
 #: retried every possible split point, so input repeating the very word the
-#: pattern searches for — ``"error" * n``, entirely ordinary in a noisy log —
+#: pattern searches for - ``"error" * n``, entirely ordinary in a noisy log -
 #: went quadratic: 16 KB took 2.7 seconds. ``\w*`` after it compounds the same
 #: effect. A real error-class name (``ValueError``, ``my.module.PoolExhausted``)
 #: is far shorter than 64 characters, so the bound costs nothing.
@@ -180,8 +180,8 @@ def _fingerprint(error_text: str) -> str:
     Two tiers, because the obvious single-pass version picks the wrong line. A
     Python traceback contains both the failing source line (``assert
     pool.acquire()``) and the exception that resulted (``E TimeoutError:
-    deadlock in db fixture teardown``). The second is far more identifying — the
-    same source line can raise different exceptions — so a line that *declares*
+    deadlock in db fixture teardown``). The second is far more identifying - the
+    same source line can raise different exceptions - so a line that *declares*
     an error wins over one that merely mentions failure.
 
     Both tiers skip framing like ``Traceback (most recent call last):``, which is
@@ -239,8 +239,8 @@ def signature_from_event(event: Event) -> Signature:
 def _sentence(text: str) -> str:
     """Terminate a fragment so later clauses append as separate sentences.
 
-    Gotcha text is assembled in stages — the failure, then the repeat count, then
-    the resolution — each appended by a different writer at a different time.
+    Gotcha text is assembled in stages - the failure, then the repeat count, then
+    the resolution - each appended by a different writer at a different time.
     Without this, an error line that ends mid-phrase runs into the next clause
     ("...fixture teardown This has now failed twice").
     """
@@ -254,7 +254,7 @@ def gotcha_text(*, command: str, error_kind: str, excerpt: str, branch: str | No
     """Render the human-readable text for a gotcha.
 
     Deterministic string construction, no formatting that depends on locale or
-    dict ordering — this text is hashed into ``content_hash``.
+    dict ordering - this text is hashed into ``content_hash``.
     """
     parts = [f"`{command.strip()}` failed"]
     if error_kind:
@@ -346,8 +346,8 @@ def resolution_summary(
     """Describe what resolved a failure, in one clause.
 
     When the fix was a *different* command, that command is the answer and is
-    named. When the same command later passed, naming it is tautological — "what
-    later worked: the thing that failed" — and the useful datum is the one
+    named. When the same command later passed, naming it is tautological - "what
+    later worked: the thing that failed" - and the useful datum is the one
     recorded beside it and never surfaced: the commit the resolving run was at.
     What changed was the tree, not the command.
 
@@ -371,8 +371,8 @@ def resolution_summary(
 
     if not head:
         # No command and no note: this resolution came from a landing, which is
-        # the strongest evidence there is — the tree changed and the change
-        # survived review and the merge — but it names no command, because a
+        # the strongest evidence there is - the tree changed and the change
+        # survived review and the merge - but it names no command, because a
         # landing is not one. The commit is the whole answer.
         branch = str(resolution.get("branch") or "").strip()
         if commit:
@@ -446,7 +446,7 @@ def merge_occurrence(gotcha: Memory, event: Event, occurrences: int) -> Memory:
     """Fold a repeat occurrence into an existing gotcha.
 
     Repetition is what elevates a note into a warning, so the count is recorded
-    on the record rather than only in the signature table — a digest showing the
+    on the record rather than only in the signature table - a digest showing the
     gotcha should be able to say "twice" without a second query.
     """
     content = dict(gotcha.content)

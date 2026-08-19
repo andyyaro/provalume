@@ -15,7 +15,7 @@ provalume demo
 ```
 
 Runs a complete scenario in a temporary directory using the real storage, policy,
-and retrieval code — an agent fails, the gotcha is recorded, a second agent is
+and retrieval code - an agent fails, the gotcha is recorded, a second agent is
 warned, a fix is verified and independently reviewed, a procedure is promoted, a
 stale fact is superseded, and a later query retrieves it all with provenance.
 
@@ -25,7 +25,7 @@ Add `--html report.html` for a light-themed report you can open in a browser.
 
 ```sh
 cd your-project
-provalume init      # creates .provalume/ (add it to .gitignore — provalume does not commit)
+provalume init      # creates .provalume/ (add it to .gitignore - provalume does not commit)
 provalume doctor    # checks Python, SQLite, FTS5, Git, permissions
 ```
 
@@ -103,7 +103,7 @@ trusted, the record should not be trusted.
 
 ```sh
 provalume serve-mcp                # read tools plus propose
-provalume serve-mcp --read-only    # read tools only — for shared environments
+provalume serve-mcp --read-only    # read tools only - for shared environments
 ```
 
 An MCP client can recall, explain, query failures and decisions, and run the

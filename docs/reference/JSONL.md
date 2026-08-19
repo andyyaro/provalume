@@ -15,7 +15,7 @@ Decision record: [ADR-0011](../adr/ADR-0011-jsonl-interchange.md).
   transitions.jsonl   one lifecycle transition per line
 ```
 
-**No header line.** A header would conflict on every concurrent export — exactly
+**No header line.** A header would conflict on every concurrent export - exactly
 the Git-merge pain this format exists to avoid. Each record self-describes with
 `rv` (record version) and `kind`.
 
@@ -47,7 +47,7 @@ in the schema.
 `seq`, `event_hash`, `prev_event_hash`.
 
 These describe *this database's* local chain, not the record. Exporting them would
-invite an importer to treat a foreign chain as its own — and the chain is a local
+invite an importer to treat a foreign chain as its own - and the chain is a local
 tamper-evidence mechanism, not a global ledger.
 
 ## Import rules
@@ -57,7 +57,7 @@ An imported record is **untrusted input**. Every rule below follows from that.
 | Situation | Behaviour |
 |---|---|
 | Duplicate `event_id`, identical content | Skipped. Idempotent. |
-| Duplicate `event_id`, **different** content | **Conflict.** Never overwritten — that is the forgery path. |
+| Duplicate `event_id`, **different** content | **Conflict.** Never overwritten - that is the forgery path. |
 | Declared `payload_hash` ≠ actual | **Rejected.** The hash is recomputed, never trusted: leaving a stale hash on a tampered payload is how a forgery would pass as a duplicate. |
 | `rv` newer than supported | Rejected, or quarantined with `--quarantine-unknown`. Never partially interpreted. |
 | `rv` older than supported | Migrated forward if a migration exists, else rejected |
@@ -71,8 +71,8 @@ An imported record is **untrusted input**. Every rule below follows from that.
 
 ### Only events are stored
 
-`memories.jsonl` and `transitions.jsonl` are read and checked — divergent
-supersession is found there — and then dropped. A memory is a projection of
+`memories.jsonl` and `transitions.jsonl` are read and checked - divergent
+supersession is found there - and then dropped. A memory is a projection of
 events, so the importer rebuilds its own from the events it accepted rather than
 adopting a file's. `provalume import` reports the two counts separately:
 
@@ -104,7 +104,7 @@ Optional, and the two schemes differ in what they prove:
 
 Both fail closed. Without the `cryptography` extra, Ed25519-signed records are
 **quarantined with an explicit reason** rather than accepted unverified. Keys must
-be pinned in advance — a record carrying its own key would be self-authenticating,
+be pinned in advance - a record carrying its own key would be self-authenticating,
 which is not authentication.
 
 > **A valid signature proves origin, never truthfulness.** A signed lie is a
@@ -163,5 +163,5 @@ filters let you export a subset.
 Current: **1**.
 
 A record from the future is rejected rather than partially interpreted, because a
-record you cannot fully validate is a record you cannot safely trust — and
+record you cannot fully validate is a record you cannot safely trust - and
 importing the fields you happen to recognise is how forged provenance gets in.

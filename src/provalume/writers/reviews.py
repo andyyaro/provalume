@@ -137,7 +137,7 @@ def build_finding(event: Event, *, landing_state: TrustState) -> Memory | None:
 def attach_approval(lesson: Memory, approval: Event) -> Memory:
     """Record that a later review approved the subject of an earlier rejection.
 
-    The lesson keeps ``review_state=REJECTED`` — the rejection happened and the
+    The lesson keeps ``review_state=REJECTED`` - the rejection happened and the
     record of it is the point. What changes is the resolution, which is what a
     future reader needs: not just "this was objected to" but "and this is what
     satisfied the objection".
@@ -172,7 +172,7 @@ def is_independent(*, reviewer: str | None, author: str | None) -> bool:
     """Whether a reviewer is distinct from the record's author.
 
     Compared case-insensitively on the trimmed profile name. When either side is
-    unknown the answer is ``True`` — an unknown reviewer is not evidence of a
+    unknown the answer is ``True`` - an unknown reviewer is not evidence of a
     self-review, and treating it as one would block legitimate promotion whenever
     an integration omits an optional field. The promotion rule still requires an
     approval event to exist at all.

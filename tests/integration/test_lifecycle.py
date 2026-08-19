@@ -195,7 +195,7 @@ def test_rebuild_reproduces_projections_byte_for_byte(pv: Provalume) -> None:
 
 
 def test_writers_are_pure_functions_of_their_event(pv: Provalume) -> None:
-    """Same event in, same record out — including the identifier."""
+    """Same event in, same record out - including the identifier."""
     from provalume.writers.failures import build_gotcha
 
     event = pv.record_verification(

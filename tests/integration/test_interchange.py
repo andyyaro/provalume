@@ -152,7 +152,7 @@ def tamper_payload(directory: Path, *, key: str, value: object) -> dict:
 def test_a_tampered_payload_with_a_stale_hash_is_rejected(exported: tuple[Provalume, Path]) -> None:
     """The forgery shape a trusting importer would wave through as a duplicate."""
     pv, out = exported
-    # Payload changed, declared hash left untouched — the whole point.
+    # Payload changed, declared hash left untouched - the whole point.
     tamper_payload(out, key="excerpt", value="E TamperedError: forged")
 
     result = pv.import_records(out, apply=False)

@@ -17,7 +17,7 @@ An unknown signer is an untrusted signer.
 The thing to keep straight: **a valid signature proves origin, never
 truthfulness.** A signed lie is a verified-origin lie. Signatures raise confidence
 about *who* wrote a record, and change nothing about whether its content is
-correct — which is why an imported record's trust is still re-derived locally from
+correct - which is why an imported record's trust is still re-derived locally from
 evidence, regardless of how well it is signed.
 """
 
@@ -130,7 +130,7 @@ def verify_ed25519(record: dict[str, Any], signature: dict[str, Any], *, public_
     Raises rather than returning ``False`` when the backend is missing. The
     distinction matters: "the signature is invalid" and "I cannot check this
     signature" are different facts, and collapsing them would let a missing
-    dependency read as a forgery — or worse, get handled by a caller that treats
+    dependency read as a forgery - or worse, get handled by a caller that treats
     ``False`` as "skip it and continue".
     """
     if signature.get("scheme") != SCHEME_ED25519:
@@ -160,7 +160,7 @@ class Verifier:
     """Verifies signatures against a pinned set of keys.
 
     Keys must be pinned in advance. A record carrying its own public key would be
-    self-authenticating, which is not authentication at all — an attacker would
+    self-authenticating, which is not authentication at all - an attacker would
     simply supply a key they hold.
     """
 
@@ -178,7 +178,7 @@ class Verifier:
     def verify(self, record: dict[str, Any]) -> tuple[bool, str]:
         """Verify a record's signature.
 
-        Returns ``(ok, reason)``. ``reason`` is always populated — on success it
+        Returns ``(ok, reason)``. ``reason`` is always populated - on success it
         says which key verified, which is what makes an import audit meaningful.
 
         Every failure path returns ``False``. There is no path that returns

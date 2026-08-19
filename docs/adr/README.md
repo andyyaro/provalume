@@ -4,7 +4,7 @@ Each ADR records one decision, the context that forced it, and what it costs.
 They were written before the corresponding implementation, not after it.
 
 A decision here is binding until superseded by a later ADR. If the code disagrees
-with an accepted ADR, that is a bug in one of them — say which in the issue.
+with an accepted ADR, that is a bug in one of them - say which in the issue.
 
 | ADR | Decision | Status |
 |---|---|---|

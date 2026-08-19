@@ -1,7 +1,7 @@
 """Provenance: the evidence chain behind a memory.
 
 The product claim is "facts your agents proved". This module holds the types that
-answer *proved by what?* — and, critically, the types that admit when the answer
+answer *proved by what?* - and, critically, the types that admit when the answer
 cannot be resolved.
 
 A memory whose claimed provenance does not resolve is **degraded, visibly**. It is
@@ -34,13 +34,13 @@ class ResolutionStatus(StrEnum):
     """Checked and holds: the events exist, the commit exists."""
 
     UNRESOLVABLE = "unresolvable"
-    """Could not be checked — no repository available, commit garbage-collected,
+    """Could not be checked - no repository available, commit garbage-collected,
     branch deleted, history rewritten. Not evidence of forgery; evidence of not
     knowing. Applicability degrades to uncertain."""
 
     BROKEN = "broken"
     """Checked and does not hold: a referenced event is absent from the journal, or
-    a hash does not match. This is a hard finding — ``audit`` fails on it."""
+    a hash does not match. This is a hard finding - ``audit`` fails on it."""
 
 
 class VerificationEvidence(BaseModel):

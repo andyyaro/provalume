@@ -1,7 +1,7 @@
 name: Publish to PyPI
 
 # Triggered only by an immutable release tag. Never by a branch push, never
-# manually with a version argument — the tag is the only thing that decides what
+# manually with a version argument - the tag is the only thing that decides what
 # gets published.
 on:
   push:

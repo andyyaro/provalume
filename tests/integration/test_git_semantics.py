@@ -1,7 +1,7 @@
 """Branch and commit validity against a real Git repository (ADR-0006).
 
 The rule under test: a query as of commit X must not present a fact introduced
-after X as current truth — and where ancestry cannot be established, the answer
+after X as current truth - and where ancestry cannot be established, the answer
 is ``uncertain`` rather than a guess.
 """
 
@@ -36,7 +36,7 @@ def test_detects_a_repository(git_repo: Path) -> None:
 
 
 def test_degrades_gracefully_without_a_repository(tmp_path: Path) -> None:
-    """A real capability is lost, not merely degraded — documented, not hidden."""
+    """A real capability is lost, not merely degraded - documented, not hidden."""
     info = GitInfo(tmp_path)
     assert not info.available
     assert info.current_commit() is None
@@ -181,7 +181,7 @@ def test_rebase_degrades_to_uncertain_rather_than_guessing(
 
 
 def test_cherry_pick_produces_a_different_sha(git_repo: Path, git_commits: list[str]) -> None:
-    """Same change, different identity — so ancestry legitimately fails and the
+    """Same change, different identity - so ancestry legitimately fails and the
     result is labelled rather than asserted."""
     git(git_repo, "checkout", "-q", "-b", "side", git_commits[0])
     (git_repo / "side.txt").write_text("side\n")

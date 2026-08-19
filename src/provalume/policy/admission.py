@@ -122,9 +122,9 @@ def landing_state(
 
     Two independent constraints, and the stricter wins:
 
-    * the source ceiling — an agent cannot produce anything above ``observed``,
+    * the source ceiling - an agent cannot produce anything above ``observed``,
       no matter what its payload says (threat T2);
-    * the poisoning threshold — anything at or above it lands ``quarantined``
+    * the poisoning threshold - anything at or above it lands ``quarantined``
       regardless of source.
     """
     reasons: list[str] = []
@@ -209,7 +209,7 @@ def admit_text(text: str, *, field: str = "text") -> tuple[str, dict[str, Any]]:
     """Admit a free-text field: cap, redact, and report.
 
     Used for memory ``text`` where the value did not arrive inside an event
-    payload — a proposal's rendered text, for instance.
+    payload - a proposal's rendered text, for instance.
     """
     if len(text) > MAX_TEXT_FIELD_CHARS:
         msg = f"{field} is {len(text)} characters, over the {MAX_TEXT_FIELD_CHARS} cap"

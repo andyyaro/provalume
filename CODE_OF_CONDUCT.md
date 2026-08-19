@@ -22,7 +22,7 @@ Be decent. Assume good faith. Critique the work, not the person.
 
 ## Scope
 
-Applies in all project spaces — issues, pull requests, discussions — and when
+Applies in all project spaces - issues, pull requests, discussions - and when
 representing the project publicly.
 
 ## Enforcement

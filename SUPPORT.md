@@ -7,11 +7,11 @@
 | How do I use it? | [Quickstart](docs/QUICKSTART.md), or `provalume demo` |
 | What does "verified" mean? | [Trust model](docs/security/TRUST_MODEL.md) |
 | Why did this rank first? | `provalume explain <memory-id>` |
-| Why was this *not* returned? | [Retrieval](docs/reference/RETRIEVAL.md) — the filters run before scoring |
+| Why was this *not* returned? | [Retrieval](docs/reference/RETRIEVAL.md) - the filters run before scoring |
 | Why can't my agent promote memory? | [ADR-0012](docs/adr/ADR-0012-mcp-permissions.md). It is deliberate. |
 | Is something broken? | `provalume doctor` and `provalume audit` |
 | Is this a known gap? | [Limitations](docs/reference/LIMITATIONS.md) |
-| Why is it built this way? | [ADRs](docs/adr/) — 18 decisions, each with its cost |
+| Why is it built this way? | [ADRs](docs/adr/) - 18 decisions, each with its cost |
 
 ## Diagnosing
 
@@ -34,7 +34,7 @@ making a claim is never the party granting it trust.
 **"A semantic fact says it is not established truth."** It has not landed in
 history. Verification passing in one worktree does not change the project.
 
-**"Applicability says uncertain."** Ancestry could not be determined — usually a
+**"Applicability says uncertain."** Ancestry could not be determined - usually a
 rebase, a cherry-pick, or a missing repository. A labelled uncertainty beats a
 confident wrong answer.
 
@@ -48,7 +48,7 @@ incident.
 
 Open an issue with: what you recorded, what you queried, what you expected, what
 you got, plus `provalume doctor` and `provalume audit --json` output. Redact
-anything sensitive first — the output can contain command strings and paths.
+anything sensitive first - the output can contain command strings and paths.
 
 ## Reporting a vulnerability
 

@@ -35,7 +35,7 @@ what to do.
 
 Two shapes, because the fix is not always a different command.
 
-When a *different* command resolved the failure — as above — that command is the
+When a *different* command resolved the failure - as above - that command is the
 answer, and it is what the line names.
 
 When the **same** command later passed, naming it would be tautological: the
@@ -48,7 +48,7 @@ resolving run was at instead.
 
 `PreflightMatch` carries `resolution_commit_sha` and `resolved_at` alongside the
 sentence, so a caller can diff against the commit rather than parse the prose.
-When no commit was recorded — Git unavailable, for instance — the line falls back
+When no commit was recorded - Git unavailable, for instance - the line falls back
 to the time the resolution was recorded.
 
 ## Warning, not blocking
@@ -74,13 +74,13 @@ gate = PreflightGate(pv.memories, allow_blocking=True)
 A signature is SHA-256 over a normalised `(command, error_kind, error_fingerprint)`
 tuple.
 
-### Command normalisation — conservative
+### Command normalisation - conservative
 
 Only whitespace and temp paths. Flags and arguments are meaningful:
 `pytest -n auto` and `pytest -p no:xdist` are different procedures, and collapsing
 them would let one claim the other's evidence.
 
-### Error normalisation — aggressive
+### Error normalisation - aggressive
 
 Everything that varies between two runs of the same failure is replaced with a
 placeholder:
@@ -104,7 +104,7 @@ placeholder:
 
 A Python traceback contains both the failing source line (`assert pool.acquire()`)
 and the exception it raised (`E TimeoutError: deadlock`). The second is far more
-identifying — the same source line can raise different exceptions — so the
+identifying - the same source line can raise different exceptions - so the
 fingerprint is picked in two tiers:
 
 1. A line that **declares** an error: `ValueError: bad input`,
@@ -125,7 +125,7 @@ should speak.
 
 Every rule is individually tested and the false-positive rate is an eval metric
 (scenario 19) rather than an assumption. **Two failures sharing a signature are
-*probably* the same failure — never certainly.**
+*probably* the same failure - never certainly.**
 
 ## Match tiers
 
@@ -138,7 +138,7 @@ Every rule is individually tested and the false-positive rate is an eval metric
 | File overlap | 0.40 | A prior failure touching the same file |
 
 Below 0.40 nothing is reported. A gate that cries wolf gets ignored, which is
-worse than no gate — it also teaches agents to dismiss the real warnings.
+worse than no gate - it also teaches agents to dismiss the real warnings.
 
 Confidence is reduced for records whose applicability is uncertain (×0.8) or
 historical (×0.6). Such records still warrant a warning; they warrant a quieter

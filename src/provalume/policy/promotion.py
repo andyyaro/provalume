@@ -36,7 +36,7 @@ from provalume.schemas.trust import (
 class Decision(NamedTuple):
     """The outcome of evaluating one transition.
 
-    ``rule`` is always populated — on refusal it names the rule that refused, so
+    ``rule`` is always populated - on refusal it names the rule that refused, so
     "why was this not promoted?" is as answerable as "why was this promoted?".
     """
 
@@ -272,8 +272,8 @@ def _semantic_authority(memory: Memory, evidence: tuple[Event, ...]) -> tuple[Ev
     and that is the whole of it: no command returns whether the project uses uv.
     Requiring a verification event here instead left ``observed -> verified``
     permanently refused for the category, so every projected fact stalled two
-    rungs below ``integrated`` — the state ``presentable_as_current_truth``
-    requires — and the one category that exists to state current truth could
+    rungs below ``integrated`` - the state ``presentable_as_current_truth``
+    requires - and the one category that exists to state current truth could
     never state any.
 
     The landing has to be this record's own. A record carries a landed
@@ -298,7 +298,7 @@ def _to_verified(memory: Memory, evidence: tuple[Event, ...]) -> Decision:
       a different command's evidence would be a fabricated runbook.
     * **Gotcha** is verified by a *failure*. The evidence is that something broke,
       which is the whole content of the record.
-    * **Decision** has nothing to verify — there is no command behind "we chose
+    * **Decision** has nothing to verify - there is no command behind "we chose
       Typer over Click". Its authority is a person, so the human decision event
       is its evidence at every rung. The rungs are still walked and still
       recorded; what differs is what counts as evidence, not whether evidence is
@@ -450,7 +450,7 @@ def _to_integrated(
     """reviewed -> integrated: it actually landed.
 
     A human decision is the one case that reaches ``integrated`` on authority
-    rather than on a commit — a decision *is* project truth because a human made
+    rather than on a commit - a decision *is* project truth because a human made
     it, not because a test passed.
     """
     if memory.memory_type is MemoryType.DECISION:
@@ -500,7 +500,7 @@ def _revalidation(
 ) -> Decision:
     """The one narrow path out of ``invalidated``.
 
-    Requires fresh deterministic evidence that the fact holds again — a reverted
+    Requires fresh deterministic evidence that the fact holds again - a reverted
     revert, a restored dependency. ``superseded`` and ``rejected`` have no
     equivalent, which is what closes the laundering route from rejected work back
     to trusted truth.
@@ -539,7 +539,7 @@ def evidence_states(
     """Derive review and integration state from a set of events.
 
     Precedence is deliberate: a rejection outranks an approval, and a revert
-    outranks a landing. The pessimistic reading is the safe one — a record that
+    outranks a landing. The pessimistic reading is the safe one - a record that
     was approved and then rejected should not read as approved.
     """
     review = ReviewState.NONE

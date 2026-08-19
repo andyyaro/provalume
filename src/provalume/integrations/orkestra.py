@@ -1,4 +1,4 @@
-"""Orkestra adapter — the reference integration.
+"""Orkestra adapter - the reference integration.
 
 **This module imports nothing from Orkestra.** It accepts plain dictionaries
 shaped like Orkestra's records and translates them into Provalume events. That
@@ -71,7 +71,7 @@ class OrkestraAdapter:
     """Translates Orkestra records into Provalume events.
 
     Every method returns the recorded :class:`Event` so the caller can link
-    outcomes back — the preflight gate in particular depends on being able to
+    outcomes back - the preflight gate in particular depends on being able to
     associate a warning with what happened next.
     """
 
@@ -182,7 +182,7 @@ class OrkestraAdapter:
         resolves_signature: str = "",
         **extra: Any,
     ) -> Event:
-        """Record a verification result — the evidence everything else needs.
+        """Record a verification result - the evidence everything else needs.
 
         This is the single most valuable thing an orchestrator can supply. A
         failure becomes a gotcha keyed on a deterministic signature; a success

@@ -11,7 +11,7 @@ Two jobs, both usable by any orchestrator:
 The materialization rules exist because a real orchestrator was verified to run
 ``git add -A`` over the whole worktree when committing an agent's work. Anything
 written there lands in the agent's commit, the reviewer's diff, and the
-integration branch — so cleanup is deterministic and explicit rather than
+integration branch - so cleanup is deterministic and explicit rather than
 delegated to ``.gitignore``.
 """
 
@@ -84,7 +84,7 @@ def render_for_file(digest: Digest, *, limit: int) -> str:
 class MaterializeResult:
     """What materialization actually did.
 
-    ``written`` is what cleanup will remove — exactly those paths, never a glob,
+    ``written`` is what cleanup will remove - exactly those paths, never a glob,
     because a glob would delete a user's real ``CLAUDE.md``.
     """
 
@@ -167,7 +167,7 @@ def materialized(
     """Materialize for the duration of a block, then clean up.
 
     Cleanup runs on exception too. A crashed task must not leave a generated file
-    behind for a subsequent ``git add -A`` to sweep into a commit — which is the
+    behind for a subsequent ``git add -A`` to sweep into a commit - which is the
     exact failure this whole mechanism exists to prevent.
 
         with materialized(digest, worktree) as files:
@@ -184,7 +184,7 @@ def materialized(
 def generated_paths(worktree: Path | str) -> list[Path]:
     """Every Provalume-generated file currently in a worktree.
 
-    A safety net for callers that lost their path list — a crash between
+    A safety net for callers that lost their path list - a crash between
     materialize and cleanup, say. Identifies files by sentinel, so it can never
     return a user's own context file.
     """

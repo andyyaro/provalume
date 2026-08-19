@@ -76,8 +76,8 @@ def normalize(value: str) -> str:
 def age_days(recorded_at: str, *, reference: str | None = None) -> float:
     """Age in fractional days, used by the recency component of ranking.
 
-    Never negative: a record whose timestamp is in the future — clock skew, or a
-    caller passing a bad ``occurred_at`` — is treated as brand new rather than
+    Never negative: a record whose timestamp is in the future - clock skew, or a
+    caller passing a bad ``occurred_at`` - is treated as brand new rather than
     given a recency score above 1.0, which would let a forged future timestamp
     win every ranking.
     """

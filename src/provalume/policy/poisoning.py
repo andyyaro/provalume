@@ -1,15 +1,15 @@
 """Memory-poisoning heuristics (Tier 2 of ADR-0010).
 
 **These are the weakest control in the system and they are meant to be.** The
-architecture — deterministic evidence as the only promotion path, structural
-``source``, agents that cannot promote — is what actually stops poisoning. These
+architecture - deterministic evidence as the only promotion path, structural
+``source``, agents that cannot promote - is what actually stops poisoning. These
 patterns only make hostile text fail earlier and more loudly.
 
 Concretely: heuristics do nothing against the hardest case, a clean confident lie
 with no suspicious phrasing (``MEMORY_POISONING.md`` §2.2). That case is defeated
 by the absence of qualifying evidence, not by anything here.
 
-Scoring is deterministic — the same text always scores the same — because the eval
+Scoring is deterministic - the same text always scores the same - because the eval
 harness replays a fixed corpus and a fuzzy score would make results irreproducible.
 """
 
@@ -33,7 +33,7 @@ class Pattern(NamedTuple):
 #: chosen rather than emergent: it is the most-recognised attack shape there is,
 #: and a text saying "ignore all previous instructions" has no legitimate reading
 #: as a project memory. Every other family sits below the default threshold, so it
-#: takes two independent signals to force quarantine — a lone `chmod 777` in a
+#: takes two independent signals to force quarantine - a lone `chmod 777` in a
 #: verification excerpt is suspicious, not conclusive.
 #:
 #: ``tests/security/test_poisoning_threshold_boundary.py`` pins this relationship,
@@ -259,7 +259,7 @@ def assess(text: str) -> PoisoningAssessment:
 
     Each family contributes its weight once, however many of its patterns match.
     Family weights then sum and clamp to 1.0, so risk rises with the *diversity*
-    of hostile signals rather than with repetition — a single phrase repeated
+    of hostile signals rather than with repetition - a single phrase repeated
     thirty times is one signal, while three different families is genuinely
     worse.
     """

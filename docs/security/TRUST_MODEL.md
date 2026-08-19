@@ -12,7 +12,7 @@ what?* for every record. This document gives that answer.
 ## 1. The one rule
 
 > **Trust is granted by deterministic evidence from a trusted source, never by
-> assertion — no matter how confident the assertion sounds.**
+> assertion - no matter how confident the assertion sounds.**
 
 Everything below is that rule, made specific.
 
@@ -38,7 +38,7 @@ Eight states. Each record is in exactly one.
 | `quarantined` | Admitted and stored, but its content came from an untrusted source with no supporting evidence, or it tripped a poisoning heuristic. Retrievable only when explicitly requested, always labelled. | **No** |
 | `observed` | Something was recorded as having happened, from a source trusted to report but not to interpret. The default for agent-sourced structured reports. | **No** |
 | `verified` | A deterministic evidence event supports it: a command ran and its outcome is recorded. Includes gotchas, whose evidence is a *failure*. | Within its own scope, labelled |
-| `reviewed` | An independent party — a reviewing agent's structured verdict, or a human — assessed it. Independence is required: the reviewer must not be the author. | Within its own scope, labelled |
+| `reviewed` | An independent party - a reviewing agent's structured verdict, or a human - assessed it. Independence is required: the reviewer must not be the author. | Within its own scope, labelled |
 | `integrated` | The work it describes landed in history: merged into the run's integration branch, or accepted into the user's branch. The only state that can be presented as current project truth without qualification. | **Yes** |
 | `invalidated` | Was true, is no longer. Retained with `invalid_at` set. Retrievable for historical queries. | **No** |
 | `superseded` | Replaced by a specific newer record, linked by `supersedes_id`. Retained; the chain is walkable. | **No** |
@@ -60,7 +60,7 @@ question "is this more trusted than `observed`?" is not meaningful for a record
 that has been withdrawn.
 
 Terminal states are reachable from any ladder state. Ladder states are never
-reachable from a terminal state — with one narrow exception, stated in §6.
+reachable from a terminal state - with one narrow exception, stated in §6.
 
 ### Trust state is not the same as evidence state
 
@@ -80,13 +80,13 @@ field could not say it.
 
 ## 3. Sources
 
-Every event records a `source`. It is structural — assigned by the code path that
+Every event records a `source`. It is structural - assigned by the code path that
 created the event, never chosen by the content.
 
 | `source` | Who | Trusted to |
 |---|---|---|
 | `human` | The operator, at the CLI or through a human-decision gate | Everything. The highest authority in the system. |
-| `kernel` | An orchestration kernel reporting a structured outcome it deterministically observed | Report facts (exit codes, verdicts, commit SHAs) — **not** to interpret them |
+| `kernel` | An orchestration kernel reporting a structured outcome it deterministically observed | Report facts (exit codes, verdicts, commit SHAs) - **not** to interpret them |
 | `adapter` | An integration translating a kernel's native records | The same as `kernel`, subject to the adapter's own validation |
 | `agent` | An autonomous agent, including through MCP | Nothing. Its reports are recorded as claims. |
 | `import` | A JSONL file from elsewhere | Nothing. Signature verification proves origin, not truth. |
@@ -131,17 +131,17 @@ a claim about what the project *currently* is needs more.
 
 | Memory type | Highest state without landed history | Notes |
 |---|---|---|
-| **Episodic** — what happened | `verified` | A record of an event. `integrated` is meaningless for it; the event happened regardless of what landed. |
-| **Semantic** — current project facts | `reviewed` | **Requires `integrated` to be presented as current truth.** Below that, served with a branch-local or unconfirmed label. This is where "verification is not enough" bites hardest. |
-| **Procedural** — verified commands and runbooks | `verified` after one passing run of the exact command | `reviewed` on independent approval, `integrated` when it landed. |
-| **Decision** — chosen option, rejected alternatives, rationale | `integrated` directly when `source=human` | A human decision *is* project truth by authority, not by test. `authority` is recorded. Agent-proposed decision records start `quarantined` like anything else. |
-| **Gotcha / negative** — failed approaches | `verified` on a deterministic verification-failure event | May reach `reviewed` if a reviewer confirmed the finding. **Never promoted to semantic project truth** — a gotcha describes what failed, not what is. |
-| **Performance** — agent and profile outcomes | `verified` | Deterministically aggregated from outcome events. Never `integrated`; a statistic does not land in a commit. |
+| **Episodic** - what happened | `verified` | A record of an event. `integrated` is meaningless for it; the event happened regardless of what landed. |
+| **Semantic** - current project facts | `reviewed` | **Requires `integrated` to be presented as current truth.** Below that, served with a branch-local or unconfirmed label. This is where "verification is not enough" bites hardest. |
+| **Procedural** - verified commands and runbooks | `verified` after one passing run of the exact command | `reviewed` on independent approval, `integrated` when it landed. |
+| **Decision** - chosen option, rejected alternatives, rationale | `integrated` directly when `source=human` | A human decision *is* project truth by authority, not by test. `authority` is recorded. Agent-proposed decision records start `quarantined` like anything else. |
+| **Gotcha / negative** - failed approaches | `verified` on a deterministic verification-failure event | May reach `reviewed` if a reviewer confirmed the finding. **Never promoted to semantic project truth** - a gotcha describes what failed, not what is. |
+| **Performance** - agent and profile outcomes | `verified` | Deterministically aggregated from outcome events. Never `integrated`; a statistic does not land in a commit. |
 
 ### Cross-scope promotion
 
-Widening a record's scope — branch → repository, repository → project, project →
-global — is a promotion in its own right and needs its own evidence.
+Widening a record's scope - branch → repository, repository → project, project →
+global - is a promotion in its own right and needs its own evidence.
 
 - **branch → repository** requires landed integration (`integration_state` in
   {`integrated_run`, `accepted_user`}).
@@ -170,7 +170,7 @@ No state changes without a `memory_transitions` row recording:
 `policy_rule` is the field that makes the model falsifiable rather than
 decorative: for any record you can ask *which rule promoted this, on what
 evidence*, and get a name and a list of event IDs rather than a shrug. A refused
-transition is also recorded, with the rule that refused it — refusals are evidence
+transition is also recorded, with the rule that refused it - refusals are evidence
 too, and a silently-dropped promotion attempt is exactly what an attacker wants.
 
 ## 6. What can never happen
@@ -181,7 +181,7 @@ should fail CI.
 1. **A `rejected` record is never promoted.** Terminal, permanent, no exception.
 2. **An agent never promotes.** No SDK path, CLI path, or MCP tool grants an
    `agent`-sourced actor a promotion.
-3. **The MCP surface has no promotion tool.** Not disabled — absent. A test asserts
+3. **The MCP surface has no promotion tool.** Not disabled - absent. A test asserts
    the tool list contains no promotion, invalidation, supersession, scope-movement,
    rebuild, or import tool.
 4. **Semantic project truth requires landed history.** A semantic record below
@@ -195,7 +195,7 @@ should fail CI.
    the untrusted-data banner.
 
 **The single narrow exception.** An `invalidated` record may return to a ladder
-state if — and only if — a later deterministic evidence event shows the fact holds
+state if - and only if - a later deterministic evidence event shows the fact holds
 again (a reverted revert; a dependency restored). This requires fresh evidence and
 a new transition row, and it is logged as a re-validation with the rule
 `revalidate.invalidated.fresh_evidence`. `superseded` and `rejected` have no such
@@ -204,7 +204,7 @@ permanent.
 
 ## 7. How trust affects retrieval
 
-Trust is not a filter alone — it is a weighted signal, so that a highly relevant
+Trust is not a filter alone - it is a weighted signal, so that a highly relevant
 `verified` gotcha can outrank a marginally relevant `integrated` fact when the
 gotcha is what the caller actually needs.
 

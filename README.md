@@ -55,7 +55,7 @@ attached:
 |---|---|---|
 | Who writes memory | An LLM extracts or summarises | Deterministic functions of structured events |
 | Why a fact is trusted | It was stored | A named rule promoted it, on listed evidence |
-| Failed attempts | Discarded as noise | A first-class category — the most useful thing it holds |
+| Failed attempts | Discarded as noise | A first-class category - the most useful thing it holds |
 | Rejected branch work | Indistinguishable from landed fact | Terminal state; can never become project truth |
 | "Is this still true?" | Unanswerable | Bi-temporal validity, checked against the commit you asked about |
 | Same input twice | May store different things | Byte-identical, every time |
@@ -75,8 +75,8 @@ uv tool install provalume     # or: pipx install provalume, pip install provalum
 provalume demo
 ```
 
-Runs a complete scenario in a temporary directory — no API key, no agent CLI, no
-network — using the real storage, policy, and retrieval code. It shows an agent
+Runs a complete scenario in a temporary directory - no API key, no agent CLI, no
+network - using the real storage, policy, and retrieval code. It shows an agent
 failing, the gotcha being recorded, a second agent being warned, a fix being
 verified and independently reviewed, a procedure being promoted, a stale fact
 being superseded, and a later query retrieving it all with provenance.
@@ -147,14 +147,14 @@ flowchart LR
 ```
 
 Solid arrows are promotions and no rung can be skipped. Dotted arrows lead to the three
-terminal states — `invalidated`, `superseded`, `rejected` — which are retained as history and
+terminal states - `invalidated`, `superseded`, `rejected` - which are retained as history and
 never promoted out of.
 
 Three rules do most of the work:
 
 1. **Agents propose; they never promote.** The party making a claim is never the
    party granting it trust. This is what defeats a confident, well-written,
-   entirely false statement — no heuristic can catch that, and it does not need
+   entirely false statement - no heuristic can catch that, and it does not need
    to, because a lie does not generate evidence.
 2. **Verification is not always enough.** A test passing in one worktree proves
    something happened *there*. To be served as a current project fact, a semantic
@@ -169,9 +169,9 @@ Full specification: [`docs/security/TRUST_MODEL.md`](docs/security/TRUST_MODEL.m
 
 | Category | Example |
 |---|---|
-| **Gotcha** | `pytest -n auto` deadlocks in the db fixture — and what worked instead |
+| **Gotcha** | `pytest -n auto` deadlocks in the db fixture - and what worked instead |
 | **Procedural** | The exact release command that passed verification |
-| **Semantic** | This project uses `uv`, not `pip` — superseded, not overwritten, when it changed |
+| **Semantic** | This project uses `uv`, not `pip` - superseded, not overwritten, when it changed |
 | **Decision** | We chose Typer over Click, and here is what we rejected and why |
 | **Episodic** | Attempt 3 failed, attempt 4 passed after removing the fixture scope |
 | **Performance** | Which agent profile actually succeeds at migration tasks |
@@ -191,7 +191,7 @@ constraint the whole design is built around
 
 **Optional, off by default:** vector retrieval (`provalume[vectors]`),
 cryptographic signatures (`provalume[signatures]`). Both experimental. Vector
-retrieval is **not yet wired into the read path** in 0.1.x — the index, embedder
+retrieval is **not yet wired into the read path** in 0.1.x - the index, embedder
 and rank fusion ship and are exercised by the eval harness, but `recall()` does
 not consult them and nothing writes a vector
 ([`RETRIEVAL.md`](docs/reference/RETRIEVAL.md) §Optional vectors). Retrieval is
@@ -217,13 +217,13 @@ heuristic. Retrievable, always labelled, never presented as fact.
 - It has no multi-user access control. Single-operator; use filesystem permissions.
 - It has no hard deletion. The journal is append-only, so it is a poor fit for
   data under a deletion requirement.
-- It does not do cross-project or global memory in 0.1.x — deliberately, because
+- It does not do cross-project or global memory in 0.1.x - deliberately, because
   cross-project leakage is the one Critical-rated confidentiality threat
   ([ADR-0016](docs/adr/ADR-0016-global-memory-deferral.md)).
 - **It has not been dogfooded against real agents yet.** Two real orchestration
   runs have been driven end to end, with real worktrees, real failing commands
   and real integration commits, and they found seven defects no test or review
-  had caught — but fake agents stood in for vendor CLIs. What is still unproven
+  had caught - but fake agents stood in for vendor CLIs. What is still unproven
   is whether a digest measurably helps a real model. Its schema comes from the
   literature, a competitor review, and a replayable eval harness, not from mined
   production failure frequencies. That is the largest known weakness and it is
@@ -235,13 +235,13 @@ harness compares Provalume against Provalume, on its own fixtures, and says so.
 
 ## Works with
 
-- **Any MCP client** — `provalume serve-mcp`. Read tools plus `propose`. There is
+- **Any MCP client** - `provalume serve-mcp`. Read tools plus `propose`. There is
   no promotion, invalidation, or delete tool on the MCP surface: not disabled,
   *absent*, and a test asserts it stays that way
   ([ADR-0012](docs/adr/ADR-0012-mcp-permissions.md)).
-- **Orkestra** — reference integration, structured event ingestion and digest
+- **Orkestra** - reference integration, structured event ingestion and digest
   injection ([`docs/integration/ORKESTRA.md`](docs/integration/ORKESTRA.md)).
-- **Anything else** — the Python SDK and a generic adapter.
+- **Anything else** - the Python SDK and a generic adapter.
 
 ## Documentation
 
@@ -267,7 +267,7 @@ harness compares Provalume against Provalume, on its own fixtures, and says so.
 See [`CONTRIBUTING.md`](CONTRIBUTING.md). Apache-2.0, no CLA, DCO optional.
 
 Six changes require security review before they can land, because each would
-re-open the poisoning channel — an LLM in the write path, exposing promotion to
+re-open the poisoning channel - an LLM in the write path, exposing promotion to
 MCP, letting payload influence its own trust state, cross-project promotion
 without human approval, making vectors the authorisation gate, or serving
 semantic records as truth without landed history.
@@ -275,4 +275,4 @@ semantic records as truth without landed history.
 ## License
 
 [Apache-2.0](LICENSE). See [`NOTICE`](NOTICE) for attribution of the ideas
-Provalume borrowed — no code from any other project was copied.
+Provalume borrowed - no code from any other project was copied.

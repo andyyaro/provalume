@@ -65,7 +65,7 @@ def procedural_text(*, command: str, purpose: str, branch: str | None) -> str:
 def build_procedural(event: Event, *, landing_state: TrustState) -> Memory | None:
     """Project a passing verification into a procedural candidate.
 
-    Returns ``None`` when the event carries no command — there is nothing to
+    Returns ``None`` when the event carries no command - there is nothing to
     make a runbook out of, and inventing one from surrounding metadata would be
     the LLM-extraction behaviour this design refuses.
     """
@@ -193,7 +193,7 @@ def build_semantic(event: Event, *, landing_state: TrustState) -> Memory | None:
 
     Semantic memory is the strictest category: it is the only one asserting what
     the project currently *is*, so it needs landed history before being served as
-    current truth (ADR-0004). Below that it is still stored and retrievable — just
+    current truth (ADR-0004). Below that it is still stored and retrievable - just
     labelled as branch-local or unconfirmed.
     """
     statement = str(event.payload.get("statement", "")).strip()

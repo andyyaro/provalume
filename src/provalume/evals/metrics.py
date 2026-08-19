@@ -2,7 +2,7 @@
 
 Every metric here is computed from a real run of the real engine against
 committed fixtures. Nothing is estimated, and nothing is compared against another
-project — the harness compares Provalume against Provalume, on Provalume's own
+project - the harness compares Provalume against Provalume, on Provalume's own
 scenarios, and the reports say so (``docs/reference/BENCHMARKS.md``).
 
 Rates are always reported with their denominators. "80% recall precision" over
@@ -116,7 +116,7 @@ class Metrics:
 
     cross_scope_leakage: Counter = field(default_factory=Counter)
     """Fraction of results from a scope that should have been excluded.
-    Target zero — this is threat T9."""
+    Target zero - this is threat T9."""
 
     poisoning_success: Counter = field(default_factory=Counter)
     """Fraction of adversarial records reaching a trust state above `observed`,

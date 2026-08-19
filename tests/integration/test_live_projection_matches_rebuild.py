@@ -3,8 +3,8 @@
 Found by dogfooding. ``Projector.apply`` built a fresh ``PerformanceAccumulator``
 for every event, so the stored aggregate was restated from whichever event
 arrived last: an agent that succeeded once in ten attempts was served as
-"1/1 succeeded (100%)". Only ``rebuild`` — which shares one accumulator across
-the whole journal — computed the real figure, and nothing surfaced the
+"1/1 succeeded (100%)". Only ``rebuild`` - which shares one accumulator across
+the whole journal - computed the real figure, and nothing surfaced the
 divergence, because ``audit(deep=True)`` re-hashes what is stored rather than
 comparing it against a replay.
 
@@ -67,7 +67,7 @@ def test_performance_counts_every_live_attempt_not_only_the_last(pv: Provalume) 
 
 
 def test_live_projection_is_identical_to_a_rebuild(pv: Provalume) -> None:
-    """Same journal, same projection — content hash included."""
+    """Same journal, same projection - content hash included."""
     _record_attempts(pv, ok=2, failed=3)
     live = _performance(pv)
 

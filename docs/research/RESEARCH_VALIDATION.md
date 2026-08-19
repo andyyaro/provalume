@@ -32,7 +32,7 @@ decision by the project owner, not an oversight, and it is recorded as such in
 
 The honest accounting of that choice:
 
-**What is lost.** The report's strongest argument is real — a month of dogfooding
+**What is lost.** The report's strongest argument is real - a month of dogfooding
 inside a working orchestrator would rank which memory failures actually recur,
 turning the schema from reasoned design into evidence-backed design. Provalume
 ships without that data. Its schema is derived from the literature, from the
@@ -51,7 +51,7 @@ largest known weakness of v0.1.0** and it is stated in
    imports Provalume; and Provalume is optional to Orkestra at runtime.
 2. **The replayable eval harness substitutes for some of the missing dogfood
    data.** Twenty scenarios encode the failure modes the report and the literature
-   name — repeated failed fixes, environment gotchas, stale facts, rejected-branch
+   name - repeated failed fixes, environment gotchas, stale facts, rejected-branch
    knowledge, cross-scope leakage, poisoning. They are synthetic, which is weaker
    than production traces, and they are *reproducible*, which production traces
    were never going to be.
@@ -63,7 +63,7 @@ largest known weakness of v0.1.0** and it is stated in
 
 **How the gap gets closed.** Dogfooding is not skipped, it is sequenced after
 v0.1.0: the Orkestra integration lands as a *draft* pull request, and the
-requirements-mining pass the report calls for (§8.5 — query real `events`/`ledger`
+requirements-mining pass the report calls for (§8.5 - query real `events`/`ledger`
 data to rank recurring failures) is tracked as post-v0.1.0 work in
 [`ROADMAP.md`](../../ROADMAP.md). Schema changes that mining produces are what the
 compatibility and migration machinery ([ADR-0017](../adr/ADR-0017-compatibility-and-versioning.md))
@@ -71,10 +71,10 @@ exists to absorb.
 
 ---
 
-## 2. Orkestra codebase claims — verified against source
+## 2. Orkestra codebase claims - verified against source
 
 Read-only inspection of the local checkout at `~/Downloads/Orkestra`
-(branch `nested-repo-fix-v0.4.4`, HEAD `1cdbc9ad`, working tree dirty — another
+(branch `nested-repo-fix-v0.4.4`, HEAD `1cdbc9ad`, working tree dirty - another
 session holds write access; nothing was modified). The report's file paths were
 stated as correct at v0.4.2; the checkout is at v0.4.4.
 
@@ -115,7 +115,7 @@ that per-vendor auto-loading behaviour is unverified. See
 | Claim | Status |
 |---|---|
 | MCP protocol revision | **Corrected.** The current revision is **`2025-11-25`** (per the MCP specification's own versioning page). Provalume advertises `2025-11-25` and negotiates down to `2025-06-18` and `2024-11-05`. The `initialize` / `notifications/initialized` lifecycle, `tools/list` pagination, and `tools/call` result shape (`content`, `structuredContent`, `isError`) were read from the published specification rather than recalled. |
-| Tool-result error semantics | Verified from spec: protocol errors use JSON-RPC `error`; tool execution errors use a normal result with `isError: true`. Provalume follows this distinction — an unknown tool is `-32601`/`-32602`, a rejected write is `isError: true` with an actionable reason. |
+| Tool-result error semantics | Verified from spec: protocol errors use JSON-RPC `error`; tool execution errors use a normal result with `isError: true`. Provalume follows this distinction - an unknown tool is `-32601`/`-32602`, a rejected write is `isError: true` with an actionable reason. |
 | Spec's own security guidance | Verified and adopted: servers **MUST** validate all tool inputs, implement access controls, rate-limit invocations, and sanitise outputs. Provalume's MCP layer does all four; see [ADR-0012](../adr/ADR-0012-mcp-permissions.md). |
 
 ## 4. Benchmark claims
@@ -128,7 +128,7 @@ practice follows from it rather than from any re-verification:
   relevant benchmark; it is a conversational-trajectory benchmark with its own
   harness, and Provalume v0.1.0 does not run it. What ships is a
   LongMemEval-V2-*style* replayable harness over software-agent task
-  trajectories — twenty scenarios, own fixtures, own metrics, committed and
+  trajectories - twenty scenarios, own fixtures, own metrics, committed and
   re-runnable. Its methodology and its limits are documented in
   [`docs/reference/BENCHMARKS.md`](../reference/BENCHMARKS.md).
 - **No comparative superiority claim is published anywhere in this repository.**

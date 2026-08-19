@@ -143,7 +143,7 @@ class Provalume:
 
         ``project_id`` defaults to the repository identity when Git is available,
         and to the directory name otherwise. Deriving it rather than requiring it
-        keeps the common case to one call, and the derived value is stable —
+        keeps the common case to one call, and the derived value is stable -
         which matters because ``project_id`` is the isolation boundary (threat T9).
         """
         base = Path(root) if root is not None else Path.cwd()
@@ -198,8 +198,8 @@ class Provalume:
     ) -> Event:
         """Record an event and project it.
 
-        The only way to write to the journal. Runs the full admission pipeline —
-        validation, size caps, redaction, poisoning scan — before anything
+        The only way to write to the journal. Runs the full admission pipeline -
+        validation, size caps, redaction, poisoning scan - before anything
         durable happens, which is why :meth:`Event.create` alone cannot persist.
         """
         defaults: dict[str, Any] = {}
@@ -239,7 +239,7 @@ class Provalume:
         resolves_signature: str = "",
         **fields: Any,
     ) -> Event:
-        """Record a verification result — the primary evidence event.
+        """Record a verification result - the primary evidence event.
 
         ``resolves_signature`` names a failure signature this success resolves.
         Supply it when a command that previously failed now passes: without it,
@@ -277,7 +277,7 @@ class Provalume:
 
         The reviewer's identity is recorded so independence can be checked at
         promotion time. A self-review never promotes, and the comparison happens
-        there rather than here — recording a self-review is legitimate, promoting
+        there rather than here - recording a self-review is legitimate, promoting
         on one is not.
         """
         if approved:
@@ -358,7 +358,7 @@ class Provalume:
         changed, which is what "what later worked" claims.
         """
         # The envelope branch too, not only the payload. Without it the event
-        # falls back to whatever branch the recording process has checked out —
+        # falls back to whatever branch the recording process has checked out -
         # for an orchestrator that is the *base* branch, so the row read "landed
         # on main" while the payload correctly named the integration branch, and
         # a consumer reading the column drew the opposite conclusion.
@@ -517,7 +517,7 @@ class Provalume:
             resolved_commit = self.git.current_commit()
 
         # Truncate rather than reject. An over-long query is a paste, not an
-        # attack — the FTS layer already caps term count and length — and
+        # attack - the FTS layer already caps term count and length - and
         # erroring on it would turn a harmless mistake into a failed call.
         spec = RecallQuery(
             project_id=self.project_id,
@@ -579,7 +579,7 @@ class Provalume:
             # Recorded through the projecting path even though nothing projects a
             # `warning.shown`. Projection is what advances the watermark, and
             # skipping it left `provalume audit` reporting "projections are
-            # behind the journal" after every warning that matched — constantly,
+            # behind the journal" after every warning that matched - constantly,
             # in an orchestrator run, which devalues the one signal that would
             # surface a genuinely stale projection.
             event = self.record_event(
@@ -649,7 +649,7 @@ class Provalume:
 
         Refuses to run when audit finds unredacted credential patterns (threat
         T13). Export is the moment data leaves the machine, which makes it the
-        last place to catch a leak — and the worst place to discover one later.
+        last place to catch a leak - and the worst place to discover one later.
         """
         if audit_first:
             report = self.audit(deep=True)
@@ -691,18 +691,18 @@ class Provalume:
         evidence that also imported and also validated (threat T17).
 
         A file is untrusted input, so its events cross into the journal through
-        the same admission pipeline as a locally recorded one — validation, size
-        caps, redaction, poisoning scan — run by :func:`jsonl.import_directory`
+        the same admission pipeline as a locally recorded one - validation, size
+        caps, redaction, poisoning scan - run by :func:`jsonl.import_directory`
         so a record that fails is reported as an issue rather than aborting the
         import.
 
         Only events are stored. Memory and transition records are parsed and
-        checked — that is where divergent supersessions are found — but the
+        checked - that is where divergent supersessions are found - but the
         projections are rebuilt from the events that just landed (ADR-0002),
         which is why ``ImportResult.accepted`` counts events alone.
         """
         # Every event in the journal, not just this project's. `event_id` is a
-        # global key — `Journal.append` looks it up without a project filter — so
+        # global key - `Journal.append` looks it up without a project filter - so
         # a map scoped to one project reports "new" for an id another project
         # already holds, and the append then raises out of the whole batch.
         existing = {e.event_id: e.payload_hash for e in self.journal.iter_all()}

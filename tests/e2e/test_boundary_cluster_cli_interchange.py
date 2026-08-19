@@ -2,7 +2,7 @@
 
 The signature subsystem shipped complete and unreachable: `provalume import` had
 no way to pin a key, so `verifier` was always `None` and `jsonl.import_directory`
-skipped the whole check — a record carrying a forged, unknown-key, or unsupported
+skipped the whole check - a record carrying a forged, unknown-key, or unsupported
 signature imported without complaint. `provalume export` had no `--sign`, so
 nothing was ever signed. ADR-0011's "invalid or unverifiable signature →
 quarantined, fail-closed" was true of the library and false of the product.

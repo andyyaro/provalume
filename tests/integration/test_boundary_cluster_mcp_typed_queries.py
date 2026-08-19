@@ -4,7 +4,7 @@
 mismatched type costs a result about 0.10 of score, which a strong lexical match
 of another type easily outranks. `_typed_query` then filtered the engine's
 already-truncated result list, so `query_failures` reported "no matching records"
-to a client while several matching gotchas sat in the store — the worst possible
+to a client while several matching gotchas sat in the store - the worst possible
 answer, since the client asked precisely so it would not repeat a known failure.
 """
 
@@ -19,7 +19,7 @@ from provalume.sdk.client import Provalume
 
 def stocked(pv: Provalume) -> Provalume:
     """Six procedures that match the query exactly, three gotchas that match it
-    only in part — the ordinary shape of a repository with a healthy deploy path
+    only in part - the ordinary shape of a repository with a healthy deploy path
     and a few failures behind it."""
     for index in range(6):
         pv.record_verification(

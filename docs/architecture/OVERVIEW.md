@@ -22,7 +22,7 @@ integrations                  the only layer that may know about a host
 ```
 
 **The core never imports a host.** `provalume.integrations.orkestra` translates
-another system's records into Provalume events and imports nothing from it — a
+another system's records into Provalume events and imports nothing from it - a
 test asserts this, because "extract it later" is exactly how hidden couplings form
 ([ADR-0014](../adr/ADR-0014-orkestra-integration-boundary.md)).
 
@@ -68,7 +68,7 @@ can win the similarity contest and still not be returned.
 | `store/projections.py` | Events → memories; applies promotion decisions |
 | `store/fts.py` | FTS5 query construction and safety |
 | `store/gitinfo.py` | Read-only Git: ancestry, commit existence, branch |
-| `store/integrity.py` | `audit` — chain, projections, pragmas, credentials, provenance |
+| `store/integrity.py` | `audit` - chain, projections, pragmas, credentials, provenance |
 | `policy/admission.py` | Boundary 1: validate → cap → redact → scan → hash |
 | `policy/promotion.py` | Boundary 2: the only place trust is granted |
 | `policy/invalidation.py` | Withdrawal, supersession, contradiction detection |
@@ -128,7 +128,7 @@ RecallQuery
   ├─▶ candidates       FTS5 MATCH + bm25, or structured filter when no query text
   ├─▶ hard filters     project, trust floor, terminal, validity, scope, commit
   ├─▶ scoring          nine components, each recorded
-  ├─▶ ordering         (−score, −recorded_at, memory_id) — fully deterministic
+  ├─▶ ordering         (−score, −recorded_at, memory_id) - fully deterministic
   ├─▶ explanations     reasons, filters passed, breakdown, warnings
   └─▶ digest           banner first, hard budget, per-item trust labels
 ```
@@ -137,7 +137,7 @@ RecallQuery
 
 - **A language model.** Not in the write path, not in the read path, not in
   ranking ([ADR-0007](../adr/ADR-0007-deterministic-writers.md)).
-- **A network call.** No telemetry, no update check, no hosted anything —
+- **A network call.** No telemetry, no update check, no hosted anything -
   asserted by `tests/security/test_no_network.py`.
 - **A required heavy dependency.** Three pure-Python runtime dependencies;
   everything else is an optional extra.

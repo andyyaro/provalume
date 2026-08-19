@@ -55,7 +55,7 @@ def test_a_short_subsystem_does_not_match_a_word_that_contains_it(
 ) -> None:
     """`subsystem="ui"` must not warn about `npm run build`.
 
-    The reason this tier emits — "previously failed in ui" — is a claim with a
+    The reason this tier emits - "previously failed in ui" - is a claim with a
     record attached. Matching on a raw substring makes that claim about any
     command whose text happens to contain the letters.
     """
@@ -223,7 +223,7 @@ def test_type_is_a_nudge_on_the_browse_path_too(pv: Provalume) -> None:
     kinds = {r.memory_type for r in browsed}
     assert MemoryType.GOTCHA in kinds, "the requested type was not returned"
     assert kinds - {MemoryType.GOTCHA}, (
-        "no other type survived a browse — memory_types became a hard filter"
+        "no other type survived a browse - memory_types became a hard filter"
     )
     for result in browsed:
         expected = 1.0 if result.memory_type is MemoryType.GOTCHA else 0.5

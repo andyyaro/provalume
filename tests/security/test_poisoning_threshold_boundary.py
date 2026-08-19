@@ -3,13 +3,13 @@
 Pinned deliberately, because it used to be emergent: the largest `FAMILY_WEIGHT`
 was 0.45 against a default threshold of 0.5, so *no* single family could reach
 the gate. A textbook prompt injection matching five separate instruction-override
-patterns scored 0.45 and was never forced to `quarantined` — it only took a
+patterns scored 0.45 and was never forced to `quarantined` - it only took a
 ranking penalty. Nothing in the code or the docs said one family was meant to be
 insufficient, which is how a defence ends up unreachable by accident.
 
-The chosen relationship: instruction-override alone reaches the threshold — it is
+The chosen relationship: instruction-override alone reaches the threshold - it is
 the most-recognised attack shape and has no legitimate reading as a project
-memory — and every other family sits below it, so two independent signals are
+memory - and every other family sits below it, so two independent signals are
 needed. These are still the weakest tier of the controls (ADR-0010); the
 architecture is what stops poisoning.
 """

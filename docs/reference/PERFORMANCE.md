@@ -15,16 +15,16 @@ has not been measured.
 |---|---:|---:|
 | Retrieval (FTS + scoring + explanations) | ~1.7 ms | ~1.7 ms |
 | Write (admission + journal + projection) | ~3.8 ms | ~3.8 ms |
-| Rebuild (small corpus) | ~2.4 ms | — |
+| Rebuild (small corpus) | ~2.4 ms | - |
 
 Latency is long-tailed in principle, so the harness reports median and p95 rather
-than a mean — a mean hides exactly the slow queries a user would notice.
+than a mean - a mean hides exactly the slow queries a user would notice.
 
 ## Where the time goes
 
 **A write** does more than an insert: validation, size caps, redaction over the
 structured payload, a poisoning scan, canonical serialisation, two hashes, the
-journal insert, then projection — which may fold a gotcha, run promotion rules,
+journal insert, then projection - which may fold a gotcha, run promotion rules,
 and record transitions. ~4 ms for all of that is the cost of the guarantees.
 
 **A read** runs an FTS5 MATCH with `bm25()`, caps the candidate set at 500,
@@ -44,7 +44,7 @@ explanations, and sorts deterministically.
 ## What does not
 
 **Rebuild is O(journal).** It replays every event. Fine at thousands, and it will
-become noticeable at millions. It is not on any hot path — only `provalume
+become noticeable at millions. It is not on any hot path - only `provalume
 rebuild` and `--check`.
 
 **`audit --deep` is O(journal + memories).** It re-scans stored content for
@@ -52,7 +52,7 @@ credential patterns. Use `audit` without `--deep` for a fast structural check.
 
 **The database only grows.** Append-only journal, superseded records retained.
 Text-sized records, so growth is modest, but there is no compaction and there
-will not be — compacting a provenance journal is deleting evidence.
+will not be - compacting a provenance journal is deleting evidence.
 
 **Git ancestry costs subprocess calls.** Cached per `GitInfo` instance and only
 consulted for candidates that survived the other filters, but a query touching
@@ -69,7 +69,7 @@ pv = Provalume.open(policy=RankingPolicy(candidate_cap=100))   # faster, less re
 | Knob | Effect |
 |---|---|
 | `candidate_cap` | The main lever. Fewer candidates scored, lower recall. |
-| `limit` on a query | Does not reduce scoring work — the cap does |
+| `limit` on a query | Does not reduce scoring work - the cap does |
 | `char_budget` on a digest | Affects rendering only, not retrieval |
 | Vectors | Adds an embedding pass per query; the numpy path is much faster than pure Python |
 
@@ -80,7 +80,7 @@ WAL means readers never block the writer. Concurrent writers serialise on a
 5-second busy timeout rather than failing.
 
 `tests/integration/test_concurrency_and_recovery.py` verifies that concurrent
-writers do not corrupt the chain — not that they are fast.
+writers do not corrupt the chain - not that they are fast.
 
 ## Durability
 

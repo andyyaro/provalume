@@ -21,7 +21,7 @@ def main() -> None:
         pv = Provalume.open(Path(tmp) / "provalume.db", project_id="example",
                             use_git=False)
 
-        # 1. Evidence. A verification failed — this is what a gotcha is made of.
+        # 1. Evidence. A verification failed - this is what a gotcha is made of.
         pv.record_verification(
             command=FAILING,
             passed=False,

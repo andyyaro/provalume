@@ -30,7 +30,7 @@ choice.**
 | `--pv-black` | `#151515` | Primary typography |
 | `--pv-green` | `#3F684F` | Primary functional accent |
 | `--pv-mauve` | `#705468` | Secondary categories, lineage, supersession chains |
-| `--pv-gold` | `#B28A45` | Verified, promoted, attested, trusted states — **used sparingly** |
+| `--pv-gold` | `#B28A45` | Verified, promoted, attested, trusted states - **used sparingly** |
 
 ### Semantic assignment
 
@@ -69,7 +69,7 @@ they cannot be lost by someone reading only the palette:
    3.0:1 bar for large text and non-text elements only. Gold is for badges, large
    labels, icons, and borders.
 2. **Gold is never placed on a beige background.** On `--pv-beige-light` it measures
-   2.70:1 and on `--pv-beige-soft` 2.40:1 — below the 3.0:1 non-text threshold, so it
+   2.70:1 and on `--pv-beige-soft` 2.40:1 - below the 3.0:1 non-text threshold, so it
    fails even as a border or a large label there. Gold badges sit on warm white or
    pure white, with a beige surround at most.
 
@@ -106,8 +106,8 @@ documentation site all read from the same names.
 
 ### Terminal rendering
 
-Rich styles derive from the same semantic roles. Terminal colour is constrained —
-`#3F684F` may render approximately on a 256-colour terminal — so:
+Rich styles derive from the same semantic roles. Terminal colour is constrained -
+`#3F684F` may render approximately on a 256-colour terminal - so:
 
 - Every state is labelled in text, colour is reinforcement.
 - `NO_COLOR` and non-TTY output are honoured, producing plain text.
@@ -141,7 +141,7 @@ never as gold prose. The constraint was found by measuring rather than by eye, w
 is why `contrast_check.py` runs in CI.
 
 **Also bad.** Investing in a visual system for a CLI-first 0.1.0 is work that mostly
-pays off later. Small cost — tokens plus a Rich theme — against three inconsistent
+pays off later. Small cost - tokens plus a Rich theme - against three inconsistent
 implementations later.
 
 ## Alternatives rejected

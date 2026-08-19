@@ -4,7 +4,7 @@ User text never reaches FTS5 as query syntax. It is tokenised and rebuilt as
 double-quoted terms, and FTS5 operators, column filters, and prefix wildcards are
 **stripped rather than escaped**.
 
-Stripping over escaping is deliberate. Escaping invites a bypass — one missed
+Stripping over escaping is deliberate. Escaping invites a bypass - one missed
 context, one nesting case, and the operator is live again. Stripping cannot be
 bypassed because the dangerous characters do not survive tokenisation at all.
 
@@ -31,7 +31,7 @@ MAX_TERM_CHARS: Final = 64
 MAX_QUERY_CHARS: Final = 4_096
 
 #: Dropped from queries: too common to discriminate, and they cost a full index
-#: scan each. Kept small — over-filtering loses real signal in a corpus where
+#: scan each. Kept small - over-filtering loses real signal in a corpus where
 #: "no" and "not" can be the whole point ("no:xdist").
 _STOPWORDS: Final[frozenset[str]] = frozenset(
     {
@@ -112,7 +112,7 @@ def build_query(text: str, *, mode: str = "or") -> str:
     callers that genuinely need conjunction.
 
     An empty return means the caller should fall back to structured filtering
-    rather than running a MATCH — an empty MATCH expression is a syntax error in
+    rather than running a MATCH - an empty MATCH expression is a syntax error in
     FTS5, and a bare ``""`` would match nothing at all.
     """
     terms = tokenize(text)
@@ -157,7 +157,7 @@ def normalize_bm25(raw_scores: list[float]) -> list[float]:
     than a ten-term one, so cross-query comparison would be meaningless.
 
     A single candidate, or a set where every score is identical, normalises to
-    ``1.0`` — with nothing to compare against, the only honest relative relevance
+    ``1.0`` - with nothing to compare against, the only honest relative relevance
     is "as relevant as anything else here".
     """
     if not raw_scores:

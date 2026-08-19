@@ -5,7 +5,7 @@ is ProjectMem's; this is an independent implementation keyed on the deterministi
 failure signatures from :mod:`provalume.writers.failures`.
 
 **Default behaviour is to warn, never to block.** Memory must not acquire veto
-power over an orchestrator's policy — a memory-poisoning bug would become an
+power over an orchestrator's policy - a memory-poisoning bug would become an
 orchestration-control bug, and a false positive would become an outage. Blocking
 exists, gated behind an explicit policy, and requires an exact high-confidence
 match on a high-risk action.
@@ -13,8 +13,8 @@ match on a high-risk action.
 **Certainty needs the error, not just the command.** The failure signature is
 computed over ``(command, error_kind, error_text)``, so a caller that has not run
 anything yet cannot reach :data:`CONFIDENCE_EXACT_SIGNATURE`. A command-only
-check — which is what ``provalume preflight``, the MCP tool and the Orkestra
-adapter issue — tops out at :data:`CONFIDENCE_EXACT_COMMAND` and therefore
+check - which is what ``provalume preflight``, the MCP tool and the Orkestra
+adapter issue - tops out at :data:`CONFIDENCE_EXACT_COMMAND` and therefore
 always warns. Blocking is reachable only where the caller passes the error it
 observed: a retry check, or any caller re-proposing an action it has already
 watched fail. That asymmetry is the point. "This exact failure, again" is not
@@ -73,7 +73,7 @@ MIN_SUBSYSTEM_CHARS: Final = 2
 def _one_line(text: str, limit: int) -> str:
     """Collapse to a single line for the aligned warning layout.
 
-    Failure excerpts are multi-line by nature — a traceback, a test summary — and
+    Failure excerpts are multi-line by nature - a traceback, a test summary - and
     dropping them in verbatim breaks the column alignment that makes the warning
     scannable. The full excerpt remains on the record; this is the summary view.
     """
@@ -134,7 +134,7 @@ class PreflightGate:
         """Look for prior failures resembling a proposed action.
 
         ``error_kind`` and ``error_text`` describe an error the caller has
-        *already seen* — they are what a retry check supplies, and the only way
+        *already seen* - they are what a retry check supplies, and the only way
         to reach tier 1 and, with it, blocking. Omitting them is the normal
         pre-action case and is not a degraded one: the check still runs, and
         still warns, one tier down.
@@ -288,7 +288,7 @@ class PreflightGate:
         excerpt = str(memory.content.get("excerpt", "")) or str(memory.content.get("finding", ""))
 
         # A record whose applicability cannot be established still warrants a
-        # warning — it just warrants a quieter one. Silently dropping it would
+        # warning - it just warrants a quieter one. Silently dropping it would
         # make the gate go blind after every rebase.
         adjusted = confidence
         if applicability is Applicability.UNCERTAIN:
@@ -364,8 +364,8 @@ class PreflightGate:
 
         top = matches[0]
         # A resolved failure and an open one need different headlines. Both are
-        # worth surfacing — knowing a thing broke once and how it was fixed is
-        # useful — but leading a resolved failure with "failed previously" reads
+        # worth surfacing - knowing a thing broke once and how it was fixed is
+        # useful - but leading a resolved failure with "failed previously" reads
         # as an open trap and invites the agent to avoid an approach that now
         # works. The distinction is the difference between a warning and noise.
         headline = (

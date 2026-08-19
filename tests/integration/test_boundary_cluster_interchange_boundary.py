@@ -1,11 +1,11 @@
 """What `import_records` stores, and what it only claims to store.
 
-Two defects with the same shape — the import path reporting success it had not
+Two defects with the same shape - the import path reporting success it had not
 achieved:
 
 * `event_id` is a global key, but the duplicate map was built from one project.
   An id already held by *another* project therefore looked new, and the append
-  raised `IntegrityError` out of the batch — rolling back every valid record in
+  raised `IntegrityError` out of the batch - rolling back every valid record in
   the file, with no `ImportIssue` to show for it. ADR-0011 says a duplicate id
   with different content is a reported conflict and the import continues.
 * Memory and transition records were counted as `accepted` and never stored.
@@ -100,7 +100,7 @@ def test_an_id_held_by_another_project_with_the_same_content_is_a_duplicate(
 def test_a_conflict_found_only_at_append_time_is_reported_not_raised(tmp_path: Path) -> None:
     """The duplicate map is a fast path; the journal is the authority.
 
-    Between the scan and the append another writer can land the same id — so the
+    Between the scan and the append another writer can land the same id - so the
     batch can still fail, and when it does the file must not be lost with it.
     """
     demo = Provalume(open_database(tmp_path / "target.db"), project_id="demo", git=None)

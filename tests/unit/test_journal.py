@@ -165,7 +165,7 @@ def test_timestamps_are_canonicalised() -> None:
 
 
 def test_duplicate_payload_detection(journal: Journal) -> None:
-    """Identical payloads are legitimate — the same command failing twice — but
+    """Identical payloads are legitimate - the same command failing twice - but
     they are also the signature of a re-imported export, so they are surfaced."""
     journal.append(make_event())
     journal.append(make_event())

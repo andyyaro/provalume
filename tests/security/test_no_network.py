@@ -52,7 +52,7 @@ def python_files() -> list[Path]:
 
 
 def test_source_tree_is_non_empty() -> None:
-    assert python_files(), "no source files found — the check would pass vacuously"
+    assert python_files(), "no source files found - the check would pass vacuously"
 
 
 @pytest.mark.parametrize("path", python_files(), ids=lambda p: p.name)

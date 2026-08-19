@@ -263,7 +263,7 @@
       "id": 20,
       "name": "lexical-vs-hybrid",
       "notes": [
-        "lexical 6, vector 6, fused 6 \u2014 plumbing only; the baseline embedder is non-semantic by design"
+        "lexical 6, vector 6, fused 6 - plumbing only; the baseline embedder is non-semantic by design"
       ],
       "passed": true
     }

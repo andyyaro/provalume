@@ -104,7 +104,7 @@ class Scope(BaseModel):
 
         Dropping is deliberate: a record promoted to repository scope must not
         keep claiming a branch, or scope filtering would still confine it. This
-        performs no authorisation — :mod:`provalume.policy.scope` decides whether
+        performs no authorisation - :mod:`provalume.policy.scope` decides whether
         the widening is permitted.
         """
         if SCOPE_BREADTH[level] < self.breadth:
@@ -144,7 +144,7 @@ def specificity(record_scope: Scope, query_scope: Scope) -> tuple[float, Applica
 
     Returns the ranking contribution and the applicability label. Both are needed
     because the score drives ordering while the label drives what the digest says
-    about the record — a cross-scope hit is still worth showing, just not as
+    about the record - a cross-scope hit is still worth showing, just not as
     current truth.
 
     Callers must have already enforced ``project_id`` equality; this function

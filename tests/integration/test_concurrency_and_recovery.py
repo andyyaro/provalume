@@ -161,7 +161,7 @@ def test_integrity_check_detects_a_corrupted_file(tmp_path: Path) -> None:
     """Corrupt real b-tree pages, not slack space.
 
     Writing one event leaves most of the file unused, and scribbling on unused
-    bytes proves nothing — `integrity_check` correctly ignores them. Enough
+    bytes proves nothing - `integrity_check` correctly ignores them. Enough
     events to fill several pages, with the WAL checkpointed into the main file,
     is what makes this a real corruption test.
     """

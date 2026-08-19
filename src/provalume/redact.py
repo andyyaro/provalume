@@ -10,7 +10,7 @@ post-hoc pass over stored rows would mean the secret hit the disk first.
 
 Every rule favours recall over precision. A redacted false positive is an
 annoyance; a persisted credential is an incident. Users will occasionally see
-``[REDACTED]`` where nothing was secret — that is the intended trade, and it is
+``[REDACTED]`` where nothing was secret - that is the intended trade, and it is
 documented in ``docs/security/PRIVACY_MODEL.md``.
 
 This module is deliberately independent of any orchestrator's redaction
@@ -97,9 +97,9 @@ RULES: tuple[Rule, ...] = (
     ),
     # The body is bounded, and it cannot contain a `-----` run. Both are **ReDoS
     # fixes, not tidiness**: `.*?` with DOTALL rescanned to the end of the input
-    # from every BEGIN marker, so `"-----BEGIN PRIVATE KEY-----" * n` — an
+    # from every BEGIN marker, so `"-----BEGIN PRIVATE KEY-----" * n` - an
     # unterminated marker repeated, which is ordinary in a log that echoed a
-    # truncated key — was quadratic: 0.1s at 20 KB, 11.2s at 250 KB. Repeating the
+    # truncated key - was quadratic: 0.1s at 20 KB, 11.2s at 250 KB. Repeating the
     # literal a pattern is looking for is the same adversarial shape the error
     # normaliser was already hardened against. Excluding `-----` makes the body
     # fail immediately at the next marker instead of walking to the bound, and
@@ -133,8 +133,8 @@ RULES: tuple[Rule, ...] = (
     # not a tidiness choice**: an unbounded lazy `*?` retried every prefix length
     # at every position, which took 10.5 seconds on 20 KB of adversarial input
     # and would have hung the write path on hostile command output (threat T24).
-    # Bounding it costs nothing real — no credential environment variable has a
-    # 40-character prefix before the word `token` — and it is ~240x faster.
+    # Bounding it costs nothing real - no credential environment variable has a
+    # 40-character prefix before the word `token` - and it is ~240x faster.
     Rule(
         "generic",
         re.compile(
@@ -198,7 +198,7 @@ class RedactionReport(NamedTuple):
     """What redaction did, recorded alongside the record.
 
     Stored so a reader can tell "clean" apart from "cleaned". Never contains the
-    secret itself — only which families fired and how many times.
+    secret itself - only which families fired and how many times.
 
     The match count is named ``matches`` rather than ``count`` because
     ``NamedTuple`` inherits ``tuple.count``, and shadowing it would replace a
@@ -266,8 +266,8 @@ def _redact_any(value: Any, families: list[str], counter: list[int]) -> Any:
 def redact_structured(payload: dict[str, Any]) -> tuple[dict[str, Any], RedactionReport]:
     """Redact a structured payload in place of serialising first.
 
-    Structured redaction catches what text redaction cannot — a secret under a
-    sensitive key that has no recognisable format — and it runs before
+    Structured redaction catches what text redaction cannot - a secret under a
+    sensitive key that has no recognisable format - and it runs before
     canonicalisation so the hash covers redacted content.
     """
     families: list[str] = []
@@ -304,7 +304,7 @@ def scan_for_secrets(text: str) -> list[str]:
 
     A non-empty result means redaction failed and is a hard ``audit`` failure.
 
-    An empty result is **not** proof that no secret is present — it proves no
+    An empty result is **not** proof that no secret is present - it proves no
     *known pattern* matched. A credential with no recognisable shape may survive.
     Stated in ``PRIVACY_MODEL.md`` §3 so a clean audit is not mistaken for
     clearance.

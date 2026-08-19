@@ -2,7 +2,7 @@
 
 The specification these types implement is ``docs/security/TRUST_MODEL.md``, and
 the reasoning for the shape is ADR-0005. If this module and that document
-disagree, one of them is a bug — say which.
+disagree, one of them is a bug - say which.
 
 The central structural point: trust is **two shapes, not one ordering**. A
 five-rung ladder that can be compared, and three terminal states that cannot,
@@ -162,7 +162,7 @@ class Source(StrEnum):
     the event, never read from content.
 
     A payload claiming ``{"verified": true}`` is payload. This is what makes the
-    hardest poisoning case — a clean, confident, false statement — fail: it never
+    hardest poisoning case - a clean, confident, false statement - fail: it never
     gets to choose its own source (threat T2).
     """
 
@@ -199,7 +199,7 @@ def within_ceiling(state: TrustState, source: Source) -> bool:
 
     Terminal states are always permissible: any source may report that something
     failed, was superseded, or was rejected. Withdrawal is not a trust grant, so
-    it needs no authority — and refusing an agent's ability to report a failure
+    it needs no authority - and refusing an agent's ability to report a failure
     would suppress exactly the information gotcha memory exists to capture.
     """
     if is_terminal(state):

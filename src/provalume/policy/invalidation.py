@@ -3,9 +3,9 @@
 Facts are never overwritten and never hard-deleted (ADR-0009). Three ways a record
 stops being current, and they mean different things:
 
-**Invalidation** — it stopped being true, no replacement asserted.
-**Supersession** — a specific newer record replaces it, linked both ways.
-**Rejection** — the work was rejected or the claim disproved. Permanent.
+**Invalidation** - it stopped being true, no replacement asserted.
+**Supersession** - a specific newer record replaces it, linked both ways.
+**Rejection** - the work was rejected or the claim disproved. Permanent.
 
 Conflating them loses the *reason* a fact changed, which is the part a later
 reader needs. "We no longer use pip" and "we use uv now" are different claims.
@@ -64,7 +64,7 @@ def can_supersede(old: Memory, new: Memory) -> WithdrawalDecision:
     """Whether ``new`` may supersede ``old``.
 
     Chains are linear by construction. Two records claiming the same predecessor
-    is a *conflict*, surfaced rather than resolved by recency — the newer record
+    is a *conflict*, surfaced rather than resolved by recency - the newer record
     may be the poisoned one.
     """
     if old.memory_id == new.memory_id:
@@ -158,14 +158,14 @@ def subject_key(text: str, *, max_terms: int = 8) -> str:
 
     Deliberately literal: lowercase, strip punctuation, drop a small stopword
     set, sort and deduplicate the first terms. It will **miss** paraphrased
-    contradictions — "we use uv" versus "the package manager is uv" produce
+    contradictions - "we use uv" versus "the package manager is uv" produce
     different keys. That is the intended failure direction. Detecting more would
     mean interpreting text, which means an LLM in the read path (ADR-0007), and a
     *fabricated* contradiction demotes a correct fact, which is worse than a
     missed one.
 
     Short words are normally dropped as noise, but a subject made *entirely* of
-    them — ``ci``, ``pm``, ``db``, ``ui`` — is a real subject, not noise.
+    them - ``ci``, ``pm``, ``db``, ``ui`` - is a real subject, not noise.
     Returning an empty key there would silently switch off supersession and
     contradiction detection for exactly those subjects, so the filter relaxes
     rather than giving up.
@@ -198,7 +198,7 @@ def contradicts(a: Memory, b: Memory) -> bool:
     if a.scope.repository_id != b.scope.repository_id:
         return False
     # Branch-scoped records on *different* branches are not contradicting each
-    # other — that is the concurrent-worktree case, which is legitimate and is
+    # other - that is the concurrent-worktree case, which is legitimate and is
     # handled by scope filtering rather than by flagging a conflict.
     if a.scope.branch != b.scope.branch:
         return False

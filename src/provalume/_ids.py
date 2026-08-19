@@ -80,8 +80,8 @@ class MonotonicIdFactory:
 
     Plain :func:`new_id` sorts correctly across milliseconds but two IDs minted
     in the same millisecond have an arbitrary relative order. Where insertion
-    order must be recoverable from the ID alone — journal append being the case
-    that matters — this factory increments the random component instead of
+    order must be recoverable from the ID alone - journal append being the case
+    that matters - this factory increments the random component instead of
     redrawing it, so ordering holds at sub-millisecond resolution.
 
     Not thread-safe by design: Provalume is single-writer (ADR-0003).

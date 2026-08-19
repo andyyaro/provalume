@@ -1,7 +1,7 @@
 """The PEM redaction rule, on the shape `tests/security/test_redos.py` missed.
 
-That suite's own comment records the lesson — "repeat the literal a pattern is
-looking for" — and applies it to the error normaliser, but its PEM probe is a
+That suite's own comment records the lesson - "repeat the literal a pattern is
+looking for" - and applies it to the error normaliser, but its PEM probe is a
 *single* unterminated BEGIN marker, which is linear either way. Repeat the
 marker and the old `-----BEGIN … -----.*?-----END … -----` with DOTALL is clean
 O(n^2): every BEGIN position rescans to the end of the input looking for an END

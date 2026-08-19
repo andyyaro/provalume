@@ -19,7 +19,7 @@ without specifics is a slogan.
 | `.provalume/provalume.db` | The SQLite database: events, memories, transitions, FTS index, optional vectors | **No.** `.provalume/` is in `.gitignore`. |
 | `.provalume/provalume.db-wal`, `-shm` | SQLite write-ahead log and shared-memory file | No |
 | `.provalume/config.toml` | Local configuration, if created | No |
-| Wherever you point `provalume export` | JSONL interchange files | **Your choice** — see §4 |
+| Wherever you point `provalume export` | JSONL interchange files | **Your choice** - see §4 |
 
 The database is **project-local by default**. There is no `~/.provalume/`, no
 global store, and no cross-project memory in 0.1.0
@@ -81,7 +81,7 @@ Rule families, applied in order:
 
 Every rule favours recall over precision. **A redacted false positive is an
 annoyance; a persisted credential is an incident.** You will occasionally see
-`[REDACTED]` where nothing secret was — that is the intended trade.
+`[REDACTED]` where nothing secret was - that is the intended trade.
 
 Redaction metadata (whether rules fired, which families, how many matches) is
 recorded alongside the record, so you can tell "clean" apart from "cleaned".
@@ -90,10 +90,10 @@ recorded alongside the record, so you can tell "clean" apart from "cleaned".
 
 ```sh
 provalume audit          # rescans stored content for known credential patterns
-provalume audit --strict # non-zero exit on any finding — use in CI
+provalume audit --strict # non-zero exit on any finding - use in CI
 ```
 
-`audit` finding nothing is not proof of no secrets — it proves no *known pattern*
+`audit` finding nothing is not proof of no secrets - it proves no *known pattern*
 is present. A credential with no recognisable shape (a bare password, an internal
 API key with no prefix) may survive. **If you know a specific secret transited a
 run, treat the database as containing it and rotate.** Do not treat a clean audit
@@ -108,7 +108,7 @@ Exactly two paths, both explicit.
 The only way Provalume writes data outside `.provalume/`. It is always an explicit
 command; nothing exports on a schedule or on shutdown.
 
-Export contains events, memories, and transitions — including command strings,
+Export contains events, memories, and transitions - including command strings,
 error excerpts, branch names, worktree paths, and agent identifiers. Redaction runs
 again on the way out as defence in depth, and export **refuses to run** if audit
 finds unredacted credential patterns.
@@ -133,7 +133,7 @@ Vector retrieval is off by default and not required for anything. When enabled:
 - `model2vec` and `fastembed` run **locally on CPU**. They need network access
   **once**, to download the model you asked for, and never again.
 - The built-in `HashingEmbedder` is stdlib-only, needs no network ever, and is a
-  deterministic non-semantic baseline for testing — not a quality embedder.
+  deterministic non-semantic baseline for testing - not a quality embedder.
 - **No hosted embedding API is supported.** There is no code path that sends text
   to a remote embedding service, and no API-key configuration for one.
 - Embeddings are computed from **already-redacted stored text** (threat T12). There
@@ -172,7 +172,7 @@ Provalume does not expire data on its own. It grows until you act.
 | Rebuild projections from the journal | `provalume rebuild` |
 
 **On deletion, honestly:** the event journal is append-only and enforced by
-database triggers. `invalidate` and `supersede` mark records without removing them —
+database triggers. `invalidate` and `supersede` mark records without removing them -
 that is the point of a provenance system, and it means **Provalume is a poor fit
 for data subject to a hard deletion requirement.** If a secret or personal datum
 entered the journal, the reliable remedies are to delete the database, or to export
@@ -187,7 +187,7 @@ agent whose outputs Provalume records.
 There is **no access control**. No authentication, no authorisation, no per-user
 isolation, no notion of a memory another user may not read. Anyone who can read
 `.provalume/provalume.db` can read everything; anyone who can write it can tamper
-with it (detectably — see [`THREAT_MODEL.md`](THREAT_MODEL.md) T14).
+with it (detectably - see [`THREAT_MODEL.md`](THREAT_MODEL.md) T14).
 
 Concretely: do not place a Provalume database on a shared host and expect isolation
 between users. Use filesystem permissions, and full-disk encryption if the content
@@ -203,7 +203,7 @@ The MCP server has a `--read-only` mode and project scoping, which limit what a
 | Does it phone home? | No. No telemetry, analytics, crash reporting, update checks, or accounts. |
 | Does it need an API key? | No. None, at any tier. |
 | Does it need an LLM? | No. Not for writes, not for retrieval, not for anything. |
-| Does it need network? | No — unless you opt into an embedder extra, which downloads a model once. |
+| Does it need network? | No - unless you opt into an embedder extra, which downloads a model once. |
 | Where is my data? | `.provalume/provalume.db`, in your project. Nowhere else. |
 | Is it committed to Git? | No. `.provalume/` is gitignored. |
 | Can it leak between projects? | No. Separate files; `project_id` filtered on every query. |
@@ -211,5 +211,5 @@ The MCP server has a `--read-only` mode and project scoping, which limit what a
 | Are secrets redacted? | Before the durable write, with an auditable rescan. Known patterns only. |
 | Can I check for secrets? | `provalume audit --strict` |
 | Can I delete everything? | `rm -rf .provalume/` |
-| Can I delete one thing surgically? | No — invalidate or supersede. The journal is append-only by design. |
+| Can I delete one thing surgically? | No - invalidate or supersede. The journal is append-only by design. |
 | Is there access control? | No. Single-operator. Use filesystem permissions. |

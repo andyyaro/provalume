@@ -7,7 +7,7 @@ body:
       value: |
         The most useful feature requests name **the failure the feature would
         have prevented**. Knowing which limitations actually bite in practice is
-        exactly the data this project lacks — see
+        exactly the data this project lacks - see
         [LIMITATIONS.md](../blob/main/docs/reference/LIMITATIONS.md).
 
   - type: textarea

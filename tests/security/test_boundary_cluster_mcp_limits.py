@@ -3,7 +3,7 @@
 Two of them were reachable from a client that ignores every rule the server
 states. A refused tool call was journalled *before* the rate limiter was
 consulted, so `promote` in a loop wrote an unbounded number of durable
-`mcp.refused` events while the limit never moved — the one call shape an
+`mcp.refused` events while the limit never moved - the one call shape an
 attacker gets for free was the one shape outside the bound (threat T24). And a
 deeply-nested JSON line raised `RecursionError` out of `json.loads`, which
 `handle_line` did not catch, ending the session on one bad line instead of
@@ -154,7 +154,7 @@ def test_over_deep_input_is_refused_by_the_depth_check_not_the_parser(pv: Proval
     assert response is not None
     assert response["error"]["code"] == PARSE_ERROR
     assert "nests deeper" in response["error"]["message"], (
-        "the parser got there first — this passes for the wrong reason on "
+        "the parser got there first - this passes for the wrong reason on "
         "interpreters that overflow"
     )
 
@@ -195,7 +195,7 @@ def test_a_message_at_the_limit_is_still_served(pv: Provalume) -> None:
     # is made to prove it sits exactly on the limit before it is sent.
     assert not _exceeds_nesting_depth(line, MAX_NESTING_DEPTH)
     assert _exceeds_nesting_depth(line, MAX_NESTING_DEPTH - 1), (
-        "fixture is shallower than the limit — it would pass with the check inverted"
+        "fixture is shallower than the limit - it would pass with the check inverted"
     )
 
     response = server.handle_line(line)

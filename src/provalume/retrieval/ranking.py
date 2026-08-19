@@ -36,7 +36,7 @@ from provalume.schemas.trust import evidence_weight, trust_weight
 def recency_component(memory: Memory, *, as_of: str | None = None) -> float:
     """Exponential decay with a per-type half-life.
 
-    ``0.5 ** (age / half_life)`` — a record at exactly its half-life scores 0.5.
+    ``0.5 ** (age / half_life)`` - a record at exactly its half-life scores 0.5.
     Half-lives differ by category because a verified command stays verified for
     far longer than last sprint's episode stays interesting (ADR-0008).
     """
@@ -72,7 +72,7 @@ def type_component(
     """How well the record's category matches what was asked for.
 
     A nudge, not a filter. Asking for gotchas should not hide a decisive semantic
-    fact that answers the question outright — which is why the mismatch factor is
+    fact that answers the question outright - which is why the mismatch factor is
     0.5 rather than 0.
     """
     if not requested:
@@ -149,7 +149,7 @@ def score(
 def sort_key(memory: Memory, breakdown: ScoreBreakdown) -> tuple[float, str, str]:
     """Deterministic ordering key: ``(-score, -recorded_at, memory_id)``.
 
-    Full determinism is not a nicety here — the eval harness replays a fixed
+    Full determinism is not a nicety here - the eval harness replays a fixed
     corpus and compares output, so an ordering that varied with dict iteration or
     floating-point tie-breaks would make every measurement noise. Ties break on
     recency, then on identifier, both of which are data rather than accidents of
@@ -193,13 +193,13 @@ def build_reasons(
         reasons.append(f"applies at {memory.scope.level} scope")
 
     if applicability is Applicability.CURRENT:
-        reasons.append(f"current here — {applicability_reason}")
+        reasons.append(f"current here - {applicability_reason}")
     elif applicability is Applicability.HISTORICAL:
-        reasons.append(f"historical — {applicability_reason}")
+        reasons.append(f"historical - {applicability_reason}")
     elif applicability is Applicability.CROSS_SCOPE:
-        reasons.append(f"from another scope — {applicability_reason}")
+        reasons.append(f"from another scope - {applicability_reason}")
     else:
-        reasons.append(f"applicability uncertain — {applicability_reason}")
+        reasons.append(f"applicability uncertain - {applicability_reason}")
 
     if provenance_summary:
         reasons.append(provenance_summary)
@@ -231,7 +231,7 @@ def build_warnings(
 
     Warnings state what a reader must not conclude. They are separate from
     reasons because a reason explains a match, while a warning constrains how far
-    the result may be trusted — and the second must not be lost in the first.
+    the result may be trusted - and the second must not be lost in the first.
     """
     warnings: list[str] = []
 

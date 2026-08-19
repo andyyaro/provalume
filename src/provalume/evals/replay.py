@@ -1,4 +1,4 @@
-"""The replayable evaluation harness — twenty scenarios.
+"""The replayable evaluation harness - twenty scenarios.
 
 Each scenario builds a fresh in-memory database, drives the **real** engine, and
 asserts on what comes out. Nothing is mocked, and nothing is estimated: if a
@@ -12,7 +12,7 @@ Two things this harness is deliberately not:
   is a LongMemEval-V2-*style* harness over software-agent task trajectories:
   own scenarios, own fixtures, own metrics, committed and re-runnable.
 
-Conversational recall — the favourite-colour genre — appears nowhere, because it
+Conversational recall - the favourite-colour genre - appears nowhere, because it
 measures nothing Provalume claims to do.
 
 Determinism: scenarios pass explicit timestamps wherever recency matters, so a
@@ -206,7 +206,7 @@ def s04_stale_fact_rejected(ctx: ScenarioContext) -> None:
     everything = pv.memory_records(include_terminal=True, current_only=False, limit=20)
     ctx.check(
         any(m.trust_state.value == "superseded" for m in everything),
-        "the old fact was not retained as superseded — history was destroyed",
+        "the old fact was not retained as superseded - history was destroyed",
     )
 
 
@@ -313,7 +313,7 @@ def s08_verified_procedure_promotion(ctx: ScenarioContext) -> None:
     transitions = pv.memories.transitions_for(procedure.memory_id)
     allowed = [t for t in transitions if t["allowed"]]
     ctx.check(
-        len(allowed) >= 3, f"expected three recorded rungs, got {len(allowed)} — rungs were skipped"
+        len(allowed) >= 3, f"expected three recorded rungs, got {len(allowed)} - rungs were skipped"
     )
 
 
@@ -494,7 +494,7 @@ def s14_jsonl_merge_conflict(ctx: ScenarioContext) -> None:
         pv.export(out)
         ctx.check(
             (out / jsonl.EVENTS_FILE).read_bytes() == first,
-            "two exports of the same database differed — export is not deterministic",
+            "two exports of the same database differed - export is not deterministic",
         )
 
         again = pv.import_records(out)
@@ -656,8 +656,8 @@ def s20_lexical_vs_hybrid(ctx: ScenarioContext) -> None:
     """Lexical and hybrid retrieval both work; neither bypasses governance.
 
     No superiority claim is made. The baseline embedder is a hashing projection
-    with no semantic content, so this scenario measures *plumbing* — that fusion
-    runs, that vectors cannot authorise a record — and not retrieval quality.
+    with no semantic content, so this scenario measures *plumbing* - that fusion
+    runs, that vectors cannot authorise a record - and not retrieval quality.
     """
     from provalume.retrieval.vectors import (
         HashingEmbedder,
@@ -698,7 +698,7 @@ def s20_lexical_vs_hybrid(ctx: ScenarioContext) -> None:
         "fusion introduced a record that governance had not authorised",
     )
     ctx.note(
-        f"lexical {len(lexical)}, vector {len(vector_hits)}, fused {len(fused)} — "
+        f"lexical {len(lexical)}, vector {len(vector_hits)}, fused {len(fused)} - "
         "plumbing only; the baseline embedder is non-semantic by design"
     )
 

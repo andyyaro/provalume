@@ -25,13 +25,13 @@ is a single sentence:
 
 **In scope for the project:**
 
-- Verification-grounded promotion — trust from deterministic evidence only.
-- Independent-review provenance — who approved it, and that they were not the author.
+- Verification-grounded promotion - trust from deterministic evidence only.
+- Independent-review provenance - who approved it, and that they were not the author.
 - Branch-aware and commit-aware truth.
 - Deterministic writes, reproducible from the same inputs.
 - Failed-attempt memory as a first-class category, not an afterthought.
 - Cross-agent learning within a project.
-- Explainable retrieval — every result answers "why was this returned?".
+- Explainable retrieval - every result answers "why was this returned?".
 - Memory-poisoning resistance as an architectural property.
 
 **Explicitly out of scope, permanently:**
@@ -52,15 +52,15 @@ in the proof/provenance semantic field. Clearance recorded in
 
 **Standalone, not extracted.** The research report recommended building inside
 Orkestra and extracting after a month of dogfooding. Provalume ships standalone
-from day one. This is a directed decision; the trade-off — shipping without
-production-mined requirements — is accounted for in
+from day one. This is a directed decision; the trade-off - shipping without
+production-mined requirements - is accounted for in
 [`RESEARCH_VALIDATION.md`](../research/RESEARCH_VALIDATION.md) §1 and listed as
 the largest known weakness in [`LIMITATIONS.md`](../reference/LIMITATIONS.md).
 
 ## Consequences
 
 **Good.** A defensible position that does not depend on out-executing a
-88.5k-star incumbent. The differentiator is architectural — a competitor cannot
+88.5k-star incumbent. The differentiator is architectural - a competitor cannot
 add verification provenance without acquiring a deterministic verification
 process. The dependency direction comes out right by construction, because there
 is no host to accrete couplings to.
@@ -76,13 +76,13 @@ demo that make the category legible. Provalume has to explain itself.
 ## Alternatives rejected
 
 **Adopt an existing engine.** Every engine reviewed puts an LLM in the write path,
-which makes stored content non-reproducible — fatal for a system whose claim is
+which makes stored content non-reproducible - fatal for a system whose claim is
 "this was proved". Several also carry dependency risk (Zep CE discontinued, Letta
 flagship legacy, Kuzu archived, Graphiti CLA'd).
 
 **Wrap claude-mem.** It would mean depending on a project whose roadmap someone
 else steers, for the component that is meant to be the identity. It is also
-session-compression memory with no verification concept — there would be nothing
+session-compression memory with no verification concept - there would be nothing
 to wrap.
 
 **Build generic.** Memory repo #41.

@@ -1,7 +1,7 @@
 """What a performance aggregate is allowed to claim.
 
 ``verification.passed`` and ``review.approved`` carry no task category, so they
-were filed under one named "general" — a bucket with zero attempts, published
+were filed under one named "general" - a bucket with zero attempts, published
 next to the agent's real record as a ``verified`` memory reading "<agent>: no
 recorded attempts at general.", with ``success_rate`` 0.0 for an agent that had
 just succeeded at everything. The same filter dropped reviewer profiles

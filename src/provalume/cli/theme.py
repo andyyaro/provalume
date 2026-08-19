@@ -11,8 +11,8 @@ rules, all of which are about not lying to the user:
    reader, and when piped to a file.
 3. **`NO_COLOR` and non-TTY output are honoured**, producing plain text.
 
-Terminal colour rendering is approximate — ``#3F684F`` will be quantised on a
-256-colour terminal — which is another reason the label carries the meaning.
+Terminal colour rendering is approximate - ``#3F684F`` will be quantised on a
+256-colour terminal - which is another reason the label carries the meaning.
 """
 
 from __future__ import annotations

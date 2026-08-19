@@ -11,7 +11,7 @@ lexical is a defensible default, not a compromise.
 
 A ranking function full of unexplained magic numbers is not defensible, though. It
 cannot be tuned, tested, or trusted, and "why did this rank first?" becomes
-unanswerable — which for Provalume is a product failure, since explainability is a
+unanswerable - which for Provalume is a product failure, since explainability is a
 stated differentiator.
 
 ## Decision
@@ -33,7 +33,7 @@ score = w_lex           · lexical
       − p_poison        · poisoning_risk
 ```
 
-Every component is normalised to `[0, 1]`. The score itself is **not** normalised —
+Every component is normalised to `[0, 1]`. The score itself is **not** normalised -
 its maximum is the sum of the positive weights (2.70 at defaults). Scores are
 comparable within one query, not across queries. Said explicitly because a
 `0.0–1.0`-looking number invites misreading as a probability.
@@ -45,7 +45,7 @@ comparable within one query, not across queries. Said explicitly because a
 | `lexical` | FTS5 `bm25()`, sign-flipped (BM25 returns negative, lower is better) and min-max normalised across the candidate set. `1.0` when only one candidate matched. |
 | `trust` | `TRUST_RANK / 5` → quarantined 0.2, observed 0.4, verified 0.6, reviewed 0.8, integrated 1.0 |
 | `evidence` | `0.4` if `verification_state ∈ {passed, failed}` + `0.3` if `review_state = approved` + `0.3` if `integration_state ∈ {integrated_run, accepted_user}`, capped at 1.0 |
-| `recency` | `0.5 ** (age_days / half_life_days)` — exponential decay, per-type half-life |
+| `recency` | `0.5 ** (age_days / half_life_days)` - exponential decay, per-type half-life |
 | `usage` | `log1p(access_count) / log1p(usage_saturation)`, capped at 1.0, `usage_saturation = 50` |
 | `type_match` | `1.0` if the record's type was requested, `0.5` otherwise; `1.0` for all when no types were requested |
 | `scope_specificity` | exact branch match 1.0 · repository 0.8 · project 0.6 · cross-scope 0.3 |
@@ -65,7 +65,7 @@ gate needs.
 | `w_trust` | 0.50 | Substantial, but cannot outrank relevance. Half of lexical, so a strongly-matching `verified` record beats a weakly-matching `integrated` one. |
 | `w_evidence` | 0.30 | Rewards evidence beyond what the trust rung already captures. |
 | `w_recency` | 0.25 | Matters, but a two-year-old verified procedure is often still correct. |
-| `w_usage` | 0.15 | Weak deliberately — usage is a popularity signal and self-reinforcing. |
+| `w_usage` | 0.15 | Weak deliberately - usage is a popularity signal and self-reinforcing. |
 | `w_type` | 0.20 | A nudge, not a filter. Requesting gotchas should not hide a decisive semantic fact. |
 | `w_scope` | 0.30 | Local relevance is real signal. |
 | `p_contradiction` | 0.40 | Demote, do not hide. The user should see contested facts, marked. |
@@ -92,7 +92,7 @@ change's effect on precision and coverage is measurable rather than argued.
 
 Scoring only reorders an already-authorised set. Filters are not weights:
 
-- `project_id` must match — always, no exceptions (threat T9).
+- `project_id` must match - always, no exceptions (threat T9).
 - Terminal states excluded unless explicitly requested.
 - `min_trust` rank floor (default `observed`).
 - Scope applicability.
@@ -111,7 +111,7 @@ iteration order.
 ### Explainability
 
 Every result carries a structured explanation: which filters it passed, each score
-component and its contribution, and human-readable reasons — same project, same
+component and its contribution, and human-readable reasons - same project, same
 subsystem, current at this commit, verified by command X, approved by reviewer Y,
 linked to a prior failure, used successfully in later runs.
 
@@ -122,10 +122,10 @@ explain itself, that is a bug**, not a cosmetic gap.
 
 User text is tokenised and rebuilt as double-quoted terms joined by `OR`. FTS5
 operators, column filters, and prefix wildcards from user input are **stripped, not
-escaped** — escaping invites a bypass, stripping does not. Term count and length are
+escaped** - escaping invites a bypass, stripping does not. Term count and length are
 capped. Adversarial inputs are tested (threat T22).
 
-The cost: users cannot write FTS queries. Accepted — a memory system's query
+The cost: users cannot write FTS queries. Accepted - a memory system's query
 language should not be a SQL-injection-shaped surface.
 
 ## Consequences
@@ -134,7 +134,7 @@ language should not be a SQL-injection-shaped surface.
 inspectable. The policy is data, so tuning does not mean editing scoring code.
 Deterministic ordering makes evaluation reproducible.
 
-**Bad.** Lexical retrieval misses synonyms — a query for "dependency resolution
+**Bad.** Lexical retrieval misses synonyms - a query for "dependency resolution
 failure" will not match a record phrased "package solver conflict". This is the real
 cost of no-embeddings-by-default, and it is what optional vectors
 ([ADR-0013](ADR-0013-optional-vector-retrieval.md)) exist to address.
@@ -142,7 +142,7 @@ cost of no-embeddings-by-default, and it is what optional vectors
 **Bad.** Nine weights and six half-lives is a lot of surface. Mitigated by defaults
 that work and by the eval harness making changes measurable.
 
-**Also bad.** Additive linear scoring cannot express interactions — "recency matters
+**Also bad.** Additive linear scoring cannot express interactions - "recency matters
 more for episodic than procedural" is handled by per-type half-lives, but "trust
 matters more when the query is about security" is not expressible. Simplicity and
 explainability are worth more than expressiveness here.
@@ -154,7 +154,7 @@ and the authorisation gate, which is threat T6. Vectors reorder; they never
 authorise.
 
 **Learned ranking.** No training data, and a learned model would destroy
-explainability — the thing being differentiated on.
+explainability - the thing being differentiated on.
 
 **Multiplicative scoring** (`bm25 × decay × log(usage)`). Any zero factor
 annihilates the score, so a brand-new record with zero accesses vanishes.

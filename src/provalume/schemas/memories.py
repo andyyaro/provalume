@@ -29,7 +29,7 @@ from provalume.schemas.trust import (
     VerificationState,
 )
 
-#: Transitions are frequently created several times within one millisecond — a
+#: Transitions are frequently created several times within one millisecond - a
 #: three-rung promotion is three rows with identical timestamps. A plain ULID
 #: leaves their relative order to chance, which makes lifecycle history print
 #: scrambled. A monotonic factory keeps insertion order recoverable from the ID.
@@ -42,7 +42,7 @@ MAX_MEMORY_CONTENT_BYTES: Final = 64 * 1024
 
 
 class MemoryType(StrEnum):
-    """The six persistent categories. Working memory is not stored — it is the
+    """The six persistent categories. Working memory is not stored - it is the
     digest composed at query time."""
 
     EPISODIC = "episodic"
@@ -79,8 +79,8 @@ NEVER_INTEGRATED: Final[frozenset[MemoryType]] = frozenset(
 #: reviewed and landed. Everything else records what happened.
 #:
 #: The distinction matters more than it looks. Without it, a review approving a
-#: fix gets stamped onto every record sharing the attempt — including the failure
-#: that prompted the fix — so a gotcha ends up reading "approved by reviewer-2"
+#: fix gets stamped onto every record sharing the attempt - including the failure
+#: that prompted the fix - so a gotcha ends up reading "approved by reviewer-2"
 #: and, once the branch merges, "integrated". Both are false: the reviewer
 #: approved the fix, and what landed was the fix. The failure is still a failure.
 CLAIM_TYPES: Final[frozenset[MemoryType]] = frozenset(

@@ -4,7 +4,7 @@ Found by dogfooding. `human.rejection`, `human.invalidation` and
 `branch.rejected` acted on whatever their payload named, with no check on the
 event's source and no check that the memory belonged to the event's project.
 `record_to_event` forces `source=import` so that a file cannot promote itself
-(threat T17) — but that defence only covered the upward direction, and
+(threat T17) - but that defence only covered the upward direction, and
 `rejected` is terminal (`promotion.REFUSE_REJECTED`), so a two-line export could
 permanently withdraw the recipient's own verified memories with no error, no
 transition, and no way back.

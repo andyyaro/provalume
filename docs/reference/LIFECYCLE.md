@@ -15,7 +15,7 @@ quarantined ──▶ observed ──▶ verified ──▶ reviewed ──▶ i
    prose          from a run   returned     approved it     in history
 ```
 
-Plus three terminal states — `invalidated`, `superseded`, `rejected` — which are
+Plus three terminal states - `invalidated`, `superseded`, `rejected` - which are
 retained as history and never promoted.
 
 **Rungs are never skipped.** `observed → integrated` in one step is refused even
@@ -87,7 +87,7 @@ pv.record_integration(commit_sha="a1b2c3…", target="user", task_id="t1")
 ```
 
 Had the *only* approval come from `agent-A`, the record's own author, the first
-of those two steps would have been refused with `refuse.self_review` — and the
+of those two steps would have been refused with `refuse.self_review` - and the
 refusal recorded.
 
 The gotcha stays at `verified`. What landed was the fix; the failure is still a
@@ -121,7 +121,7 @@ A promotion attempt that vanishes silently is exactly what an attacker wants.
 
 | Type | Ceiling without landed history | Notes |
 |---|---|---|
-| `episodic` | `verified` | `integrated` is meaningless — the episode happened regardless |
+| `episodic` | `verified` | `integrated` is meaningless - the episode happened regardless |
 | `semantic` | `reviewed` | **Needs `integrated` to be current truth** |
 | `procedural` | `verified` | Needs the *exact* command to have passed |
 | `decision` | `integrated` | Directly, when `source=human` |
@@ -131,10 +131,10 @@ A promotion attempt that vanishes silently is exactly what an attacker wants.
 Two categories have no command to run, so `observed → verified` asks for what
 does settle them:
 
-- `semantic` — the landing itself, or a recorded human decision.
+- `semantic` - the landing itself, or a recorded human decision.
   Rule: `promote.semantic.landed_or_human_authority`. The landing has to be the
   record's own; an unrelated integration event is not evidence about this fact.
-- `decision` — the human decision event, at every rung.
+- `decision` - the human decision event, at every rung.
   Rule: `promote.decision.human_authority`.
 
 Everything else needs a verification or command-result event from a source
@@ -161,7 +161,7 @@ loses the *reason* a fact changed, which is the part a later reader needs.
 ### The one way back
 
 An `invalidated` record can return to `verified` if fresh deterministic evidence,
-recorded *after* the invalidation, shows the fact holds again — a reverted revert,
+recorded *after* the invalidation, shows the fact holds again - a reverted revert,
 a restored dependency. Rule: `revalidate.invalidated.fresh_evidence`.
 
 `superseded` and `rejected` have no equivalent. Supersession is resolved by
@@ -181,7 +181,7 @@ provalume recall "runtime" --explain
 warning: contradicted by another current record; neither is auto-resolved
 ```
 
-Detected, never resolved. Recency is not correctness — the newer record may be
+Detected, never resolved. Recency is not correctness - the newer record may be
 the poisoned one. Resolve it yourself with `invalidate` or `supersede`.
 
 ## What you cannot do
@@ -191,6 +191,6 @@ the poisoned one. Resolve it yourself with `invalidate` or `supersede`.
 - Skip a rung.
 - Approve your own work into `reviewed`.
 - Serve a semantic record as current truth without landed history.
-- Widen scope to `global` — the capability does not exist in 0.1.0.
+- Widen scope to `global` - the capability does not exist in 0.1.0.
 
 Each is asserted by a test in `tests/security/`.

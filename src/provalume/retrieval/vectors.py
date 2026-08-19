@@ -10,8 +10,8 @@ Three embedders, and the first one matters more than it looks:
 
 ``HashingEmbedder``
     Standard library only, deterministic, **non-semantic**. It exists so the
-    whole vector path — fusion, fallback, rebuild, and the cannot-bypass-filters
-    guarantee — is exercised by CI on every commit rather than only when someone
+    whole vector path - fusion, fallback, rebuild, and the cannot-bypass-filters
+    guarantee - is exercised by CI on every commit rather than only when someone
     installs an optional extra. Optional code paths that are only tested
     optionally are how optional code paths rot. It is a *baseline*, not a quality
     embedder, and every surface says so.
@@ -63,7 +63,7 @@ class HashingEmbedder:
     """Deterministic hashing-trick projection. A test baseline, not semantics.
 
     Each token is hashed to a dimension and a sign, and the resulting sparse
-    vector is L2-normalised. It captures exact token overlap and nothing else —
+    vector is L2-normalised. It captures exact token overlap and nothing else -
     no synonymy, no word order, no meaning. Two texts about the same concept in
     different words score near zero.
 
@@ -181,7 +181,7 @@ def reciprocal_rank_fusion(
     scales, and normalising them against each other would invent a comparison
     that does not exist. RRF only needs each list's internal ordering.
 
-    Ties break on the identifier, so fusion is deterministic — required for the
+    Ties break on the identifier, so fusion is deterministic - required for the
     eval harness to produce comparable runs.
     """
     scores: dict[str, float] = {}
@@ -250,7 +250,7 @@ class VectorIndex:
         """Rank memory IDs by similarity to ``query``.
 
         ``candidate_ids`` restricts the search to an already-authorised set. When
-        the caller passes it, no unauthorised record can appear at all — the
+        the caller passes it, no unauthorised record can appear at all - the
         governance filter is applied *before* similarity rather than after, so
         there is nothing for an adversarial embedding to win.
         """

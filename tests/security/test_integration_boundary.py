@@ -307,7 +307,7 @@ def test_assert_clean_raises_when_a_generated_file_remains(tmp_path: Path) -> No
 
 
 def test_generated_paths_finds_orphans_by_sentinel(tmp_path: Path) -> None:
-    """A safety net for a caller that lost its path list — and it can never
+    """A safety net for a caller that lost its path list - and it can never
     return a user's own file."""
     generic.materialize(make_digest(), tmp_path, vendors=("codex",))
     (tmp_path / "CLAUDE.md").write_text("# theirs\n")
