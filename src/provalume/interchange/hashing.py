@@ -161,7 +161,8 @@ def hash_content(content: dict[str, Any], text: str) -> str:
 
     Covers both the structured ``content`` and the rendered ``text``, because the
     two are stored separately (ADR-0004) and a projection that changed only the
-    rendering while leaving the structure alone would otherwise appear unchanged which would make ``rebuild`` determinism tests pass while the digest output
+    rendering while leaving the structure alone would otherwise appear unchanged which would make
+    ``rebuild`` determinism tests pass while the digest output
     silently differed.
     """
     return hash_value({"content": content, "text": text})
