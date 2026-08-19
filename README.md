@@ -116,14 +116,39 @@ print(digest.text)      # always within budget, always banner-first
 
 Five rungs, and you cannot skip one:
 
-```
-quarantined ──▶ observed ──▶ verified ──▶ reviewed ──▶ integrated
-   agent          reported     a command    a non-author    it landed
-   prose          from a run   returned     approved it     in history
+```mermaid
+flowchart LR
+    Q(["quarantined<br/><small>agent prose</small>"])
+    O(["observed<br/><small>reported from a run</small>"])
+    V(["verified<br/><small>a command returned</small>"])
+    R(["reviewed<br/><small>a non-author approved it</small>"])
+    I(["integrated<br/><small>it landed in history</small>"])
+
+    Q --> O --> V --> R --> I
+
+    INV["invalidated"]
+    SUP["superseded"]
+    REJ["rejected"]
+
+    O -.-> INV
+    V -.-> INV
+    V -.-> SUP
+    R -.-> REJ
+    I -.-> SUP
+
+    style Q fill:#fee2e2,stroke:#b91c1c,color:#000
+    style O fill:#ffedd5,stroke:#c2410c,color:#000
+    style V fill:#fef9c3,stroke:#a16207,color:#000
+    style R fill:#dcfce7,stroke:#15803d,color:#000
+    style I fill:#bbf7d0,stroke:#166534,color:#000
+    style INV fill:#e5e7eb,stroke:#6b7280,color:#000
+    style SUP fill:#e5e7eb,stroke:#6b7280,color:#000
+    style REJ fill:#e5e7eb,stroke:#6b7280,color:#000
 ```
 
-Plus three terminal states — `invalidated`, `superseded`, `rejected` — which are
-retained as history and never promoted.
+Solid arrows are promotions and no rung can be skipped. Dotted arrows lead to the three
+terminal states — `invalidated`, `superseded`, `rejected` — which are retained as history and
+never promoted out of.
 
 Three rules do most of the work:
 
