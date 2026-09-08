@@ -13,17 +13,34 @@ printed (threat T24).
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 
 import pytest
 
 from provalume import redact
 
-#: Same budget as the existing ReDoS suite. The quadratic version took 11s at
-#: 250 KB, so there is no risk of flakiness on a slow runner.
-BUDGET_S = 2.0
-LENGTH = 250_000
+#: The probe sizes whose costs are compared. The assertion is about the *ratio*
+#: between them, so what matters is that the smaller one is comfortably above
+#: timer noise, not that either is large in absolute terms.
+SMALL = 64_000
+GROWTH = 4
+
+#: Linear work grows by ~GROWTH between the two sizes; the quadratic version
+#: grew by ~GROWTH**2, i.e. 16x. The threshold sits at the geometric mean of the
+#: two, so it is as far from a passing linear curve as from a failing quadratic
+#: one, and no runner's speed enters into it.
+MAX_GROWTH_RATIO = 8.0
+
+#: Each size is timed this many times and the *minimum* is kept. Scheduling
+#: noise on a shared runner only ever adds time, so the minimum is the closest
+#: estimate of the real cost -- and it is the reason this test does not need a
+#: wall-clock budget to be stable (issue #13).
+REPEATS = 3
 
 MARKER = "-----BEGIN PRIVATE KEY-----"
+RSA_MARKER = "-----BEGIN RSA PRIVATE KEY-----"
+END_MARKER = "-----END PRIVATE KEY-----"
+BODY_UNIT = MARKER + "\n" + "MIIEpAIBAAKCAQEA" * 4 + "\n"
 
 
 def elapsed(fn: object, *args: object) -> float:
@@ -32,15 +49,19 @@ def elapsed(fn: object, *args: object) -> float:
     return time.perf_counter() - start
 
 
+def best_of(repeats: int, fn: object, *args: object) -> float:
+    return min(elapsed(fn, *args) for _ in range(repeats))
+
+
 @pytest.mark.parametrize(
     "probe",
     [
-        MARKER * (LENGTH // len(MARKER)),
-        "-----BEGIN RSA PRIVATE KEY-----" * (LENGTH // 31),
-        (MARKER + "\n" + "MIIEpAIBAAKCAQEA" * 4 + "\n") * (LENGTH // 90),
-        MARKER + "a" * LENGTH,
-        ("-----END PRIVATE KEY-----" * (LENGTH // 25)),
-        "-" * LENGTH,
+        lambda n: MARKER * (n // len(MARKER)),
+        lambda n: RSA_MARKER * (n // len(RSA_MARKER)),
+        lambda n: BODY_UNIT * (n // len(BODY_UNIT)),
+        lambda n: MARKER + "a" * n,
+        lambda n: END_MARKER * (n // len(END_MARKER)),
+        lambda n: "-" * n,
     ],
     ids=[
         "repeated-begin",
@@ -51,8 +72,24 @@ def elapsed(fn: object, *args: object) -> float:
         "hyphens",
     ],
 )
-def test_pem_redaction_is_linear_on_repeated_markers(probe: str) -> None:
-    assert elapsed(redact.redact_text, probe) < BUDGET_S
+def test_pem_redaction_is_linear_on_repeated_markers(probe: Callable[[int], str]) -> None:
+    """Assert the growth curve, not the wall clock.
+
+    A fixed budget measured how fast the runner was as much as how fast the
+    redactor was: 2.0s held on Linux and failed intermittently on macOS at
+    2.5-4.4s for byte-identical code (issue #13). Quadratic-vs-linear is a
+    property of the pattern, so comparing the same probe at two sizes tests it
+    directly and cancels the machine out of the result.
+    """
+    small = best_of(REPEATS, redact.redact_text, probe(SMALL))
+    large = best_of(REPEATS, redact.redact_text, probe(SMALL * GROWTH))
+
+    ratio = large / max(small, 1e-9)
+    assert ratio < MAX_GROWTH_RATIO, (
+        f"{GROWTH}x the input cost {ratio:.1f}x the time "
+        f"({small * 1000:.1f}ms -> {large * 1000:.1f}ms); "
+        f"linear is ~{GROWTH}x and the quadratic regression was ~{GROWTH**2}x"
+    )
 
 
 def test_a_pem_private_key_is_still_removed() -> None:
