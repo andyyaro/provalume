@@ -42,7 +42,7 @@ dependencies = [
 # Cryptographic provenance signatures (Ed25519). Without this extra,
 # HMAC-SHA256 keyed integrity still works via the standard library, and
 # Ed25519-signed imports are quarantined rather than silently trusted.
-signatures = ["cryptography>=42"]
+signatures = ["cryptography>=50.0.1"]
 # Experimental vector retrieval. Never required: retrieval degrades to
 # lexical-only, which is the tested default path.
 vectors = ["numpy>=1.26"]
@@ -68,7 +68,7 @@ dev = [
     "bandit>=1.8",
     "pip-audit>=2.7",
     "numpy>=1.26",
-    "cryptography>=42",
+    "cryptography>=50.0.1",
 ]
 
 [build-system]
