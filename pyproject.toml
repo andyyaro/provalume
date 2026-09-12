@@ -46,7 +46,7 @@ signatures = ["cryptography>=50.0.1"]
 # Experimental vector retrieval. Never required: retrieval degrades to
 # lexical-only, which is the tested default path.
 vectors = ["numpy>=1.26"]
-model2vec = ["provalume[vectors]", "model2vec>=0.8"]
+model2vec = ["provalume[vectors]", "model2vec>=0.9.0"]
 fastembed = ["provalume[vectors]", "fastembed>=0.5"]
 
 [project.urls]
