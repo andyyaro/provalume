@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/andyyaro/provalume/main/docs/assets/brand/lockup/lockup-color.png" alt="provalume" width="236">
+</p>
+
 # Provalume
 
 [![CI](https://github.com/andyyaro/provalume/actions/workflows/ci.yml/badge.svg)](https://github.com/andyyaro/provalume/actions/workflows/ci.yml)
