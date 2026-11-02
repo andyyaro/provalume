@@ -1,0 +1,149 @@
+<!doctype html>
+<html
+  lang="en"
+  data-composition-variables='[
+  {"id":"color-paper","type":"color","label":"Paper","default":"#EEE8DA"},
+  {"id":"color-ink","type":"color","label":"Ink","default":"#15123B"},
+  {"id":"color-sun","type":"color","label":"Sun","default":"#FFB547"},
+  {"id":"color-ember","type":"color","label":"Ember","default":"#F2602F"}
+]'
+>
+  <head>
+    <meta charset="utf-8" />
+    <title>Provalume: launch film</title>
+    <script src="assets/vendor/gsap.min.js"></script>
+    <script src="assets/vo.js"></script>
+    <script src="assets/timing.js"></script>
+    <style>
+      @font-face { font-family: "Instrument Serif"; src: url("assets/fonts/InstrumentSerif-400.woff2") format("woff2"); font-weight: 400; font-style: normal; }
+      @font-face { font-family: "Instrument Serif"; src: url("assets/fonts/InstrumentSerif-400-italic.woff2") format("woff2"); font-weight: 400; font-style: italic; }
+      @font-face { font-family: "Archivo"; src: url("assets/fonts/Archivo-var.woff2") format("woff2"); font-weight: 100 900; }
+      @font-face { font-family: "Montserrat"; src: url("assets/fonts/Montserrat-SemiBold.woff2") format("woff2"); font-weight: 600; }
+
+      :root {
+        --paper: #eee8da;
+        --paper-deep: #e2dac6;
+        --ink: #15123b;
+        --ink-soft: rgba(21, 18, 59, 0.18);
+        --sun: #ffb547;
+        --sun-soft: #ffd37e;
+        --haze: #ffebb9;
+        --ember: #f2602f;
+        --cream: #fff4e0;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { background: var(--paper); }
+      #main {
+        position: relative; width: 1920px; height: 1080px; overflow: hidden;
+        color: var(--ink); font-family: "Archivo", sans-serif; -webkit-font-smoothing: antialiased;
+      }
+
+      /* the ground (Biennale Yellow): warm paper, one sun bloom that travels, one ember counter-bloom, paper grain */
+      #bg { position: absolute; inset: 0; background: var(--paper); overflow: hidden; }
+      #sun {
+        position: absolute; left: -700px; top: -700px; width: 1400px; height: 1400px; border-radius: 50%;
+        background: radial-gradient(circle at 50% 50%, rgba(255, 181, 71, 0.9) 0%, rgba(255, 211, 126, 0.55) 28%,
+          rgba(255, 235, 185, 0.24) 52%, rgba(238, 232, 218, 0) 72%);
+      }
+      #ember {
+        position: absolute; left: -500px; top: -500px; width: 1000px; height: 1000px; border-radius: 50%;
+        background: radial-gradient(circle at 50% 50%, rgba(242, 96, 47, 0.2) 0%, rgba(242, 96, 47, 0.1) 35%, rgba(242, 96, 47, 0) 70%);
+      }
+      #grain {
+        position: absolute; inset: 0; opacity: 0.05; mix-blend-mode: multiply;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='480' height='480'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='11' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.08  0 0 0 0 0.07  0 0 0 0 0.23  0 0 0 1.5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+      }
+
+      /* shared parts, used by every scene */
+      /* labels: Montserrat SemiBold caps (the approved label face; never a monospace) */
+      .micro {
+        position: absolute; font-family: "Montserrat", sans-serif; font-weight: 600; font-size: 20px;
+        letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink); white-space: nowrap;
+      }
+      .disp {
+        position: absolute; font-family: "Instrument Serif", serif; font-weight: 400; letter-spacing: -0.018em;
+        line-height: 0.9; color: var(--ink); white-space: nowrap;
+      }
+      .disp .w { display: inline-block; }
+      .it { font-style: italic; }
+      .body { position: absolute; font-family: "Archivo", sans-serif; font-weight: 400; font-size: 28px; line-height: 1.4; color: var(--ink); white-space: nowrap; }
+      /* commands, figures, hashes: Archivo Medium, no monospace anywhere on screen (the films' rule) */
+      .cmd { font-family: "Archivo", sans-serif; font-weight: 500; letter-spacing: 0; }
+      .rule { position: absolute; height: 1px; background: var(--ink); transform-origin: 0% 50%; }
+      .rule.soft { background: var(--ink-soft); }
+      .pagenum {
+        position: absolute; right: 96px; bottom: 54px; font-family: "Instrument Serif", serif; font-size: 30px;
+        letter-spacing: 0.02em; color: var(--ink); opacity: 0.75; white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="main" data-composition-id="main" data-start="0" data-duration="62.5" data-width="1920" data-height="1080">
+      <div id="bg">
+        <div id="sun"></div>
+        <div id="ember"></div>
+        <div id="grain"></div>
+      </div>
+
+      <audio id="soundtrack" class="clip" src="assets/audio/mix.wav" data-start="0" data-duration="62.5" data-track-index="0" data-volume="1"></audio>
+
+      <div id="s1-open" data-composition-id="s1-open" data-composition-src="compositions/s1-open.html" data-start="0" data-duration="16.75" data-track-index="1" data-width="1920" data-height="1080"></div>
+      <div id="s2-proof" data-composition-id="s2-proof" data-composition-src="compositions/s2-proof.html" data-start="16.75" data-duration="6.75" data-track-index="2" data-width="1920" data-height="1080"></div>
+      <div id="s3-ladder" data-composition-id="s3-ladder" data-composition-src="compositions/s3-ladder.html" data-start="23.5" data-duration="8.5" data-track-index="3" data-width="1920" data-height="1080"></div>
+      <div id="s4-warn" data-composition-id="s4-warn" data-composition-src="compositions/s4-warn.html" data-start="32" data-duration="8" data-track-index="4" data-width="1920" data-height="1080"></div>
+      <div id="s5-facts" data-composition-id="s5-facts" data-composition-src="compositions/s5-facts.html" data-start="40" data-duration="10" data-track-index="5" data-width="1920" data-height="1080"></div>
+      <div id="s6-try" data-composition-id="s6-try" data-composition-src="compositions/s6-try.html" data-start="50" data-duration="6.5" data-track-index="6" data-width="1920" data-height="1080"></div>
+      <div id="s7-end" data-composition-id="s7-end" data-composition-src="compositions/s7-end.html" data-start="55.614" data-duration="6.886" data-track-index="7" data-width="1920" data-height="1080"></div>
+    </div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      (function () {
+        const TM = window.TM, VO = window.VO;
+        const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+        const W = (k, w) => {
+          const alts = w.split("|");
+          for (const exact of [true, false])
+            for (const x of VO[k].words) { const t = norm(x.w); if (alts.some((a) => (exact ? t === a : t.startsWith(a)))) return x.t0; }
+          return VO[k].start;
+        };
+        const tl = gsap.timeline({ paused: true });
+        // the light travels: the sun bloom moves between frames, the paper never cuts (centre x, y in px; scale)
+        const SUN = "#sun", EMB = "#ember";
+        const go = (t, x, y, s, o = 1, d = 1.2) => tl.to(SUN, { x, y, scale: s, opacity: o, duration: d, ease: "power2.inOut" }, t);
+        const em = (t, x, y, o = 1, d = 1.2) => tl.to(EMB, { x, y, opacity: o, duration: d, ease: "power2.inOut" }, t);
+        gsap.set(SUN, { x: 720, y: 560, scale: 0.85, opacity: 0 });
+        gsap.set(EMB, { x: 1760, y: 1010, opacity: 0 });
+        // s1 cover: the sun rises left of centre, the ember answers in the far corner
+        tl.to(SUN, { opacity: 1, scale: 1, duration: 1.6, ease: "power2.out" }, 0.2);
+        tl.to(EMB, { opacity: 1, duration: 1.6, ease: "power2.out" }, 0.4);
+        // s1 ledger: the light steps back to the upper right, the ember to the lower left
+        go(W("v02", "one") - 0.3, 1560, 210, 0.62, 0.85);
+        em(W("v02", "one") - 0.3, 160, 1040, 0.8);
+        // s1 "most memory keeps what agents said."
+        go(VO.v04.start - 0.3, 1480, 760, 0.75, 0.8);
+        // the drop: the sun swells behind "proved."
+        go(TM.drop - 0.05, 1010, 640, 1.22, 1, 0.9);
+        em(TM.drop - 0.05, 1780, 140, 0.9, 0.9);
+        // s2 strand list: low and left, behind the numerals
+        go(TM.s2[0] - 0.2, 250, 900, 0.8);
+        em(TM.s2[0] - 0.2, 1800, 120, 0.8);
+        // s3 ladder: the light waits above the mark and comes on at the top of the climb
+        go(TM.s3[0] - 0.2, 581, 225, 0.42, 0);
+        em(TM.s3[0] - 0.2, 1780, 1020, 0.85);
+        tl.to(SUN, { opacity: 1, scale: 0.6, duration: 0.7, ease: "power2.out" }, W("v07", "skipped") + 0.1);
+        // s4: behind the sun panel (the panel carries its own bloom)
+        go(TM.s4[0] - 0.1, 330, 560, 1.0, 1, 0.6);
+        em(TM.s4[0] - 0.1, 1800, 1030, 0.75);
+        // s5: upper right for "no LLM", then behind the jumbo numeral
+        go(TM.s5[0] - 0.2, 1500, 330, 0.9);
+        em(TM.s5[0] - 0.2, 130, 1030, 0.75);
+        go(VO.v11.start - 0.6, 520, 420, 1.05);
+        em(VO.v11.start - 0.6, 1790, 1020, 0.85);
+        // s6: the light settles high and right over the terminal
+        go(TM.s6[0] - 0.2, 1540, 250, 0.78);
+        em(TM.s6[0] - 0.2, 140, 1040, 0.7);
+        window.__timelines["main"] = tl;
+      })();
+    </script>
+  </body>
+</html>

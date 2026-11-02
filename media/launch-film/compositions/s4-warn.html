@@ -1,0 +1,111 @@
+<template>
+  <style>
+    @font-face { font-family: "Instrument Serif"; src: url("assets/fonts/InstrumentSerif-400.woff2") format("woff2"); font-weight: 400; font-style: normal; }
+    @font-face { font-family: "Instrument Serif"; src: url("assets/fonts/InstrumentSerif-400-italic.woff2") format("woff2"); font-weight: 400; font-style: italic; }
+    @font-face { font-family: "Archivo"; src: url("assets/fonts/Archivo-var.woff2") format("woff2"); font-weight: 100 900; }
+    @font-face { font-family: "Montserrat"; src: url("assets/fonts/Montserrat-SemiBold.woff2") format("woff2"); font-weight: 600; }
+    #root { position: absolute; inset: 0; }
+    /* the poster panel: sun, ink on top, meeting the paper directly */
+    #s4-panel {
+      position: absolute; left: 0; top: 0; width: 720px; height: 1080px; transform-origin: 0% 50%;
+      background: radial-gradient(900px 900px at 42% 46%, #ffd37e 0%, #ffc461 38%, #ffb547 72%);
+    }
+    #s4-pmic { left: 100px; top: 318px; }
+    #s4-hl { left: 100px; top: 366px; font-size: 136px; }
+    /* the paper side: the real `provalume preflight` output (README) */
+    #s4-cmd { position: absolute; left: 820px; top: 150px; font-size: 23px; white-space: nowrap; }
+    #s4-sum { left: 820px; top: 210px; font-size: 40px; }
+    #s4-hr { left: 820px; top: 288px; width: 980px; }
+    .s4-row { position: absolute; left: 820px; width: 980px; height: 74px; }
+    .s4-k { position: absolute; left: 0; top: 27px; font-size: 16px; }
+    .s4-v { position: absolute; left: 300px; top: 22px; font-size: 24px; white-space: nowrap; }
+    .s4-sr { left: 820px; width: 980px; }
+    #s4-end { left: 820px; top: 790px; font-size: 54px; }
+    #s4-pol { left: 820px; top: 866px; font-size: 25px; }
+  </style>
+  <div id="root" data-composition-id="s4-warn" data-width="1920" data-height="1080">
+    <div id="s4-panel"></div>
+    <div id="s4-pmic" class="micro">Preflight</div>
+    <div id="s4-hl" class="disp">
+      <span class="w" id="s4-w1">Warned</span><br />
+      <span class="w it" id="s4-w2">before</span> <span class="w" id="s4-w3">it</span><br />
+      <span class="w" id="s4-w4">repeats.</span>
+    </div>
+
+    <div id="s4-cmd" class="cmd">$ provalume preflight --command "pytest -n auto tests/integration"</div>
+    <div id="s4-sum" class="disp">A similar approach failed previously, and was later resolved.</div>
+    <div id="s4-hr" class="rule"></div>
+    <div class="s4-row" id="s4-r1" style="top: 290px"><div class="s4-k micro">Previous attempt</div><div class="s4-v cmd">pytest -n auto tests/integration</div></div>
+    <div class="rule soft s4-sr" id="s4-s1" style="top: 364px"></div>
+    <div class="s4-row" id="s4-r2" style="top: 364px"><div class="s4-k micro">Occurrences</div><div class="s4-v cmd">failed twice</div></div>
+    <div class="rule soft s4-sr" id="s4-s2" style="top: 438px"></div>
+    <div class="s4-row" id="s4-r3" style="top: 438px"><div class="s4-k micro">Failure evidence</div><div class="s4-v cmd">exit 1 - deadlock in db fixture teardown</div></div>
+    <div class="rule soft s4-sr" id="s4-s3" style="top: 512px"></div>
+    <div class="s4-row" id="s4-r4" style="top: 512px"><div class="s4-k micro">What later worked</div><div class="s4-v cmd">pytest -p no:xdist tests/integration</div></div>
+    <div class="rule soft s4-sr" id="s4-s4" style="top: 586px"></div>
+    <div class="s4-row" id="s4-r5" style="top: 586px"><div class="s4-k micro">Trust state</div><div class="s4-v cmd">verified</div></div>
+    <div class="rule soft s4-sr" id="s4-s5" style="top: 660px"></div>
+    <div class="s4-row" id="s4-r6" style="top: 660px"><div class="s4-k micro">Match confidence</div><div class="s4-v cmd">0.85 (same command failed previously)</div></div>
+    <div class="rule soft s4-sr" id="s4-s6" style="top: 734px"></div>
+    <div id="s4-end" class="disp"><span class="it">This is a warning, not a block.</span></div>
+    <div id="s4-pol" class="body">Provalume does not override policy.</div>
+    <div class="pagenum" id="s4-pg">04 / 07</div>
+  </div>
+  <script>
+    (function () {
+      const TM = window.TM, VO = window.VO;
+      const S0 = TM.s4[0], S1 = TM.s4[1];
+      const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const W = (k, w, nth = 0) => {
+        const alts = w.split("|");
+        for (const exact of [true, false]) {
+          let c = 0;
+          for (const x of VO[k].words) {
+            const t = norm(x.w);
+            if (alts.some((a) => (exact ? t === a : t.startsWith(a)))) { if (c === nth) return x.t0 - S0; c++; }
+          }
+        }
+        return VO[k].start - S0;
+      };
+      const F = (t) => t - S0;
+      const tl = gsap.timeline({ paused: true });
+      const rise = (el, t, d = 0.5, dy = 24) =>
+        tl.fromTo(el, { opacity: 0, y: dy, filter: "blur(6px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: d, ease: "power3.out" }, t - 0.04);
+      const fade = (el, t, d = 0.4) => tl.fromTo(el, { opacity: 0 }, { opacity: 1, duration: d, ease: "power2.out" }, t);
+      const draw = (el, t, d = 0.5) => tl.fromTo(el, { scaleX: 0 }, { scaleX: 1, duration: d, ease: "power2.inOut" }, t);
+      const wipe = (el, t, d) => tl.fromTo(el, { clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0% 0 0)", duration: d, ease: "none" }, t);
+
+      const TEXT = ["#s4-pmic", "#s4-hl .w", "#s4-cmd", "#s4-sum", ".s4-row", "#s4-end", "#s4-pol", "#s4-pg"];
+      gsap.set(TEXT, { opacity: 0 });
+      gsap.set(["#s4-hr", ".s4-sr"], { scaleX: 0 });
+
+      // the sun panel wipes across from the left edge
+      tl.fromTo("#s4-panel", { scaleX: 0 }, { scaleX: 1, duration: 0.65, ease: "power3.inOut" }, 0);
+      fade("#s4-pmic", 0.55, 0.4);
+      fade("#s4-pg", 0.4, 0.4);
+      rise("#s4-w1", W("v09", "agent") - 0.05, 0.55);
+      rise("#s4-w2", W("v09", "repeats") - 0.05, 0.6);
+      rise("#s4-w3", W("v09", "repeats") + 0.1, 0.5);
+      rise("#s4-w4", W("v09", "failure"), 0.55);
+
+      // the preflight prints: the command types on "before", then a row every 0.42 s (sound/mix.py uses the same rule)
+      const t0 = W("v09", "before");
+      tl.set("#s4-cmd", { opacity: 1 }, t0 - 0.05);
+      wipe("#s4-cmd", t0 - 0.05, 0.7);
+      rise("#s4-sum", t0 + 0.3, 0.5, 12);
+      draw("#s4-hr", t0 + 0.2, 0.6);
+      for (let k = 1; k <= 6; k++) {
+        const t = t0 + 0.42 * k;
+        tl.fromTo(`#s4-r${k}`, { opacity: 0, x: -12 }, { opacity: 1, x: 0, duration: 0.3, ease: "power2.out" }, t - 0.02);
+        draw(`#s4-s${k}`, t, 0.4);
+      }
+      rise("#s4-end", F(VO.v09.end) + 0.3, 0.6, 16);
+      fade("#s4-pol", F(VO.v09.end) + 0.75, 0.5);
+
+      // out: the paper side blurs away, the panel wipes back to the left edge
+      tl.to(TEXT.concat(["#s4-hr", ".s4-sr"]), { opacity: 0, filter: "blur(6px)", duration: 0.3, ease: "power3.in" }, S1 - S0 - 0.55);
+      tl.to("#s4-panel", { scaleX: 0, duration: 0.5, ease: "power3.inOut" }, S1 - S0 - 0.5);
+      window.__timelines["s4-warn"] = tl;
+    })();
+  </script>
+</template>

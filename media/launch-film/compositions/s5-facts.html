@@ -1,0 +1,116 @@
+<template>
+  <style>
+    @font-face { font-family: "Instrument Serif"; src: url("assets/fonts/InstrumentSerif-400.woff2") format("woff2"); font-weight: 400; font-style: normal; }
+    @font-face { font-family: "Instrument Serif"; src: url("assets/fonts/InstrumentSerif-400-italic.woff2") format("woff2"); font-weight: 400; font-style: italic; }
+    @font-face { font-family: "Archivo"; src: url("assets/fonts/Archivo-var.woff2") format("woff2"); font-weight: 100 900; }
+    @font-face { font-family: "Montserrat"; src: url("assets/fonts/Montserrat-SemiBold.woff2") format("woff2"); font-weight: 600; }
+    #root { position: absolute; inset: 0; }
+    /* frame A: what it needs */
+    #s5-amic { left: 120px; top: 236px; }
+    .s5-no { left: 120px; font-size: 156px; }
+    #s5-no1 { top: 284px; }
+    #s5-no2 { top: 428px; }
+    #s5-no3 { top: 572px; }
+    .s5-cell { position: absolute; top: 880px; width: 380px; }
+    .s5-cell .rule { left: 0; top: 0; width: 380px; }
+    .s5-cell .micro { left: 0; top: 22px; font-size: 16px; }
+    .s5-cell .body { left: 0; top: 52px; font-size: 28px; }
+    /* frame B: its own proof */
+    #s5-rail { left: 52px; top: 540px; transform: translate(-50%, -50%) rotate(-90deg); font-size: 18px; letter-spacing: 0.3em; }
+    #s5-num { left: 104px; top: 96px; font-size: 520px; letter-spacing: -0.04em; line-height: 0.84; }
+    #s5-tests { left: 124px; top: 560px; font-size: 104px; }
+    #s5-how { left: 128px; top: 690px; font-size: 27px; }
+    #s5-bmic { left: 1180px; top: 250px; }
+    #s5-os { left: 1180px; top: 300px; font-size: 96px; line-height: 0.92; }
+    #s5-pypi { left: 1182px; top: 500px; font-size: 28px; }
+    #s5-lic { left: 1182px; top: 544px; font-size: 28px; }
+    #s5-bhr { left: 1180px; top: 486px; width: 620px; }
+  </style>
+  <div id="root" data-composition-id="s5-facts" data-width="1920" data-height="1080">
+    <div id="s5-amic" class="micro">What it needs</div>
+    <div id="s5-no1" class="disp s5-no">No <span class="it">LLM.</span></div>
+    <div id="s5-no2" class="disp s5-no">No API key.</div>
+    <div id="s5-no3" class="disp s5-no">No network.</div>
+    <!-- footer band (README: three pure-Python dependencies, one SQLite file, no telemetry and no account, Apache-2.0) -->
+    <div class="s5-cell" id="s5-c1" style="left: 120px"><div class="rule"></div><div class="micro">Dependencies</div><div class="body">pydantic, typer, rich</div></div>
+    <div class="s5-cell" id="s5-c2" style="left: 553px"><div class="rule"></div><div class="micro">Storage</div><div class="body">one SQLite file</div></div>
+    <div class="s5-cell" id="s5-c3" style="left: 986px"><div class="rule"></div><div class="micro">Telemetry</div><div class="body">none, and no account</div></div>
+    <div class="s5-cell" id="s5-c4" style="left: 1420px"><div class="rule"></div><div class="micro">Licence</div><div class="body">Apache-2.0</div></div>
+
+    <div id="s5-rail" class="micro">Proof of its own</div>
+    <div id="s5-num" class="disp">777</div>
+    <div id="s5-tests" class="disp">tests, all <span class="it">passing.</span></div>
+    <div id="s5-how" class="body">pytest on provalume 0.1.4 · 354 of them security tests</div>
+    <div id="s5-bmic" class="micro">Where to get it</div>
+    <div id="s5-os" class="disp">Open source,<br />on <span class="it">PyPI.</span></div>
+    <div id="s5-bhr" class="rule"></div>
+    <div id="s5-pypi" class="body cmd">pypi.org/project/provalume</div>
+    <div id="s5-lic" class="body">Apache-2.0 · v0.1.4</div>
+    <div class="pagenum" id="s5-pg">05 / 07</div>
+  </div>
+  <script>
+    (function () {
+      const TM = window.TM, VO = window.VO;
+      const S0 = TM.s5[0], S1 = TM.s5[1];
+      const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const W = (k, w, nth = 0) => {
+        const alts = w.split("|");
+        for (const exact of [true, false]) {
+          let c = 0;
+          for (const x of VO[k].words) {
+            const t = norm(x.w);
+            if (alts.some((a) => (exact ? t === a : t.startsWith(a)))) { if (c === nth) return x.t0 - S0; c++; }
+          }
+        }
+        return VO[k].start - S0;
+      };
+      const F = (t) => t - S0;
+      const tl = gsap.timeline({ paused: true });
+      const rise = (el, t, d = 0.5, dy = 24) =>
+        tl.fromTo(el, { opacity: 0, y: dy, filter: "blur(6px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: d, ease: "power3.out" }, t - 0.04);
+      const fade = (el, t, d = 0.4) => tl.fromTo(el, { opacity: 0 }, { opacity: 1, duration: d, ease: "power2.out" }, t);
+      const draw = (el, t, d = 0.5) => tl.fromTo(el, { scaleX: 0 }, { scaleX: 1, duration: d, ease: "power2.inOut" }, t);
+      const out = (els, t, d = 0.3) => tl.to(els, { opacity: 0, filter: "blur(6px)", duration: d, ease: "power3.in" }, t);
+
+      const A = ["#s5-amic", ".s5-no", ".s5-cell .micro", ".s5-cell .body"];
+      const B = ["#s5-rail", "#s5-num", "#s5-tests", "#s5-how", "#s5-bmic", "#s5-os", "#s5-pypi", "#s5-lic"];
+      gsap.set(A.concat(B, ["#s5-pg"]), { opacity: 0 });
+      gsap.set([".s5-cell .rule", "#s5-bhr"], { scaleX: 0 });
+
+      // ---- frame A: "No LLM. No API key. No network." and the footer band of facts
+      fade("#s5-amic", 0.2, 0.4);
+      fade("#s5-pg", 0.2, 0.4);
+      rise("#s5-no1", W("v10", "llm") - 0.12, 0.55);
+      rise("#s5-no2", W("v10", "api") - 0.12, 0.55);
+      rise("#s5-no3", W("v10", "network") - 0.12, 0.55);
+      const fb = W("v10", "api") + 0.35; // the band lands while she is still speaking, so it reads for about 2 s
+      [1, 2, 3, 4].forEach((n, k) => {
+        draw(`#s5-c${n} .rule`, fb + 0.08 * k, 0.5);
+        fade(`#s5-c${n} .micro`, fb + 0.1 + 0.08 * k, 0.35);
+        rise(`#s5-c${n} .body`, fb + 0.16 + 0.08 * k, 0.45, 10);
+      });
+
+      // ---- blur swap to frame B: 777 counts up as she says it, and lands on "tests"
+      const b0 = F(VO.v11.start);
+      out(A.concat([".s5-cell .rule"]), b0 - 0.4, 0.28);
+      fade("#s5-rail", b0 - 0.2, 0.5);
+      const n = { v: 0 };
+      tl.set("#s5-num", { opacity: 1 }, W("v11", "777") - 0.05);
+      tl.fromTo(n, { v: 0 }, {
+        v: 777, duration: W("v11", "tests") - W("v11", "777"), ease: "expo.out",
+        onUpdate: () => { document.querySelector("#s5-num").textContent = String(Math.round(n.v)); },
+      }, W("v11", "777") - 0.05);
+      rise("#s5-tests", W("v11", "tests") - 0.05, 0.55, 18);
+      rise("#s5-how", W("v11", "all") + 0.1, 0.45, 10);
+      // "Open source, on PyPI."
+      fade("#s5-bmic", W("v12", "open") - 0.2, 0.4);
+      rise("#s5-os", W("v12", "open") - 0.05, 0.6, 20);
+      draw("#s5-bhr", W("v12", "pypi"), 0.5);
+      rise("#s5-pypi", W("v12", "pypi") + 0.1, 0.45, 10);
+      rise("#s5-lic", W("v12", "pypi") + 0.25, 0.45, 10);
+
+      out(B.concat(["#s5-bhr", "#s5-pg"]), S1 - S0 - 0.32, 0.3);
+      window.__timelines["s5-facts"] = tl;
+    })();
+  </script>
+</template>

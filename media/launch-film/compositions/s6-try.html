@@ -1,0 +1,81 @@
+<template>
+  <style>
+    @font-face { font-family: "Instrument Serif"; src: url("assets/fonts/InstrumentSerif-400.woff2") format("woff2"); font-weight: 400; font-style: normal; }
+    @font-face { font-family: "Instrument Serif"; src: url("assets/fonts/InstrumentSerif-400-italic.woff2") format("woff2"); font-weight: 400; font-style: italic; }
+    @font-face { font-family: "Archivo"; src: url("assets/fonts/Archivo-var.woff2") format("woff2"); font-weight: 100 900; }
+    @font-face { font-family: "Montserrat"; src: url("assets/fonts/Montserrat-SemiBold.woff2") format("woff2"); font-weight: 600; }
+    #root { position: absolute; inset: 0; }
+    #s6-mic { left: 120px; top: 150px; }
+    #s6-hl { left: 120px; top: 196px; font-size: 150px; }
+    /* the terminal, Biennale style: two hairlines, no box, no shadow, no monospace */
+    #s6-tmic { right: 120px; top: 520px; font-size: 17px; }
+    #s6-top { left: 120px; top: 560px; width: 1680px; }
+    #s6-bot { left: 120px; top: 990px; width: 1680px; }
+    .s6-ln { position: absolute; left: 120px; font-size: 32px; white-space: nowrap; }
+    .s6-ln .p { margin-right: 0.55em; }
+    .s6-out { font-size: 28px; left: 160px; }
+  </style>
+  <div id="root" data-composition-id="s6-try" data-width="1920" data-height="1080">
+    <div id="s6-mic" class="micro">60-second quickstart</div>
+    <div id="s6-hl" class="disp">
+      <span class="w" id="s6-w-try">Try</span> <span class="w" id="s6-w-it">it</span> <span class="w" id="s6-w-in">in</span><br />
+      <span class="w it" id="s6-w-60">sixty</span> <span class="w it" id="s6-w-sec">seconds.</span>
+    </div>
+    <div id="s6-tmic" class="micro">No API key · no agent CLI · no network</div>
+    <div id="s6-top" class="rule"></div>
+    <!-- the real commands, and four real lines of `provalume demo` output (provalume 0.1.4) -->
+    <div class="s6-ln cmd" id="s6-l1" style="top: 596px"><span class="p">$</span><span class="t">uv tool install provalume</span></div>
+    <div class="s6-ln cmd" id="s6-l2" style="top: 656px"><span class="p">$</span><span class="t">provalume demo</span></div>
+    <div class="s6-ln s6-out body" id="s6-o1" style="top: 726px">4. Agent B is warned before repeating it</div>
+    <div class="s6-ln s6-out body" id="s6-o2" style="top: 778px">7. An independent reviewer approves</div>
+    <div class="s6-ln s6-out body" id="s6-o3" style="top: 830px">9. The procedure is promoted to verified+landed</div>
+    <div class="s6-ln s6-out body" id="s6-o4" style="top: 900px">Audit · 11 checks passed.</div>
+    <div id="s6-bot" class="rule soft"></div>
+    <div class="pagenum" id="s6-pg">06 / 07</div>
+  </div>
+  <script>
+    (function () {
+      const TM = window.TM, VO = window.VO;
+      const S0 = TM.s6[0];
+      const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const W = (k, w, nth = 0) => {
+        const alts = w.split("|");
+        for (const exact of [true, false]) {
+          let c = 0;
+          for (const x of VO[k].words) {
+            const t = norm(x.w);
+            if (alts.some((a) => (exact ? t === a : t.startsWith(a)))) { if (c === nth) return x.t0 - S0; c++; }
+          }
+        }
+        return VO[k].start - S0;
+      };
+      const tl = gsap.timeline({ paused: true });
+      const rise = (el, t, d = 0.5, dy = 24) =>
+        tl.fromTo(el, { opacity: 0, y: dy, filter: "blur(6px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: d, ease: "power3.out" }, t - 0.04);
+      const fade = (el, t, d = 0.4) => tl.fromTo(el, { opacity: 0 }, { opacity: 1, duration: d, ease: "power2.out" }, t);
+      const draw = (el, t, d = 0.5) => tl.fromTo(el, { scaleX: 0 }, { scaleX: 1, duration: d, ease: "power2.inOut" }, t);
+      // a command types: its text is revealed left to right in character steps
+      const type = (el, t, n, d) => {
+        tl.set(el, { opacity: 1 }, t);
+        tl.fromTo(`${el} .t`, { clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0% 0 0)", duration: d, ease: `steps(${n})` }, t + 0.12);
+      };
+
+      gsap.set(["#s6-mic", "#s6-hl .w", "#s6-tmic", ".s6-ln", "#s6-pg"], { opacity: 0 });
+      gsap.set(["#s6-top", "#s6-bot"], { scaleX: 0 });
+
+      fade("#s6-mic", 0.15, 0.4);
+      fade("#s6-pg", 0.2, 0.4);
+      [["#s6-w-try", "try"], ["#s6-w-it", "it"], ["#s6-w-in", "in"], ["#s6-w-60", "60|sixty"], ["#s6-w-sec", "seconds"]].forEach(([s, w]) => rise(s, W("v13", w), 0.5));
+      draw("#s6-top", 0.6, 0.7);
+      draw("#s6-bot", 0.75, 0.7);
+      fade("#s6-tmic", 1.0, 0.4);
+      // the times match term_times() in sound/mix.py: two commands type, then four lines print
+      type("#s6-l1", 1.3, 25, 0.75);
+      type("#s6-l2", 2.55, 14, 0.45);
+      ["#s6-o1", "#s6-o2", "#s6-o3", "#s6-o4"].forEach((el, k) =>
+        tl.fromTo(el, { opacity: 0, x: -10 }, { opacity: 1, x: 0, duration: 0.25, ease: "power2.out" }, 3.2 + 0.32 * k));
+
+      window.__timelines["s6-try"] = tl;
+    })();
+  </script>
+</template>

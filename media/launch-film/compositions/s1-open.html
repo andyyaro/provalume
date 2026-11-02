@@ -1,0 +1,174 @@
+<template>
+  <style>
+    @font-face { font-family: "Instrument Serif"; src: url("assets/fonts/InstrumentSerif-400.woff2") format("woff2"); font-weight: 400; font-style: normal; }
+    @font-face { font-family: "Instrument Serif"; src: url("assets/fonts/InstrumentSerif-400-italic.woff2") format("woff2"); font-weight: 400; font-style: italic; }
+    @font-face { font-family: "Archivo"; src: url("assets/fonts/Archivo-var.woff2") format("woff2"); font-weight: 100 900; }
+    @font-face { font-family: "Montserrat"; src: url("assets/fonts/Montserrat-SemiBold.woff2") format("woff2"); font-weight: 600; }
+    #root { position: absolute; inset: 0; }
+    /* cover */
+    #s1-mic { left: 120px; top: 318px; }
+    #s1-date { right: 120px; top: 84px; font-size: 64px; line-height: 0.96; text-align: right; }
+    #s1-t { left: 120px; top: 372px; font-size: 250px; transform-origin: 0% 0%; }
+    /* ledger */
+    #s1-lmic { right: 120px; top: 288px; }
+    #s1-hr { left: 120px; top: 340px; width: 1680px; }
+    .s1-col { position: absolute; top: 368px; font-size: 16px; }
+    .s1-row { position: absolute; left: 0; width: 1920px; height: 170px; }
+    .s1-agent { position: absolute; left: 120px; top: 14px; font-size: 28px; }
+    .s1-what { position: absolute; left: 400px; top: 4px; font-size: 58px; }
+    .s1-cmd { position: absolute; left: 402px; top: 84px; font-size: 23px; }
+    .s1-res { position: absolute; left: 1100px; top: 10px; width: 520px; font-size: 27px; line-height: 1.4; white-space: normal; }
+    .s1-exit { position: absolute; right: 120px; top: 14px; font-size: 28px; text-align: right; }
+    #s1-r1 { top: 410px; }
+    #s1-r2 { top: 600px; }
+    #s1-sr1 { left: 120px; top: 580px; width: 1680px; }
+    #s1-sr2 { left: 120px; top: 770px; width: 1680px; }
+    /* most memory keeps what agents said. -> Provalume keeps what was proved. */
+    #s1-hmic, #s1-pmic { left: 120px; top: 318px; }
+    .s1-line { left: 120px; font-size: 150px; }
+    #s1-a1, #s1-b1 { top: 372px; }
+    #s1-a2 { top: 516px; }
+    #s1-alt { position: relative; display: inline-block; }
+    #s1-said { position: relative; display: inline-block; }
+    #s1-strike { position: absolute; left: -6px; right: -6px; top: 58%; height: 3px; background: var(--ink); transform-origin: 0% 50%; }
+    #s1-new { position: absolute; left: 0; top: 0; white-space: nowrap; }
+  </style>
+  <div id="root" data-composition-id="s1-open" data-width="1920" data-height="1080">
+    <!-- cover -->
+    <div id="s1-mic" class="micro">Vol. 01 · Agent memory</div>
+    <div id="s1-date" class="disp">v0.1.4<br />2026</div>
+    <div id="s1-t" class="disp">
+      <span class="w" id="s1-t-your">Your</span> <span class="w" id="s1-t-agents">agents</span><br />
+      <span class="w it" id="s1-t-forget">forget.</span>
+    </div>
+
+    <!-- the ledger: the README's own story, with the demo's real agents and failure -->
+    <div id="s1-lmic" class="micro">Attempts · the integration suite</div>
+    <div id="s1-hr" class="rule"></div>
+    <div class="s1-col micro" id="s1-c1" style="left: 120px">Agent</div>
+    <div class="s1-col micro" id="s1-c2" style="left: 400px">What it tried</div>
+    <div class="s1-col micro" id="s1-c3" style="left: 1100px">What happened</div>
+    <div class="s1-col micro" id="s1-c4" style="right: 120px">Exit</div>
+    <div class="s1-row" id="s1-r1">
+      <div class="s1-agent cmd" id="s1-r1a">agent-A</div>
+      <div class="s1-what disp" id="s1-r1w">The integration suite, in parallel</div>
+      <div class="s1-cmd cmd" id="s1-r1c">pytest -n auto tests/integration</div>
+      <div class="s1-res body" id="s1-r1r">TimeoutError: deadlock in db fixture teardown</div>
+      <div class="s1-exit cmd" id="s1-r1e">exit 1</div>
+    </div>
+    <div id="s1-sr1" class="rule soft"></div>
+    <div class="s1-row" id="s1-r2">
+      <div class="s1-agent cmd" id="s1-r2a">agent-B</div>
+      <div class="s1-what disp" id="s1-r2w">The same suite, the same way</div>
+      <div class="s1-cmd cmd" id="s1-r2c">pytest -n auto tests/integration</div>
+      <div class="s1-res body" id="s1-r2r">The same deadlock. Occurrences now 2.</div>
+      <div class="s1-exit cmd" id="s1-r2e">exit 1</div>
+    </div>
+    <div id="s1-sr2" class="rule soft"></div>
+
+    <!-- what most memory keeps, and what Provalume keeps -->
+    <div id="s1-hmic" class="micro">The usual way</div>
+    <div id="s1-pmic" class="micro">Evidence-based memory for AI coding agents</div>
+    <div id="s1-a1" class="disp s1-line">
+      <span class="w" id="s1-a-most">Most</span> <span class="w" id="s1-a-memory">memory</span> <span class="w" id="s1-a-keeps">keeps</span>
+    </div>
+    <div id="s1-b1" class="disp s1-line">
+      <span class="w" id="s1-b-prov">Provalume</span> <span class="w" id="s1-b-keeps">keeps</span>
+    </div>
+    <div id="s1-a2" class="disp s1-line">
+      <span class="w" id="s1-a-what">what</span>
+      <span id="s1-alt"><span id="s1-old"><span class="w" id="s1-a-agents">agents</span> <span id="s1-said"><span class="w it" id="s1-a-said">said.</span><span id="s1-strike"></span></span></span><span id="s1-new"><span class="w" id="s1-b-was">was</span> <span class="w it" id="s1-b-proved">proved.</span></span></span>
+    </div>
+
+    <div class="pagenum" id="s1-pg">01 / 07</div>
+  </div>
+  <script>
+    (function () {
+      const TM = window.TM, VO = window.VO;
+      const S0 = TM.s1[0], S1 = TM.s1[1];
+      const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+      // a word's time in scene seconds, found by its text in the voice's word times ("a|b" for alternatives)
+      const W = (k, w, nth = 0) => {
+        const alts = w.split("|");
+        for (const exact of [true, false]) {
+          let c = 0;
+          for (const x of VO[k].words) {
+            const t = norm(x.w);
+            if (alts.some((a) => (exact ? t === a : t.startsWith(a)))) { if (c === nth) return x.t0 - S0; c++; }
+          }
+        }
+        return VO[k].start - S0;
+      };
+      const F = (t) => t - S0; // film seconds -> scene seconds
+      const tl = gsap.timeline({ paused: true });
+      const rise = (el, t, d = 0.5, dy = 24) =>
+        tl.fromTo(el, { opacity: 0, y: dy, filter: "blur(6px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: d, ease: "power3.out" }, t - 0.04);
+      const fade = (el, t, d = 0.4) => tl.fromTo(el, { opacity: 0 }, { opacity: 1, duration: d, ease: "power2.out" }, t);
+      const draw = (el, t, d = 0.5) => tl.fromTo(el, { scaleX: 0 }, { scaleX: 1, duration: d, ease: "power2.inOut" }, t);
+      const out = (els, t, d = 0.28) => tl.to(els, { opacity: 0, filter: "blur(6px)", duration: d, ease: "power3.in" }, t);
+
+      const LEDGER_TEXT = ["#s1-lmic", ".s1-col", "#s1-r1 > div", "#s1-r2 > div"];
+      const LEDGER = LEDGER_TEXT.concat(["#s1-hr", "#s1-sr1", "#s1-sr2"]);
+      gsap.set(["#s1-mic", "#s1-date", "#s1-t .w", "#s1-pg", "#s1-hmic", "#s1-pmic", "#s1-a1 .w", "#s1-b1 .w", "#s1-a2 .w"].concat(LEDGER_TEXT), { opacity: 0 });
+      gsap.set(["#s1-hr", "#s1-sr1", "#s1-sr2", "#s1-strike"], { scaleX: 0 });
+
+      // ---- cover: "Your agents forget."
+      fade("#s1-mic", 0.35, 0.6);
+      rise("#s1-date", 0.5, 0.7, 14);
+      fade("#s1-pg", 0.6, 0.6);
+      rise("#s1-t-your", W("v01", "your"), 0.55);
+      rise("#s1-t-agents", W("v01", "agents"), 0.55);
+      rise("#s1-t-forget", W("v01", "forget"), 0.8, 30);
+
+      // ---- the title folds into the ledger's header; the two attempts land as rows
+      const fold = W("v02", "one") - 0.3;
+      tl.to("#s1-t", { x: 0, y: -232, scale: 0.36, duration: 0.85, ease: "power2.inOut" }, fold);
+      tl.to(["#s1-mic", "#s1-date"], { opacity: 0, filter: "blur(6px)", duration: 0.3, ease: "power3.in" }, fold);
+      draw("#s1-hr", fold + 0.35, 0.6);
+      fade("#s1-lmic", fold + 0.5, 0.4);
+      tl.fromTo(".s1-col", { opacity: 0 }, { opacity: 1, duration: 0.4, stagger: 0.06, ease: "power2.out" }, fold + 0.6);
+      // row 1 on "learns", its result on "deadlocks"
+      const r1 = W("v02", "learns");
+      rise("#s1-r1a", r1, 0.45, 16);
+      rise("#s1-r1w", r1 + 0.06, 0.5, 16);
+      rise("#s1-r1c", r1 + 0.16, 0.45, 12);
+      rise("#s1-r1r", W("v02", "deadlocks") - 0.05, 0.45, 12);
+      rise("#s1-r1e", W("v02", "deadlocks") + 0.1, 0.4, 10);
+      draw("#s1-sr1", r1 + 0.2, 0.6);
+      // row 2 on "Tuesday", its result on "again"
+      const r2 = W("v03", "tuesday");
+      rise("#s1-r2a", r2, 0.45, 16);
+      rise("#s1-r2w", r2 + 0.06, 0.5, 16);
+      rise("#s1-r2c", r2 + 0.16, 0.45, 12);
+      rise("#s1-r2r", W("v03", "again") - 0.05, 0.45, 12);
+      rise("#s1-r2e", W("v03", "again") + 0.1, 0.4, 10);
+      draw("#s1-sr2", r2 + 0.2, 0.6);
+
+      // ---- blur swap: "Most memory keeps what agents said."
+      const v4 = F(VO.v04.start);
+      out(["#s1-t"].concat(LEDGER), v4 - 0.32, 0.3);
+      fade("#s1-hmic", v4 - 0.05, 0.4);
+      rise("#s1-a-most", W("v04", "most"), 0.5);
+      rise("#s1-a-memory", W("v04", "memory"), 0.5);
+      rise("#s1-a-keeps", W("v04", "keeps"), 0.5);
+      rise("#s1-a-what", W("v04", "what"), 0.5);
+      rise("#s1-a-agents", W("v04", "agent", 1), 0.5);
+      rise("#s1-a-said", W("v04", "said"), 0.7, 28);
+      // on the build, "said." is struck through
+      draw("#s1-strike", F(VO.v04.end) + 0.25, 0.45);
+
+      // ---- the drop: it becomes "Provalume keeps what was proved."
+      const d = F(TM.drop);
+      out(["#s1-a1 .w", "#s1-old", "#s1-hmic"], d - 0.02, 0.26);
+      fade("#s1-pmic", d + 0.15, 0.5);
+      rise("#s1-b-prov", W("v05", "provo|prova"), 0.55, 28);
+      rise("#s1-b-keeps", W("v05", "keeps"), 0.5);
+      rise("#s1-b-was", W("v05", "was"), 0.5);
+      tl.fromTo("#s1-b-proved", { opacity: 0, y: 30, filter: "blur(12px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.9, ease: "power3.out" }, W("v05", "proved") - 0.04);
+
+      out(["#s1-pmic", "#s1-b1 .w", "#s1-a-what", "#s1-new .w"], S1 - S0 - 0.34, 0.3);
+      tl.to("#s1-pg", { opacity: 0, duration: 0.2 }, S1 - S0 - 0.22);
+      window.__timelines["s1-open"] = tl;
+    })();
+  </script>
+</template>

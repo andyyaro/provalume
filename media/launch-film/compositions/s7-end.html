@@ -1,0 +1,74 @@
+<template>
+  <style>
+    @font-face { font-family: "Archivo"; src: url("assets/fonts/Archivo-var.woff2") format("woff2"); font-weight: 100 900; }
+    #root { position: absolute; inset: 0; }
+    /* night falls to the brand ground; the mark is lit like a lamp (prova + lume: proof + light) */
+    #s7-night { position: absolute; inset: 0; background: #15123b; transform-origin: 50% 100%; }
+    #s7-lamp {
+      position: absolute; left: 460px; top: -190px; width: 1000px; height: 1000px; border-radius: 50%;
+      background: radial-gradient(circle at 50% 50%, rgba(255, 181, 71, 0.34) 0%, rgba(255, 138, 61, 0.14) 34%, rgba(21, 18, 59, 0) 68%);
+    }
+    #s7-mark { position: absolute; left: 820px; top: 170px; width: 280px; height: 280px; overflow: visible; }
+    #s7-word { position: absolute; left: 650px; top: 492px; width: 620px; height: 161px; }
+    .s7-c { position: absolute; left: 0; width: 1920px; text-align: center; white-space: nowrap; font-family: "Archivo", sans-serif; }
+    #s7-tag { top: 706px; font-size: 32px; font-weight: 500; color: #ffb547; letter-spacing: 0.005em; }
+    #s7-cta { top: 790px; }
+    #s7-cta span {
+      display: inline-block; padding: 16px 36px; border: 1px solid #ffb547; color: #fff4e0;
+      font-size: 30px; font-weight: 500; letter-spacing: 0.01em;
+    }
+    #s7-repo { top: 900px; font-size: 24px; font-weight: 400; color: rgba(255, 244, 224, 0.66); }
+  </style>
+  <div id="root" data-composition-id="s7-end" data-width="1920" data-height="1080">
+    <div id="s7-night"></div>
+    <div id="s7-lamp"></div>
+    <!-- assets/brand/mark/mark-color.svg, made for this ground -->
+    <svg id="s7-mark" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      <rect class="bar" id="s7-b1" x="30" y="99" width="60" height="13" rx="6.5" fill="#F2602F" />
+      <rect class="bar" id="s7-b2" x="22" y="80" width="76" height="13" rx="6.5" fill="#FF8A3D" />
+      <rect class="bar" id="s7-b3" x="30" y="61" width="64" height="13" rx="6.5" fill="#FFB547" />
+      <rect class="bar" id="s7-b4" x="42" y="42" width="46" height="13" rx="6.5" fill="#FFD37E" />
+      <rect class="bar" id="s7-b5" x="56" y="23" width="24" height="13" rx="6.5" fill="#FFEBB9" />
+      <circle id="s7-dot" cx="74" cy="11.5" r="5.5" fill="#FFF8E8" />
+    </svg>
+    <img id="s7-word" src="assets/brand/wordmark-cream.svg" alt="provalume" />
+    <div id="s7-tag" class="s7-c">Facts your agents proved, not things they said.</div>
+    <div id="s7-cta" class="s7-c"><span>uv tool install provalume</span></div>
+    <div id="s7-repo" class="s7-c">github.com/andyyaro/provalume</div>
+  </div>
+  <script>
+    (function () {
+      const TM = window.TM, VO = window.VO;
+      const S0 = TM.s7[0];
+      const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const W = (k, w) => {
+        const alts = w.split("|");
+        for (const exact of [true, false])
+          for (const x of VO[k].words) { const t = norm(x.w); if (alts.some((a) => (exact ? t === a : t.startsWith(a)))) return x.t0 - S0; }
+        return VO[k].start - S0;
+      };
+      const tl = gsap.timeline({ paused: true });
+
+      gsap.set(["#s7-lamp", "#s7-word", ".s7-c"], { opacity: 0 });
+      gsap.set("#s7-mark .bar", { scaleX: 0, transformOrigin: "50% 50%" });
+      gsap.set("#s7-dot", { scale: 0, transformOrigin: "50% 50%" });
+
+      // night rises from the horizon
+      tl.fromTo("#s7-night", { scaleY: 0 }, { scaleY: 1, duration: 0.9, ease: "power3.inOut" }, 0);
+      // the mark builds rung by rung, bottom first; the light at the top comes on with the riser's peak
+      ["#s7-b1", "#s7-b2", "#s7-b3", "#s7-b4", "#s7-b5"].forEach((el, k) =>
+        tl.to(el, { scaleX: 1, duration: 0.42, ease: "power3.out" }, 0.5 + 0.08 * k));
+      tl.to("#s7-dot", { scale: 1, duration: 0.45, ease: "back.out(2.2)" }, 0.97);
+      tl.to("#s7-lamp", { opacity: 1, duration: 0.9, ease: "power2.out" }, 0.97);
+      // the wordmark resolves as she says the name
+      const w = W("v14", "provo|prova");
+      tl.fromTo("#s7-word", { opacity: 0, clipPath: "inset(0 100% 0 0)", filter: "blur(6px)" },
+        { opacity: 1, clipPath: "inset(0 0% 0 0)", filter: "blur(0px)", duration: 0.75, ease: "power2.out" }, w - 0.04);
+      tl.fromTo("#s7-tag", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, w + 0.7);
+      tl.fromTo("#s7-cta", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 2.3 - 0.03);
+      tl.fromTo("#s7-repo", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.out" }, 2.65);
+
+      window.__timelines["s7-end"] = tl;
+    })();
+  </script>
+</template>

@@ -1,0 +1,107 @@
+<template>
+  <style>
+    @font-face { font-family: "Instrument Serif"; src: url("assets/fonts/InstrumentSerif-400.woff2") format("woff2"); font-weight: 400; font-style: normal; }
+    @font-face { font-family: "Instrument Serif"; src: url("assets/fonts/InstrumentSerif-400-italic.woff2") format("woff2"); font-weight: 400; font-style: italic; }
+    @font-face { font-family: "Archivo"; src: url("assets/fonts/Archivo-var.woff2") format("woff2"); font-weight: 100 900; }
+    @font-face { font-family: "Montserrat"; src: url("assets/fonts/Montserrat-SemiBold.woff2") format("woff2"); font-weight: 600; }
+    #root { position: absolute; inset: 0; }
+    #s3-rail { left: 52px; top: 540px; transform: translate(-50%, -50%) rotate(-90deg); font-size: 18px; letter-spacing: 0.32em; }
+    #s3-mark { position: absolute; left: 100px; top: 150px; width: 780px; height: 780px; overflow: visible; }
+    #s3-mark .ol { fill: none; stroke: #15123b; stroke-width: 0.21; }   /* 0.21 user units = 1.4 px at 6.5x */
+    .s3-lab { position: absolute; left: 860px; font-size: 62px; }
+    .s3-note { position: absolute; left: 1250px; font-size: 26px; }
+    .s3-rule { position: absolute; left: 1250px; font-size: 19px; }
+    #s3-say { left: 860px; top: 186px; font-size: 60px; }
+  </style>
+  <div id="root" data-composition-id="s3-ladder" data-width="1920" data-height="1080">
+    <div id="s3-rail" class="micro">The trust ladder · five rungs</div>
+    <!-- the ladder is the Provalume mark itself (assets/brand/mark/mark-color.svg geometry): five rungs and the light -->
+    <svg id="s3-mark" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+      <rect class="fl" id="s3-f1" x="30" y="99" width="60" height="13" rx="6.5" fill="#F2602F" />
+      <rect class="fl" id="s3-f2" x="22" y="80" width="76" height="13" rx="6.5" fill="#FF8A3D" />
+      <rect class="fl" id="s3-f3" x="30" y="61" width="64" height="13" rx="6.5" fill="#FFB547" />
+      <rect class="fl" id="s3-f4" x="42" y="42" width="46" height="13" rx="6.5" fill="#FFD37E" />
+      <rect class="fl" id="s3-f5" x="56" y="23" width="24" height="13" rx="6.5" fill="#FFEBB9" />
+      <circle class="fl" id="s3-fd" cx="74" cy="11.5" r="5.5" fill="#FFF8E8" />
+      <rect class="ol" id="s3-o1" x="30" y="99" width="60" height="13" rx="6.5" pathLength="1" />
+      <rect class="ol" id="s3-o2" x="22" y="80" width="76" height="13" rx="6.5" pathLength="1" />
+      <rect class="ol" id="s3-o3" x="30" y="61" width="64" height="13" rx="6.5" pathLength="1" />
+      <rect class="ol" id="s3-o4" x="42" y="42" width="46" height="13" rx="6.5" pathLength="1" />
+      <rect class="ol" id="s3-o5" x="56" y="23" width="24" height="13" rx="6.5" pathLength="1" />
+      <circle class="ol" id="s3-od" cx="74" cy="11.5" r="5.5" pathLength="1" />
+    </svg>
+    <!-- the rungs and what each means (README), and the real rule that promoted the demo's memory into it -->
+    <div class="s3-lab disp" id="s3-l1" style="top: 800px">quarantined</div>
+    <div class="s3-note body" id="s3-n1" style="top: 816px">agent prose</div>
+    <div class="s3-lab disp" id="s3-l2" style="top: 676px">observed</div>
+    <div class="s3-note body" id="s3-n2" style="top: 692px">reported from a run</div>
+    <div class="s3-lab disp" id="s3-l3" style="top: 553px">verified</div>
+    <div class="s3-note body" id="s3-n3" style="top: 557px">a command returned</div>
+    <div class="s3-rule cmd" id="s3-r3" style="top: 597px">promote.procedural.verified_by_exact_command</div>
+    <div class="s3-lab disp" id="s3-l4" style="top: 429px">reviewed</div>
+    <div class="s3-note body" id="s3-n4" style="top: 433px">a non-author approved it</div>
+    <div class="s3-rule cmd" id="s3-r4" style="top: 473px">promote.any.independent_review_approved</div>
+    <div class="s3-lab disp" id="s3-l5" style="top: 306px">integrated</div>
+    <div class="s3-note body" id="s3-n5" style="top: 310px">it landed in history</div>
+    <div class="s3-rule cmd" id="s3-r5" style="top: 350px">promote.any.landed_in_history</div>
+    <div id="s3-say" class="disp">Agents <span class="it">propose.</span> They never promote.</div>
+    <div class="pagenum" id="s3-pg">03 / 07</div>
+  </div>
+  <script>
+    (function () {
+      const TM = window.TM, VO = window.VO;
+      const S0 = TM.s3[0], S1 = TM.s3[1];
+      const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const W = (k, w, nth = 0) => {
+        const alts = w.split("|");
+        for (const exact of [true, false]) {
+          let c = 0;
+          for (const x of VO[k].words) {
+            const t = norm(x.w);
+            if (alts.some((a) => (exact ? t === a : t.startsWith(a)))) { if (c === nth) return x.t0 - S0; c++; }
+          }
+        }
+        return VO[k].start - S0;
+      };
+      const F = (t) => t - S0;
+      const tl = gsap.timeline({ paused: true });
+      const rise = (el, t, d = 0.5, dy = 24) =>
+        tl.fromTo(el, { opacity: 0, y: dy, filter: "blur(6px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: d, ease: "power3.out" }, t - 0.04);
+      const fade = (el, t, d = 0.4) => tl.fromTo(el, { opacity: 0 }, { opacity: 1, duration: d, ease: "power2.out" }, t);
+
+      const TEXT = ["#s3-rail", ".s3-lab", ".s3-note", ".s3-rule", "#s3-say", "#s3-pg"];
+      gsap.set(TEXT, { opacity: 0 });
+      gsap.set("#s3-mark .ol", { strokeDasharray: 1, strokeDashoffset: 1 });
+      gsap.set("#s3-mark rect.fl", { scaleX: 0, transformOrigin: "0% 50%" });
+      gsap.set("#s3-fd", { scale: 0, transformOrigin: "50% 50%" });
+
+      // the ladder draws, bottom rung first
+      fade("#s3-rail", 0.2, 0.5);
+      fade("#s3-pg", 0.2, 0.4);
+      ["#s3-o1", "#s3-o2", "#s3-o3", "#s3-o4", "#s3-o5", "#s3-od"].forEach((el, k) =>
+        tl.to(el, { strokeDashoffset: 0, duration: 0.55, ease: "power2.inOut" }, 0.25 + 0.07 * k));
+      tl.set("#s3-mark .ol", { strokeDasharray: "none" }, 1.25); // drawn: close the seam where each stroke began
+      // "climbs five rungs of trust": each rung fills, a step higher each time, and its name lands
+      const c = W("v07", "climbs");
+      for (let k = 1; k <= 5; k++) {
+        const t = c + 0.28 * (k - 1);
+        tl.to(`#s3-f${k}`, { scaleX: 1, duration: 0.42, ease: "power3.out" }, t);
+        rise(`#s3-l${k}`, t + 0.02, 0.5, 16);
+        rise(`#s3-n${k}`, t + 0.12, 0.45, 10);
+        if (k >= 3) fade(`#s3-r${k}`, t + 0.3, 0.4);
+      }
+      // "none can be skipped": the light at the top comes on
+      tl.to("#s3-fd", { scale: 1, duration: 0.5, ease: "back.out(2)" }, W("v07", "skipped") + 0.1);
+
+      // "Agents propose. They never promote."
+      rise("#s3-say", W("v08", "agents") - 0.05, 0.55, 18);
+      // agents write only at the bottom rung: the rest steps back while she says "propose", then returns on "promote"
+      tl.to(["#s3-l2", "#s3-l3", "#s3-l4", "#s3-l5", "#s3-n2", "#s3-n3", "#s3-n4", "#s3-n5"], { opacity: 0.3, duration: 0.3, ease: "power2.out" }, W("v08", "propose"));
+      tl.to(["#s3-l2", "#s3-l3", "#s3-l4", "#s3-l5", "#s3-n2", "#s3-n3", "#s3-n4", "#s3-n5"], { opacity: 1, duration: 0.35, ease: "power2.out" }, W("v08", "never"));
+      tl.to(["#s3-l1", "#s3-n1"], { opacity: 0.3, duration: 0.35, ease: "power2.out" }, W("v08", "never"));
+
+      tl.to(TEXT.concat(["#s3-mark"]), { opacity: 0, filter: "blur(6px)", duration: 0.3, ease: "power3.in" }, S1 - S0 - 0.32);
+      window.__timelines["s3-ladder"] = tl;
+    })();
+  </script>
+</template>

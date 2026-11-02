@@ -6,6 +6,16 @@ pre-1.0 caveat that `0.x` minor bumps may break the SDK.
 
 ## [Unreleased]
 
+### Added
+
+**The launch film.** A 63-second film of what Provalume keeps and why: the
+three kinds of proof, the trust ladder and the preflight warning, with the
+product's own output on screen. It plays at the top of the README and on its
+[watch page](https://andyyaro.github.io/provalume/film.html), with captions and
+a transcript. Its source is in [media/launch-film/](media/launch-film/); the MP4
+is a release asset, not in git, and [film.yml](.github/workflows/film.yml)
+publishes the page to GitHub Pages.
+
 ### Fixed
 
 **The MCP transport's nesting bound is its own, not the interpreter's.** A

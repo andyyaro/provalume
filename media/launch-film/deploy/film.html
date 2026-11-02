@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Provalume launch film</title>
+<meta name="description" content="63 seconds on Provalume: local memory for coding agents that keeps only what was proved, with the evidence attached.">
+<meta name="color-scheme" content="dark">
+<meta property="og:title" content="Provalume launch film">
+<meta property="og:description" content="Facts your agents proved, not things they said.">
+<meta property="og:image" content="https://andyyaro.github.io/provalume/film/poster.jpg">
+<meta property="og:type" content="video.other">
+<link rel="icon" href="film/icon.svg" type="image/svg+xml">
+<style>
+  :root { --bg: #15123b; --card: #1e1a4d; --ink: #fff4e0; --ink2: rgba(255, 244, 224, 0.74); --hair: rgba(255, 244, 224, 0.14); --amber: #ffb547; --amber-press: #ffc76e; }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); color: var(--ink); -webkit-text-size-adjust: 100%; }
+  body { margin: 0; font: 17px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+  a { color: var(--amber); }
+  a:focus-visible, video:focus-visible, summary:focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; border-radius: 3px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 24px 16px 56px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 28px; }
+  header a.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  header a.brand img { display: block; width: auto; }
+  header a.back { font-size: 15px; text-decoration: none; }
+  h1 { font-size: clamp(28px, 4.4vw, 44px); line-height: 1.1; letter-spacing: -0.02em; margin: 0 0 10px; font-weight: 700; }
+  .lede { color: var(--ink2); font-size: clamp(17px, 2vw, 20px); margin: 0 0 24px; max-width: 760px; }
+  .player { border-radius: 6px; overflow: hidden; background: #000; box-shadow: 0 0 0 1px var(--hair); }
+  video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; background: #000; }
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 24px 0 8px; }
+  .btn { display: inline-flex; align-items: center; min-height: 44px; padding: 0 22px; border-radius: 3px; font-weight: 600; font-size: 17px; text-decoration: none; }
+  .btn.primary { background: var(--amber); color: var(--bg); }
+  .btn.primary:hover { background: var(--amber-press); }
+  .btn.secondary { color: var(--ink); box-shadow: inset 0 0 0 1px rgba(255, 181, 71, 0.6); }
+  .btn.secondary:hover { background: rgba(255, 244, 224, 0.08); }
+  .meta { color: var(--ink2); font-size: 15px; margin: 8px 0 0; }
+  details { margin-top: 32px; background: var(--card); border-radius: 6px; padding: 4px 20px; border: 1px solid var(--hair); }
+  summary { cursor: pointer; font-weight: 600; padding: 14px 0; min-height: 44px; }
+  details p { margin: 0 0 12px; }
+  .credits { margin-top: 32px; color: var(--ink2); font-size: 14px; line-height: 1.6; border-top: 1px solid var(--hair); padding-top: 20px; }
+  .credits p { margin: 0 0 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="https://github.com/andyyaro/provalume" aria-label="Provalume on GitHub"><img src="film/logo.svg" alt="" width="34" height="34"><img src="film/wordmark.svg" alt="provalume" width="123" height="32"></a>
+    <a class="back" href="https://github.com/andyyaro/provalume">On GitHub</a>
+  </header>
+  <main>
+    <h1>Provalume, in 63 seconds</h1>
+    <p class="lede">A local memory for coding agents that only trusts what was proved: a command that passed, a reviewer who was not the author, a commit that actually landed. The trust ladder and the preflight warning, with the product's own output on screen.</p>
+    <div class="player">
+      <video controls playsinline preload="metadata" poster="film/poster.jpg" width="1920" height="1080" aria-label="Provalume launch film, 63 seconds, with narration">
+        <source src="film/provalume-launch.mp4" type="video/mp4">
+        <track kind="captions" src="film/provalume-launch.vtt" srclang="en" label="English" default>
+        Your browser cannot play this video. <a href="film/provalume-launch.mp4">Download the MP4</a>.
+      </video>
+    </div>
+    <div class="actions">
+      <a class="btn primary" href="https://github.com/andyyaro/provalume#60-second-quickstart">Try it in 60 seconds</a>
+      <a class="btn secondary" href="https://github.com/andyyaro/provalume#how-trust-works">How trust works</a>
+    </div>
+    <p class="meta">63 seconds, 1920 × 1080, English captions in the player. <a href="film/provalume-launch.mp4" download>Download the MP4 (19.9 MB)</a> · <a href="film/provalume-launch.vtt" download>Captions file (WebVTT)</a></p>
+
+    <details>
+      <summary>Transcript</summary>
+      <p>Your coding agents forget. One learns that the integration suite deadlocks. On Tuesday, the next one tries it again. Most agent memory keeps what an agent said.</p>
+      <p>Provalume keeps what was proved.</p>
+      <p>A command that passed. A reviewer who wasn't the author. A commit that actually landed.</p>
+      <p>Every memory climbs five rungs of trust, and none can be skipped. Agents propose. They never promote.</p>
+      <p>So before an agent repeats a failure, it's warned, with the evidence.</p>
+      <p>No LLM. No API key. No network. 777 tests, all passing. Open source, on PyPI.</p>
+      <p>Try it in sixty seconds.</p>
+      <p>Provalume.</p>
+    </details>
+
+    <div class="credits">
+      <p>Every line of output on screen is Provalume's own: its demo run, the README's preflight example and trust ladder, and pytest on version 0.1.4. It is set in type rather than recorded.</p>
+      <p>Narration: Kokoro-82M, voice af_heart. Music: "Baileys" by Diego Nava (Mixkit). Sound effects: Mixkit. Type: Instrument Serif, Archivo and Montserrat (SIL Open Font License). <a href="https://github.com/andyyaro/provalume/tree/main/media/launch-film">How the film was made</a>.</p>
+    </div>
+  </main>
+</div>
+</body>
+</html>

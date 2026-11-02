@@ -1,0 +1,95 @@
+<template>
+  <style>
+    @font-face { font-family: "Instrument Serif"; src: url("assets/fonts/InstrumentSerif-400.woff2") format("woff2"); font-weight: 400; font-style: normal; }
+    @font-face { font-family: "Instrument Serif"; src: url("assets/fonts/InstrumentSerif-400-italic.woff2") format("woff2"); font-weight: 400; font-style: italic; }
+    @font-face { font-family: "Archivo"; src: url("assets/fonts/Archivo-var.woff2") format("woff2"); font-weight: 100 900; }
+    @font-face { font-family: "Montserrat"; src: url("assets/fonts/Montserrat-SemiBold.woff2") format("woff2"); font-weight: 600; }
+    #root { position: absolute; inset: 0; }
+    #s2-mic { left: 120px; top: 150px; }
+    #s2-mic2 { right: 120px; top: 150px; }
+    #s2-hr { left: 120px; top: 200px; width: 1680px; }
+    .s2-row { position: absolute; left: 0; width: 1920px; height: 236px; }
+    .s2-num { position: absolute; left: 120px; top: 38px; font-size: 120px; }
+    .s2-title { position: absolute; left: 330px; top: 50px; font-size: 96px; }
+    .s2-ev { position: absolute; left: 334px; top: 158px; font-size: 27px; }
+    .s2-rung { position: absolute; right: 120px; top: 74px; font-size: 19px; }
+    #s2-r1 { top: 220px; }
+    #s2-r2 { top: 456px; }
+    #s2-r3 { top: 692px; }
+    #s2-sr1 { left: 120px; top: 456px; width: 1680px; }
+    #s2-sr2 { left: 120px; top: 692px; width: 1680px; }
+    #s2-sr3 { left: 120px; top: 928px; width: 1680px; }
+  </style>
+  <div id="root" data-composition-id="s2-proof" data-width="1920" data-height="1080">
+    <div id="s2-mic" class="micro">What counts as proof</div>
+    <div id="s2-mic2" class="micro">The rung it earns</div>
+    <div id="s2-hr" class="rule"></div>
+    <!-- each row: the README's claim + the line from the real `provalume demo` that proves it -->
+    <div class="s2-row" id="s2-r1">
+      <div class="s2-num disp" id="s2-n1">01</div>
+      <div class="s2-title disp" id="s2-t1">A command that <span class="it">passed.</span></div>
+      <div class="s2-ev cmd" id="s2-e1">exit 0 · 43 passed · pytest -p no:xdist tests/integration</div>
+      <div class="s2-rung micro" id="s2-g1">Verified</div>
+    </div>
+    <div id="s2-sr1" class="rule soft"></div>
+    <div class="s2-row" id="s2-r2">
+      <div class="s2-num disp" id="s2-n2">02</div>
+      <div class="s2-title disp" id="s2-t2">A reviewer who was <span class="it">not</span> the author.</div>
+      <div class="s2-ev body" id="s2-e2">reviewer-2 is not the author (agent-B), so the review counts as independent</div>
+      <div class="s2-rung micro" id="s2-g2">Reviewed</div>
+    </div>
+    <div id="s2-sr2" class="rule soft"></div>
+    <div class="s2-row" id="s2-r3">
+      <div class="s2-num disp" id="s2-n3">03</div>
+      <div class="s2-title disp" id="s2-t3">A commit that actually <span class="it">landed.</span></div>
+      <div class="s2-ev cmd" id="s2-e3">landed at 8b746c0fd360</div>
+      <div class="s2-rung micro" id="s2-g3">Integrated</div>
+    </div>
+    <div id="s2-sr3" class="rule soft"></div>
+    <div class="pagenum" id="s2-pg">02 / 07</div>
+  </div>
+  <script>
+    (function () {
+      const TM = window.TM, VO = window.VO;
+      const S0 = TM.s2[0], S1 = TM.s2[1];
+      const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const W = (k, w, nth = 0) => {
+        const alts = w.split("|");
+        for (const exact of [true, false]) {
+          let c = 0;
+          for (const x of VO[k].words) {
+            const t = norm(x.w);
+            if (alts.some((a) => (exact ? t === a : t.startsWith(a)))) { if (c === nth) return x.t0 - S0; c++; }
+          }
+        }
+        return VO[k].start - S0;
+      };
+      const F = (t) => t - S0;
+      const tl = gsap.timeline({ paused: true });
+      const rise = (el, t, d = 0.5, dy = 24) =>
+        tl.fromTo(el, { opacity: 0, y: dy, filter: "blur(6px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: d, ease: "power3.out" }, t - 0.04);
+      const fade = (el, t, d = 0.4) => tl.fromTo(el, { opacity: 0 }, { opacity: 1, duration: d, ease: "power2.out" }, t);
+      const draw = (el, t, d = 0.5) => tl.fromTo(el, { scaleX: 0 }, { scaleX: 1, duration: d, ease: "power2.inOut" }, t);
+
+      const TEXT = ["#s2-mic", "#s2-mic2", ".s2-row > div", "#s2-pg"];
+      gsap.set(TEXT, { opacity: 0 });
+      gsap.set(["#s2-hr", "#s2-sr1", "#s2-sr2", "#s2-sr3"], { scaleX: 0 });
+
+      fade("#s2-mic", 0.15, 0.4);
+      fade("#s2-mic2", 0.3, 0.4);
+      fade("#s2-pg", 0.2, 0.4);
+      draw("#s2-hr", 0.1, 0.7);
+      [["1", "command"], ["2", "reviewer"], ["3", "commit"]].forEach(([n, w], k) => {
+        const t = W("v06", w);
+        rise(`#s2-n${n}`, t - 0.2, 0.55, 20);
+        rise(`#s2-t${n}`, t - 0.12, 0.6, 24);
+        rise(`#s2-e${n}`, t + 0.35, 0.45, 12);
+        fade(`#s2-g${n}`, t + 0.55, 0.4);
+        draw(`#s2-sr${n}`, t, 0.6);
+      });
+
+      tl.to(TEXT.concat(["#s2-hr", "#s2-sr1", "#s2-sr2", "#s2-sr3"]), { opacity: 0, filter: "blur(6px)", duration: 0.3, ease: "power3.in" }, S1 - S0 - 0.34);
+      window.__timelines["s2-proof"] = tl;
+    })();
+  </script>
+</template>

@@ -12,6 +12,12 @@
 
 **Facts your agents proved, not things they said.**
 
+<p align="center">
+  <a href="https://andyyaro.github.io/provalume/film.html"><img src="docs/assets/readme/provalume-in-action.webp" alt="The trust ladder and the preflight warning, from the launch film: five rungs fill one by one from quarantined to integrated, with what each means and the rules that promote a memory up them, then provalume preflight warns that pytest -n auto tests/integration failed twice before, shows the deadlock it hit, what later worked and a match confidence of 0.85, and says this is a warning, not a block. Select to watch the 63-second film." width="920"></a>
+</p>
+
+<p align="center"><b>Watch the 63-second launch film:</b> <a href="https://andyyaro.github.io/provalume/film.html">with sound and captions</a> · <a href="https://andyyaro.github.io/provalume/film/provalume-launch.mp4">MP4, 19.9 MB</a> · <a href="media/launch-film/">how it was made</a></p>
+
 Your coding agents rediscover the same broken approach every week. One agent
 learns that the integration suite deadlocks under `-n auto`; the next agent tries
 it again on Tuesday. A fix gets rejected in review on a branch that is later
@@ -265,6 +271,7 @@ harness compares Provalume against Provalume, on its own fixtures, and says so.
 | [Benchmarks](docs/reference/BENCHMARKS.md) | Methodology and what is not claimed |
 | [Limitations](docs/reference/LIMITATIONS.md) | Read this before adopting |
 | [ADRs](docs/adr/) | 18 decisions, with what each cost |
+| [Launch film](media/launch-film/README.md) | The 63-second film's source, and how it was made |
 
 ## Contributing
 
